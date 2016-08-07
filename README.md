@@ -3,7 +3,7 @@
 ### Authors: Cavadia. Alberto & Tovar. Daniel 
 
 The objective is to develop a more powerful benchmarking tool for SDN 
-controllers under OF 1.3, with C than existing tools as Cbench.
+controllers under OF 1.3, with C, than existing tools as Cbench.
 
 #### Features
 
