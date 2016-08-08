@@ -17,12 +17,19 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include <openflow/openflow.h>
+#include "../include/benchmark.h"
 
 #define PROG_TITLE "USAGE: ofc [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
+void myPrintHelloMake(void) {
+
+  printf("Hello makefiles!\n");
+
+  return;
+}
+
 int main(int argc, char * argv[])
 {
-
-
+  myPrintHelloMake();
+  return(0);
 }
