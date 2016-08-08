@@ -5,7 +5,7 @@ IDIR =../include
 ODIR =obj
 LDIR =../lib
 
-LIBS=-lm
+LIBS=-lm -lloci
 
 _DEPS = benchmark.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
@@ -14,11 +14,12 @@ _OBJ = benchmark.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
+
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 run: $(OBJ)
-	gcc -o $@ $^ $(CFLAGS) $(LIBS)
+	gcc -L$(LDIR) -Wl,-rpath=$(LDIR) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 
