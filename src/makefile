@@ -5,12 +5,12 @@ IDIR =../include
 ODIR =obj
 LDIR =../lib
 
-LIBS=-lm -lloci
+LIBS=-lloci
 
-_DEPS = benchmark.h
+_DEPS = benchmark.h myargs.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = benchmark.o
+_OBJ = benchmark.o  myargs.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
@@ -18,7 +18,7 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-run: $(OBJ)
+ofcB: $(OBJ)
 	gcc -L$(LDIR) -Wl,-rpath=$(LDIR) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
