@@ -7,17 +7,17 @@
 #include "myargs.h"
 
 static int
-countOptions(struct myargs options[]);
+countOptions(struct args options[]);
 static int
-findArg(struct myargs options[], char * argname);
+findArg(struct args options[], char * argname);
 
-/************************************************************************/
-void myargsManual(struct myargs options[], char * title, int exit_val)
+void
+argsManual(struct args options[], char * title, int exit_val)
 {
-    #define nameFMT "-20"//Title Format
+    #define nameFMT "-20"       //Title Format
     #define descriptionFMT "6"  //Option Format
-    #define exampleFMT "-70" //Comment Format
-    struct myargs * optptr;
+    #define exampleFMT "-70"    //Comment Format
+    struct args * optptr;
     if(title) fprintf(stderr, "%s\n", title);
     for(optptr = &options[0]; optptr->name != NULL ; optptr++)
     {
@@ -31,13 +31,13 @@ void myargsManual(struct myargs options[], char * title, int exit_val)
                 fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(%d)\n", "<int>", optptr->description, optptr->default_val.integer);
                 break;
             case FLAG:
-                fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(%s)\n", "", optptr->description, optptr->default_val.flag? "on" : "off");
+                fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(%s)\n", "<flag>", optptr->description, optptr->default_val.flag? "on" : "off");
                 break;
             case STRING:
                 fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(\"%s\")\n", "<str>", optptr->description, optptr->default_val.string);
                 break;
             case DECIMAL:
-                fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(%lf)\n", "<real>", optptr->description, optptr->default_val.decimal);
+                fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(%lf)\n", "<double>", optptr->description, optptr->default_val.decimal);
                 break;
             default:
                 fprintf(stderr, "--- unhandled argument type %d", optptr->type);
@@ -47,33 +47,36 @@ void myargsManual(struct myargs options[], char * title, int exit_val)
     fprintf(stderr, "\n");
     exit(exit_val);
 }
-/***********************************************************************x
+
+
 const struct option *
-myargs_to_long(struct myargs options[])
+argsToLong(struct args options[])
 {
-    struct option * longopts;
-    int n = count_options(options);
+    struct option * longOpts;
+    int n = countOptions(options);
     int i;
-    longopts = malloc(sizeof(struct option) * (n+1));
+    longOpts = malloc(sizeof(struct option) * (n+1));
     for(i=0;i<=n;i++)
     {
         if(options[i].name)
-            longopts[i].name = strdup(options[i].name);
+            longOpts[i].name = strdup(options[i].name);
         else
-            longopts[i].name = NULL;
+            longOpts[i].name = NULL;
         if( options[i].type == NONE )
-            longopts[i].has_arg = no_argument;
+            longOpts[i].has_arg = no_argument;
         else if ( options[i].type == FLAG)
-            longopts[i].has_arg = optional_argument;
+            longOpts[i].has_arg = optional_argument;
         else
-            longopts[i].has_arg = required_argument;
-        longopts[i].flag =  NULL;
-        longopts[i].val  = options[i].shortname;
+            longOpts[i].has_arg = required_argument;
+        longOpts[i].flag =  NULL;
+        longOpts[i].val  = options[i].id;
     }
-    return longopts;
-}*/
-/************************************************************************/
-char * myargsToShort(struct myargs options[])
+    return longOpts;
+}
+
+
+char *
+argsToShort(struct args options[])
 {
     char * shortargs;
     int n = countOptions(options);
@@ -91,20 +94,22 @@ char * myargsToShort(struct myargs options[])
     shortargs[len]=0;
     return shortargs;
 }
-/************************************************************************/
-int countOptions(struct myargs options[])
+
+int
+countOptions(struct args options[])
 {
     int count = 0;
-    struct myargs *opt;
+    struct args *opt;
     for ( opt = &options[0]; opt->name != NULL; opt++)
         count++;
     return count;
 }
-/************************************************************************/
-int findArg(struct myargs options[], char * arg)
+
+int
+findArg(struct args options[], char * arg)
 {
     int i = 0;
-    struct myargs *opt;
+    struct args *opt;
     for ( opt = &options[0]; opt->name != NULL; opt++)
     {
         if(!strcmp(opt->name, arg))
@@ -113,30 +118,33 @@ int findArg(struct myargs options[], char * arg)
     }
     return -1;
 }
-/************************************************************************/
-char * myargsGetDefaultString(struct myargs options[], char * argname)
+
+char *
+argsGetDefaultStr(struct args options[], char * argname)
 {
-    int ARGNAME_NOTFOUND = -1;
+    int NOTFOUND = -1;
     int i = findArg(options,argname);
-    assert(i != ARGNAME_NOTFOUND);
+    assert(i != NOTFOUND);
     assert(options[i].type == STRING);
     return options[i].default_val.string;
 }
-/************************************************************************/
-int myargsGetDefaultInteger(struct myargs options[], char * argname)
+
+int
+argsGetDefaultInt(struct args options[], char * argname)
 {
-    int ARGNAME_NOTFOUND = -1;
+    int NOTFOUND = -1;
     int i = findArg(options,argname);
-    assert(i != ARGNAME_NOTFOUND);
+    assert(i != NOTFOUND);
     assert(options[i].type == INTEGER);
     return options[i].default_val.integer;
 }
-/************************************************************************/
-short myargsGetDefaultFlag(struct myargs options[], char * argname)
+
+short
+argsGetDefaultFlag(struct args options[], char * argname)
 {
-    int ARGNAME_NOTFOUND = -1;
+    int NOTFOUND = -1;
     int i = findArg(options,argname);
-    assert(i != ARGNAME_NOTFOUND);
+    assert(i != NOTFOUND);
     assert(options[i].type == FLAG);
     return options[i].default_val.flag;
 }

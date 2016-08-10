@@ -2,8 +2,8 @@
 
 ### Authors: Cavadia. Alberto & Tovar. Daniel
 
-The objective is to develop a more powerful benchmarking tool for SDN
-controllers under OF 1.3, with C, than existing tools as Cbench.
+The objective is to develop a more extensive  benchmarking tool for SDN
+controllers under OF 1.3, with C, than the existing tool Cbench.
 
 #### Features
 
@@ -29,7 +29,7 @@ controllers under OF 1.3, with C, than existing tools as Cbench.
 
 	c. Size of packet.
 
-	d. Inter-time of packets sending.
+	d. Interpacket delay sending.
 
 	e. Packet fields.
 

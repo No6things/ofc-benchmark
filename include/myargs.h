@@ -11,7 +11,12 @@ enum argsType {
     DECIMAL
 };
 
-struct myargs {
+enum test_mode
+{
+    MODE_LATENCY, MODE_THROUGHPUT
+};
+
+struct args {
     char *  name;
     char    id;
     char * description;
@@ -26,75 +31,85 @@ struct myargs {
     } default_val;
 };
 
-
+/*-------------------------Functions------------------------------*/
 
 /**
  *  Prints manual for Arguments
 
- *      @param options A list of myargs where the last arg is all zeros
- *      @param title    A string to print in the usage, i.e., "program name [options]"
- *      @param  exit_val    The value to pass to exit()
+ * @param options A list of args where the last arg is all zeros for null purposes
+ * @param title    A string to print in the usage, i.e., "program name [options]"
+ * @param  exit_val    The value to pass to exit()
  */
-
-
 void
-myargsManual(struct myargs options[], char * title, int exit_val);
+myargsManual(struct args options[], char * title, int exit_val);
 
 
 /**
- * Return a list of struct options suitable for getopt_long()
- * @param options   A list of myargs where the last arg is all zeros
- * @return A list of long options
+ * Return a list of long options suitable for getopt_long() from getopt.h
+ *  @param options   A list of args where the last arg is all zeros
+ *  @return A list of long options defined by getopt.h
 
-
+      struct option {
+      #if defined (__STDC__) && __STDC__
+        const char *name;
+      #else
+        char *name;
+      #endif
+        has_arg can't be an enum because some compilers complain about
+           type mismatches in all the code that assumes it is an int.
+        int has_arg;
+        int *flag;
+        int val;
+      };
+ */
 const struct option *
-myargsToLong(struct myargs options[]);
-*/
+myargsToLong(struct args options[]);
+
 /**
- * Return a string of options suitable for getopt()
- * @param options   A list of myargs where the last arg is all zeros
- * @return A string with colons for all of the short names of the options, i.e., "e:fg:"
+ * Return a string of short options suitable for getopt() from getopt.h
+ *  @param options   A list of args where the last arg is all zeros
+ *  @return A string with colons for all of the short names of the options, i.e., "e:fg:"
  */
 char *
-myargsToShort(struct myargs options[]);
+myargsToShort(struct args options[]);
 
 
 /**
  * Return the default value for the option
  *  abort() if does not exist or is not a string
- *  @param options   A list of myargs where the last arg is all zeros
+ *  @param options   A list of args where the last arg is all zeros
  *  @param argname   The long name of an argument
  *  @return A string
  */
 char *
-myargsGetDefaultString(struct myargs options[], char * argname);
+myargsGetDefaultStr(struct args options[], char * argname);
 /**
  * Return the default value for the option
  *  abort() if does not exist or is not an int
- *  @param options   A list of myargs where the last arg is all zeros
+ *  @param options   A list of args where the last arg is all zeros
  *  @param argname   The long name of an argument
  *  @return An int
  */
 int
-myargsGetDefaultInteger(struct myargs options[], char * argname);
+myargsGetDefaultInt(struct args options[], char * argname);
 /**
  * Return the default value for the option
  *  abort() if does not exist or is not a flag
- *  @param options   A list of myargs where the last arg is all zeros
+ *  @param options   A list of args where the last arg is all zeros
  *  @param argname   The long name of an argument
  *  @return A zero for off, a one for on
  */
 short
-myargsGetDefaultFlag(struct myargs options[], char * argname);
+myargsGetDefaultFlag(struct args options[], char * argname);
 /**
  * Return the default value for the option
  *  abort() if does not exist or is not a decimal
- *  @param options   A list of myargs where the last arg is all zeros
+ *  @param options   A list of args where the last arg is all zeros
  *  @param argname   The long name of an argument
  *  @return A double
  */
 double
-myargsGetDefaultDecimal(struct myargs options[], char * argname);
+myargsGetDefaultDec(struct args options[], char * argname); //not implemented
 
 
 #endif
