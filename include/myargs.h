@@ -11,10 +11,7 @@ enum argsType {
     DECIMAL
 };
 
-enum test_mode
-{
-    MODE_LATENCY, MODE_THROUGHPUT
-};
+
 
 struct args {
     char *  name;

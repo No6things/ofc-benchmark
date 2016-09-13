@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/loci/loci.h"
+#include "../include/openflow.h"
+#include "../include/openflow131.h"
+
 #include "myargs.h"
 
 static int
@@ -40,7 +42,7 @@ argsManual(struct args options[], char * title, int exit_val)
                 fprintf(stderr, " %"descriptionFMT"s %"exampleFMT"s | Default value:(%lf)\n", "<double>", optptr->description, optptr->default_val.decimal);
                 break;
             default:
-                fprintf(stderr, "--- unhandled argument type %d", optptr->type);
+                fprintf(stderr, "Unhandled argument type %d", optptr->type);
                 abort();
         };
     }
