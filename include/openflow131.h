@@ -121,7 +121,28 @@ enum ofp131_type {
     OFPT131_METER_MOD = 29,         /* Controller/switch message */
 };
 
+/* Instruction header that is common to all instructions. The length includes
+* the header and any padding used to make the instruction 64-bit aligned.
+* NB: The length of an instruction *must* always be a multiple of eight. */
+struct ofp131_instruction {
+    uint16_t type; /* Instruction type */
+    uint16_t len; /* Length of this struct in bytes. */
+};
+OFP_ASSERT(sizeof(struct ofp131_instruction) == 4);
 
+enum ofp131_instruction_type {
+    OFPIT_GOTO_TABLE = 1, /* Setup the next table in the lookup
+    pipeline */
+    OFPIT_WRITE_METADATA = 2, /* Setup the metadata field for use later in
+    pipeline */
+    OFPIT_WRITE_ACTIONS = 3, /* Write the action(s) onto the datapath action
+    set */
+    OFPIT_APPLY_ACTIONS = 4, /* Applies the action(s) immediately */
+    OFPIT_CLEAR_ACTIONS = 5, /* Clears all actions from the datapath
+    action set */
+    OFPIT_METER = 6, /* Apply meter (rate limiter) */
+    OFPIT_EXPERIMENTER = 0xFFFF /* Experimenter instruction */
+};
 
 enum ofp131_multipart_types {
     /* Description of this OpenFlow switch.
@@ -207,6 +228,140 @@ struct ofp131_switch_features {
     uint32_t reserved;
 };
 
+
+
+enum ofp131_table_config {
+    OFPTC_DEPRECATED_MASK = 3, /* Deprecated bits */
+};
+
+
+
+/* Table Feature property types.
+* Low order bit cleared indicates a property for a regular Flow Entry.
+* Low order bit set indicates a property for the Table-Miss Flow Entry.
+*/
+enum ofp131_table_feature_prop_type {
+    OFPTFPT_INSTRUCTIONS = 0, /* Instructions property. */
+    OFPTFPT_INSTRUCTIONS_MISS = 1, /* Instructions for table-miss. */
+    OFPTFPT_NEXT_TABLES = 2, /* Next Table property. */
+    OFPTFPT_NEXT_TABLES_MISS = 3, /* Next Table for table-miss. */
+    OFPTFPT_WRITE_ACTIONS = 4, /* Write Actions property. */
+    OFPTFPT_WRITE_ACTIONS_MISS = 5, /* Write Actions for table-miss. */
+    OFPTFPT_APPLY_ACTIONS = 6, /* Apply Actions property. */
+    OFPTFPT_APPLY_ACTIONS_MISS = 7, /* Apply Actions for table-miss. */
+    OFPTFPT_MATCH = 8, /* Match property. */
+    OFPTFPT_WILDCARDS = 10, /* Wildcards property. */
+    OFPTFPT_WRITE_SETFIELD = 12, /* Write Set-Field property. */
+    OFPTFPT_WRITE_SETFIELD_MISS = 13, /* Write Set-Field for table-miss. */
+    OFPTFPT_APPLY_SETFIELD = 14, /* Apply Set-Field property. */
+    OFPTFPT_APPLY_SETFIELD_MISS = 15, /* Apply Set-Field for table-miss. */
+    OFPTFPT_EXPERIMENTER = 0xFFFE, /* Experimenter property. */
+    OFPTFPT_EXPERIMENTER_MISS = 0xFFFF, /* Experimenter for table-miss. */
+};
+
+/* Common header for all Table Feature Properties */
+struct ofp131_table_feature_prop_header {
+    uint16_t type; /* One of OFPTFPT_*. */
+    uint16_t length; /* Length in bytes of this property. */
+};
+OFP_ASSERT(sizeof(struct ofp131_table_feature_prop_header) == 4);
+
+/* Instructions property */
+struct ofp131_table_feature_prop_instructions {
+    uint16_t type; /* One of OFPTFPT_INSTRUCTIONS,
+                      OFPTFPT_INSTRUCTIONS_MISS. */
+    uint16_t length; /* Length in bytes of this property. */
+    /* Followed by:
+    * - Exactly (length - 4) bytes containing the instruction ids, then
+    * - Exactly (length + 7)/8*8 - (length) (between 0 and 7)
+    * bytes of all-zero bytes */
+    struct ofp131_instruction instruction_ids[0]; /* List of instructions */
+};
+OFP_ASSERT(sizeof(struct ofp131_table_feature_prop_instructions) == 4);
+
+/* Next Tables property */
+struct ofp131_table_feature_prop_next_tables {
+    uint16_t type; /* One of OFPTFPT_NEXT_TABLES,
+                      OFPTFPT_NEXT_TABLES_MISS. */
+    uint16_t length; /* Length in bytes of this property. */
+    /* Followed by:
+    * - Exactly (length - 4) bytes containing the table_ids, then
+    * - Exactly (length + 7)/8*8 - (length) (between 0 and 7)
+    * bytes of all-zero bytes */
+    uint8_t next_table_ids[0];
+};
+OFP_ASSERT(sizeof(struct ofp131_table_feature_prop_next_tables) == 4);
+
+/* Actions property */
+struct ofp131_table_feature_prop_actions {
+    uint16_t type; /* One of OFPTFPT_WRITE_ACTIONS,
+                      OFPTFPT_WRITE_ACTIONS_MISS,
+                      OFPTFPT_APPLY_ACTIONS,
+                      OFPTFPT_APPLY_ACTIONS_MISS. */
+    uint16_t length; /* Length in bytes of this property. */
+    /* Followed by:
+    * - Exactly (length - 4) bytes containing the action_ids, then
+    * - Exactly (length + 7)/8*8 - (length) (between 0 and 7)
+    * bytes of all-zero bytes */
+    struct ofp_action_header action_ids[0]; /* List of actions */
+};
+OFP_ASSERT(sizeof(struct ofp131_table_feature_prop_actions) == 4);
+
+/* Match, Wildcard or Set-Field property */
+struct ofp131_table_feature_prop_oxm {
+    uint16_t type; /* One of OFPTFPT_MATCH,
+                    OFPTFPT_WILDCARDS,
+                    OFPTFPT_WRITE_SETFIELD,
+                    OFPTFPT_WRITE_SETFIELD_MISS,
+                    OFPTFPT_APPLY_SETFIELD,
+                    OFPTFPT_APPLY_SETFIELD_MISS. */
+    uint16_t length; /* Length in bytes of this property. */
+    /* Followed by:
+    * - Exactly (length - 4) bytes containing the oxm_ids, then
+    * - Exactly (length + 7)/8*8 - (length) (between 0 and 7)
+    * bytes of all-zero bytes */
+    uint32_t oxm_ids[0]; /* Array of OXM headers */
+};
+OFP_ASSERT(sizeof(struct ofp131_table_feature_prop_oxm) == 4);
+
+/* Experimenter table feature property */
+struct ofp131_table_feature_prop_experimenter {
+    uint16_t type; /* One of OFPTFPT_EXPERIMENTER,
+                      OFPTFPT_EXPERIMENTER_MISS. */
+    uint16_t length; /* Length in bytes of this property. */
+    uint32_t experimenter; /* Experimenter ID which takes the same
+                              form as in struct
+                              ofp_experimenter_header. */
+    uint32_t exp_type; /* Experimenter defined. */
+    /* Followed by:
+    * - Exactly (length - 12) bytes containing the experimenter data, then
+    * - Exactly (length + 7)/8*8 - (length) (between 0 and 7)
+    * bytes of all-zero bytes */
+    uint32_t experimenter_data[0];
+};
+OFP_ASSERT(sizeof(struct ofp131_table_feature_prop_experimenter) == 12);
+
+/* Body for ofp_multipart_request of type OFPMP_TABLE_FEATURES./
+* Body of reply to OFPMP_TABLE_FEATURES request. */
+#define OFP_MAX_TABLE_NAME_LEN 32
+struct ofp131_table_features {
+    uint16_t length; /* Length is padded to 64 bits. */
+    uint8_t table_id; /* Identifier of table. Lower numbered tables
+    are consulted first. */
+    uint8_t pad[5]; /* Align to 64-bits. */
+    char name[OFP_MAX_TABLE_NAME_LEN];
+    uint64_t metadata_match; /* Bits of metadata table can match. */
+    uint64_t metadata_write; /* Bits of metadata table can write. */
+    uint32_t config; /* Bitmap of OFPTC_* values */
+    uint32_t max_entries; /* Max number of entries supported. */
+    /* Table Feature Property list */
+    struct ofp131_table_feature_prop_header properties[0];
+};
+OFP_ASSERT(sizeof(struct ofp131_table_features) == 64);
+
+
+
+
 struct ofp131_multipart_request {
     struct ofp_header header;
     uint16_t type; /* One of the OFPMP_* constants. */
@@ -221,14 +376,31 @@ enum ofp131_multipart_request_flags {
 
 struct ofp131_multipart_reply {
     struct ofp_header header;
-    uint16_t type; /* One of the OFPMP_* constants. */
-    uint16_t flags; /* OFPMPF_REPLY_* flags. */
+    uint16_t type;    /* One of the OFPMP_* constants. */
+    uint16_t flags;   /* OFPMPF_REPLY_* flags. */
     uint8_t pad[4];
-    uint8_t body[0]; /* Body of the reply. */
+    uint8_t body[0];  /* Body of the reply. */
 };
 
 enum ofp131_multipart_reply_flags {
     OFPMPF_REPLY_MORE = 1 << 0 /* More replies to follow. */
 };
 
+
+/* Controller roles. */
+enum ofp131_controller_role {
+    OPFCR_ROLE_NOCHANGE = 0,    /* Don't change current role. */
+    OPFCR_ROLE_EQUAL    = 1,    /* Default role, full access. */
+    OPFCR_ROLE_MASTER   = 2,    /* Full access, at most one master. */
+    OPFCR_ROLE_SLAVE    = 3,    /* Read-only access. */
+};
+
+/* Role request and reply message. */
+struct ofp131_role_request {
+    struct ofp_header header; /* Type OFPT_ROLE_REQUEST/OFPT_ROLE_REPLY. */
+    uint32_t role;            /* One of NX_ROLE_*. */
+    uint8_t pad[4];           /* Align to 64 bits. */
+    uint64_t generation_id;   /* Master Election Generation Id */
+};
+OFP_ASSERT(sizeof(struct ofp131_role_request)==24);
 #endif
