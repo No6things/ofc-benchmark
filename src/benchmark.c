@@ -272,7 +272,7 @@ int main(int argc, char * argv[])
           nSwitches =         argsGetDefaultInt(options, "switches"),
           packetSize =        argsGetDefaultInt(options, "size"),
           warmup =            argsGetDefaultInt(options, "warmup"),
-          debug =0,
+          debug = 0,
           mode = MODE_LATENCY;
 
   //PARSE ARGS LOOP

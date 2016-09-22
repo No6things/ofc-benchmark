@@ -782,7 +782,7 @@ void ofp13SwitchHandleRead(struct fakeswitch *fs){
                     fs->probeState--;
                 }
                 break;
-            case OFPT131_FLOW_MOD:
+            case OFPT131_FLOW_MOD: //check
                 fm = (struct ofp_flow_mod *) ofph;
                 if(fs->switchStatus == READY_TO_SEND && (fm->command == htons(OFPFC_ADD) ||
                         fm->command == htons(OFPFC_MODIFY_STRICT)))
