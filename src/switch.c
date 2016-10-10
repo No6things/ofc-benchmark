@@ -161,7 +161,7 @@ void ofp13SwitchLearnDstmac(struct fakeswitch *fs){
     void * arp_reply;
 
     memset(buf, 0, sizeof(buf));
-    pkt_in = ( struct ofp_packet_in *) buf; //change this ofp131_packet_in
+    pkt_in = ( struct ofp131_packet_in *) buf; //change this ofp131_packet_in
 
     pkt_in->header.version = OFP131_VERSION;
     pkt_in->header.type = OFPT131_PACKET_IN;
@@ -562,7 +562,7 @@ void switchChangeStatus(struct fakeswitch *fs, int new_status) {
 }
 /***********************************************************************/
 void switchHandleRead(struct fakeswitch *fs){
-    /*int count;
+    int count;
     struct ofp_header * ofph;
     struct ofp_header echo;
     struct ofp_header barrier;
@@ -691,11 +691,11 @@ void switchHandleRead(struct fakeswitch *fs){
                             fs->probeState);
                 fs->probeState =0;
         }
-    }*/
+    }
 }
 /***********************************************************************/
 static void switchHandleWrite(struct fakeswitch *fs){
-  /*  char buf[BUFLEN];
+    char buf[BUFLEN];
     int count ;
     int send_count = 0 ;
     int throughput_buffer = BUFLEN;
@@ -734,7 +734,7 @@ static void switchHandleWrite(struct fakeswitch *fs){
     }
     // send any data if it's queued
     if( msgbufCountBuffered(fs->outbuf) > 0)
-        msgbufWrite(fs->outbuf, fs->sock, 0);*/
+        msgbufWrite(fs->outbuf, fs->sock, 0);
 }
 /***********************************************************************/
 void switchHandleIo(struct fakeswitch *fs, const struct pollfd *pfd){//consider delete this and leave solo 131 handler

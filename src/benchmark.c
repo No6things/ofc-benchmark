@@ -436,11 +436,20 @@ int main(int argc, char * argv[])
           sum = sum / (double)(countedTests);
           double std_dev = sqrt(sum);
 
-          printf("RESULT: %d switches %d tests "
-              "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
-                  i+1,
-                  countedTests,
-                  min, max, avg, std_dev);
+          if (mode==MODE_LATENCY){
+            printf("RESULT: %d switches %d tests "
+                "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
+                    i+1,
+                    countedTests,
+                    1000/min, 1000/max, 1000/avg, 1000/std_dev);
+          }else{
+            printf("RESULT: %d switches %d tests "
+                "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
+                    i+1,
+                    countedTests,
+                    min, max, avg, std_dev);
+          }
+
       }
 
   return(0);
