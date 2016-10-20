@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/openflow.h"
-#include "../include/openflow131.h"
-
 #include "../include/myargs.h"
 
 static int

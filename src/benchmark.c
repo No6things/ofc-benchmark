@@ -35,6 +35,7 @@ struct args options[] = { //Options for Tests. In case of change, also change ma
     {"controller",  'C', "Hostname of controller to connect to", STRING, {.string = "localhost"}},
     {"packet-delay",'d', "Interpacket gap (in ms)", INTEGER, {.integer = 0}},
     {"delay",       'D', "Delay starting testing after features_reply is received (in ms)", INTEGER, {.integer = 0}},
+    {"debug",      'x', "Debug messages", FLAG, {.flag = 0}},
     {"fields",      'f', "Packet fields modified", FLAG, {.flag = 0}},
     {"help",        'h', "Print this manual", NONE, {.none = 0}},
     {"connect-delay",  'i', "Delay between groups of switches connecting to the controller (in ms)", INTEGER, {.integer = 0}},
@@ -43,11 +44,13 @@ struct args options[] = { //Options for Tests. In case of change, also change ma
     {"learn-dst-macs",'L', "Send gratuitious ARP replies to learn destination macs before testing", FLAG, {.flag = 1}},
     {"ms-per-test", 'm', "Test length in ms", INTEGER, {.integer = 1000}},
     {"mac-addresses", 'M', "Unique source MAC addresses per switch", INTEGER, {.integer = 100000}},
+    {"node-master",      'n', "Hostname of the node master to send results to", STRING, {.string = "localhost"}},
+    {"nodes",      'N', "Number of nodes in distributed mode", INTEGER, {.integer = 1}},
     {"dpid-offset",  'O', "Switch DPID offset", INTEGER, {.integer = 1}},
     {"packets",     'p', "Number of packets", INTEGER, {.integer = 0}},
     {"port",        'P', "Controller port",  INTEGER, {.integer = OFP_TCP_PORT}},
     {"ranged-test", 'r', "Test range of 1..$n packages", FLAG, {.flag = 0}},
-    {"random",      'o', "Sending order is random", FLAG, {.flag = 0}},
+    {"random",      'R', "Sending order is random", FLAG, {.flag = 0}},
     {"switches",    's', "Number of switches", INTEGER, {.integer = 16}},
     {"size",        'S', "Size of packets", INTEGER, {.integer = 0}}, //todo
     {"throughput",  't', "Test throughput instead of latency", NONE, {.none = 0}},
@@ -254,7 +257,8 @@ int main(int argc, char * argv[])
   const struct option * longOpts = argsToLong(options);
   char * shortOpts = argsToShort(options);
 
-  char *  controllerHostname =argsGetDefaultStr(options,"controller");
+  char *  controllerHostname =argsGetDefaultStr(options,"controller"),
+          nodeMasterHostname =argsGetDefaultStr(options,"node-master");
   int     cooldown =          argsGetDefaultInt(options, "cooldown"),
           packetDelay =       argsGetDefaultInt(options, "packet-delay"),
           delay =             argsGetDefaultInt(options, "delay"),
@@ -273,7 +277,8 @@ int main(int argc, char * argv[])
           nSwitches =         argsGetDefaultInt(options, "switches"),
           packetSize =        argsGetDefaultInt(options, "size"),
           warmup =            argsGetDefaultInt(options, "warmup"),
-          debug = 0,
+          debug =             argsGetDefaultFlag(options, "debug"),
+          nNodes =              argsGetDefaultInt(options, "nodes"),
           mode = MODE_LATENCY;
 
   //PARSE ARGS LOOP
@@ -324,8 +329,13 @@ int main(int argc, char * argv[])
              msTestLen = atoi(optarg);
              break;
          case 'M' :
-             nMacAddresses = atoi(optarg);
-             break;
+              nMacAddresses = atoi(optarg);
+              break;
+         case 'n':
+              nodeMasterHostname= strdup(optarg);
+        case 'N':
+              nNodes = atoi(optarg);
+              break;
          case 'O':
              dpidOffset = atoi(optarg);
              break;
@@ -353,6 +363,9 @@ int main(int argc, char * argv[])
          case 'w' :
              warmup = atoi(optarg);
              break;
+         case 'x' :
+             debug = atoi(optarg);
+             break;
          default:
           argsManual(options, PROG_TITLE, 1);
      }
@@ -362,11 +375,13 @@ int main(int argc, char * argv[])
   fprintf(stderr, "ofcB: OpenFlow Controller Benchmarking Tool\n"
                   "   running in mode %s\n"
                   "   connecting to controller at %s:%d \n"
+                  "   test distributed among %d nodes, beign %s the master"
                   "   faking%s %d switches offset %d : %d ms per test\n"
                   "   %s destination mac addresses before the test\n"
                   "   starting test with %d ms delay after features_reply\n",
                   mode == MODE_THROUGHPUT? "'throughput'": "'latency'",
                   controllerHostname,  controllerPort,
+                  nNodes, nodeMasterHostname,
                   testRange ? " from 1 to": "",
                   nSwitches,
                   dpidOffset,
