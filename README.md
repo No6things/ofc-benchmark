@@ -58,3 +58,13 @@ controllers under OF 1.3, with C, than the existing tool Cbench.
 	a. Open vSwitch.
 
 	b. Mininet.
+
+#### Requirements
+
+1. SNMP-NET installed.
+2. SNMP-MIBS-DOWNLOADER installed.
+	 1. Comment out "mibs:" from snmp.conf.
+	 2. Run download-mibs.
+3. Update snmpd.conf to accept foreigner requests:
+	 1. Update to agentAddress udp:161.
+	 2. Remove "-V systemonly" from "rocommunity public default -V systemonly".

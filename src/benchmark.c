@@ -21,6 +21,7 @@
 #include "../include/openflow.h"
 
 #include "../include/myargs.h"
+#include "../include/mysnmp.h"
 #include "../include/benchmark.h"
 #include "../include/switch.h"
 
@@ -88,7 +89,7 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
     }
     tNow = now.tv_sec;
     tmNow = localtime(&tNow);
-    printf("%02d:%02d:%02d.%03d Testing %-3d Switches: flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
+    printf("%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
     usleep(100000); // sleep for 100 ms, to let packets queue
     for( i = 0 ; i < nSwitches; i++)
     {
@@ -374,6 +375,8 @@ int main(int argc, char * argv[])
                   delay);
 
   //TEST INIT
+  initializeSnmp();
+
   switches = malloc(nSwitches * sizeof(struct fakeswitch));
   assert(switches);
 
@@ -424,7 +427,6 @@ int main(int argc, char * argv[])
                       min = v;
             }
 
-
           //SHOW RESULTS
   		    int countedTests = (loopsPerTest - warmup - cooldown);
           // compute std dev
@@ -436,6 +438,7 @@ int main(int argc, char * argv[])
           sum = sum / (double)(countedTests);
           double std_dev = sqrt(sum);
 
+          asynchronousSnmp(controllerHostname);
           if (mode==MODE_LATENCY){
             printf("RESULT: %d switches %d tests "
                 "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",

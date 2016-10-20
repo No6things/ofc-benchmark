@@ -967,6 +967,6 @@ static int debugMsg(struct fakeswitch * fs, char * msg, ...){
     vfprintf(stderr,msg,aq);
     if(msg[strlen(msg)-1] != '\n')
         fprintf(stderr, "\n");
-     fflush(stderr);     // should be redundant, but often isn't :-(
+     fflush(stderr); 
     return 1;
 }

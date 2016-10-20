@@ -5,12 +5,12 @@ IDIR =../include
 ODIR =obj
 LDIR =../lib
 
-LIBS=-lm
+LIBS=`net-snmp-config --libs` -lm
 
-_DEPS = benchmark.h myargs.h switch.h msgbuf.h openflow.h openflow131.h
+_DEPS = benchmark.h myargs.h mysnmp.h switch.h msgbuf.h openflow.h openflow131.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = benchmark.o  myargs.o switch.o msgbuf.o
+_OBJ = benchmark.o  myargs.o mysnmp.o switch.o msgbuf.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)

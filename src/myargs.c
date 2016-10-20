@@ -6,7 +6,7 @@
 #include "../include/openflow.h"
 #include "../include/openflow131.h"
 
-#include "myargs.h"
+#include "../include/myargs.h"
 
 static int
 countOptions(struct args options[]);
