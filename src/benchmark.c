@@ -22,8 +22,9 @@
 
 #include "../include/myargs.h"
 #include "../include/mysnmp.h"
+#include "../include/mydist.h"
 #include "../include/benchmark.h"
-#include "../include/switch.h"
+#include "../include/myswitch.h"
 
 
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
@@ -108,6 +109,24 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
     return sum;
 }
 
+char * testResult (mode, i, countedTests, min, max, avg, std_dev){
+  char * buffer;
+  if (mode == MODE_LATENCY){
+    asprintf(buffer, "-Latency result: %d Switches %d Tests "
+        "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
+            i+1,
+            countedTests,
+            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+  }else{
+    asprintf(buffer, "-Throughput result: %d Switches %d Tests "
+        "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
+            i+1,
+            countedTests,
+            min, max, avg, std_dev);
+
+  }
+  return buffer;
+}
 //CONNECTION
 
 int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
@@ -253,13 +272,16 @@ int main(int argc, char * argv[])
   int i=0,
       j=0;
 
+  struct report *rp;
+  char *reportBuffer;
   struct fakeswitch *switches;
   const struct option * longOpts = argsToLong(options);
-  char * shortOpts = argsToShort(options);
+  char *  shortOpts =         argsToShort(options);
 
   char *  controllerHostname =argsGetDefaultStr(options,"controller"),
           nodeMasterHostname =argsGetDefaultStr(options,"node-master");
-  int     cooldown =          argsGetDefaultInt(options, "cooldown"),
+  unsigned int
+          cooldown =          argsGetDefaultInt(options, "cooldown"),
           packetDelay =       argsGetDefaultInt(options, "packet-delay"),
           delay =             argsGetDefaultInt(options, "delay"),
           fields =            argsGetDefaultFlag(options, "fields"),
@@ -279,7 +301,10 @@ int main(int argc, char * argv[])
           warmup =            argsGetDefaultInt(options, "warmup"),
           debug =             argsGetDefaultFlag(options, "debug"),
           nNodes =              argsGetDefaultInt(options, "nodes"),
+          master = 1,
           mode = MODE_LATENCY;
+
+  pthread_t tid;
 
   //PARSE ARGS LOOP
   // TODO: HANDLE MALICIOUS DATA
@@ -333,7 +358,8 @@ int main(int argc, char * argv[])
               break;
          case 'n':
               nodeMasterHostname= strdup(optarg);
-        case 'N':
+              if(!strcasecmp(nodeMasterHostname, "localhost")) master= 0;
+         case 'N':
               nNodes = atoi(optarg);
               break;
          case 'O':
@@ -392,6 +418,12 @@ int main(int argc, char * argv[])
   //TEST INIT
   initializeSnmp();
 
+  //CREATE SERVER THREAD
+  if (nNodes > 1 && master) {
+    int *a = &nNodes;
+    pthread_create(&tid, NULL, &serverSide, (void *)a);
+  }
+
   switches = malloc(nSwitches * sizeof(struct fakeswitch));
   assert(switches);
 
@@ -435,11 +467,11 @@ int main(int argc, char * argv[])
               results[j] = v;
         			if(j<warmup || j >= loopsPerTest-cooldown)
         				continue;
-                    sum += v;
-                    if (v > max)
-                      max = v;
-                    if (v < min)
-                      min = v;
+              sum += v;
+              if (v > max)
+                max = v;
+              if (v < min)
+                min = v;
             }
 
           //SHOW RESULTS
@@ -453,19 +485,23 @@ int main(int argc, char * argv[])
           sum = sum / (double)(countedTests);
           double std_dev = sqrt(sum);
 
-          asynchronousSnmp(controllerHostname);
-          if (mode==MODE_LATENCY){
-            printf("RESULT: %d switches %d tests "
-                "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
-                    i+1,
-                    countedTests,
-                    1000/min, 1000/max, 1000/avg, 1000/std_dev);
+          reportBuffer = testResult(mode, i, countedTests, min, max, avg, std_dev);
+
+          if (master){
+            asynchronousSnmp(controllerHostname);
+            if (nNodes > 1) {
+              pthread_join(&tid, NULL);
+              rp = reports;
+              i = nNodes;
+              while (i >= 0){
+                printf("%s\n",rp->buffer );
+                rp++;
+                i--;
+              }
+            }
           }else{
-            printf("RESULT: %d switches %d tests "
-                "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
-                    i+1,
-                    countedTests,
-                    min, max, avg, std_dev);
+            clientSide(nodeMasterHostname, reportBuffer);
+            printf("Report sended to master node\n" );
           }
 
       }

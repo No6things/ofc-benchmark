@@ -19,7 +19,7 @@
 #include <netinet/in.h>
 
 #include "../include/benchmark.h"
-#include "../include/switch.h"
+#include "../include/myswitch.h"
 
 static int debugMsg(struct fakeswitch * fs, char * msg, ...);
 static int makeFeaturesReply(int switch_id, int xid, char * buf, int buflen);
@@ -967,6 +967,6 @@ static int debugMsg(struct fakeswitch * fs, char * msg, ...){
     vfprintf(stderr,msg,aq);
     if(msg[strlen(msg)-1] != '\n')
         fprintf(stderr, "\n");
-     fflush(stderr); 
+     fflush(stderr);
     return 1;
 }

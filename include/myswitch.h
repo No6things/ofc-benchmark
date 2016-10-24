@@ -1,5 +1,5 @@
-#ifndef FAKESWITCH_H
-#define FAKESWITCH_H
+#ifndef MYSWITCH_H
+#define MYSWITCH_H
 
 #include <poll.h>
 
