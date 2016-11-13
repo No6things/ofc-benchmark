@@ -129,7 +129,7 @@ void asynchronousSnmp(char* controller)
   sess.callback = asynchResponse;		/* default callback */
   sess.callback_magic = hs;
 
-  fprintf(stdout, "SNMP\n" );
+  printf("---SNMP---\n" );
 
   if (!(hs->sess = snmp_open(&sess))) {
     snmp_perror("snmp_open");
