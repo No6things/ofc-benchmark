@@ -101,7 +101,7 @@ static struct report *rp;
 
   }
 
-  int clientSide(char *nodeMasterHostname, char* reportBuffer) {
+  int clientSide(char *nodeMasterHostname, char *reportBuffer) {
    int sockfd, portno, n;
    struct sockaddr_in serv_addr;
    struct hostent *server;

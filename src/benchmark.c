@@ -137,6 +137,7 @@ char * testResult (unsigned int mode, unsigned int i, int countedTests, double m
             i+1,
             countedTests,
             min, max, avg, std_dev);
+
   }
   return buffer;
 }
@@ -288,11 +289,11 @@ int main(int argc, char * argv[])
   struct report *rp;
   char *reportBuffer;
   struct fakeswitch *switches;
-  const struct option *longOpts = argsToLong(options);
-  char *shortOpts =         argsToShort(options);
+  const struct option * longOpts = argsToLong(options);
+  char *  shortOpts =         argsToShort(options);
 
-  char *controllerHostname =argsGetDefaultStr(options,"controller"),
-       *nodeMasterHostname =argsGetDefaultStr(options,"node-master");
+  char *  controllerHostname =argsGetDefaultStr(options,"controller"),
+       *  nodeMasterHostname =argsGetDefaultStr(options,"node-master");
   unsigned int
           cooldown =          argsGetDefaultInt(options, "cooldown"),
           packetDelay =       argsGetDefaultInt(options, "packet-delay"),
@@ -313,7 +314,7 @@ int main(int argc, char * argv[])
           packetSize =        argsGetDefaultInt(options, "size"),
           warmup =            argsGetDefaultInt(options, "warmup"),
           debug =             argsGetDefaultFlag(options, "debug"),
-          nNodes =             argsGetDefaultInt(options, "nodes"),
+          nNodes =            argsGetDefaultInt(options, "nodes"),
           master = 1,
           mode = MODE_LATENCY;
 
@@ -371,7 +372,7 @@ int main(int argc, char * argv[])
               break;
          case 'n':
               nodeMasterHostname= strdup(optarg);
-              if(!strcasecmp(nodeMasterHostname, "localhost")) master= 0;
+              if(!strcasecmp(nodeMasterHostname, "localhost")) master = 0;
          case 'N':
               nNodes = atoi(optarg);
               break;
@@ -497,6 +498,7 @@ int main(int argc, char * argv[])
           reportBuffer = (char*)malloc(150*sizeof(char));
           reportBuffer = testResult(mode, i, countedTests, min, max, avg, std_dev);
           printf("------------------------------------------Results------------------------------------------\n" );
+
           if (master){
             asynchronousSnmp(controllerHostname);
             if (nNodes > 1) {

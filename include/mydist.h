@@ -16,5 +16,5 @@ static  struct report {
 
 
  void * serverSide(void *s);
- int clientSide(char *nodeMasterHostname, char* reportBuffer);
+ int clientSide(char *nodeMasterHostname, char *reportBuffer);
 #endif
