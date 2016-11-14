@@ -372,7 +372,7 @@ int main(int argc, char * argv[])
               break;
          case 'n':
               nodeMasterHostname= strdup(optarg);
-              if(!strcasecmp(nodeMasterHostname, "localhost")) master = 0;
+              if(strcasecmp(nodeMasterHostname, "localhost")) master = 0;
          case 'N':
               nNodes = atoi(optarg);
               break;
