@@ -425,6 +425,7 @@ int main(int argc, char * argv[])
                   testRange ? "from 1 to": "", nSwitches, dpidOffset, msTestLen,
                   learnDstMacs ? "learning" : "NOT learning",
                   delay);
+  printf("-------------------------------------------TEST-------------------------------------------\n" );
 
   //TEST INIT
   initializeSnmp();
