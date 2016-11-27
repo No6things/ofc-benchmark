@@ -1,12 +1,11 @@
 #ifndef MYSNMP_H
 #define MYSNMP_H
-/*
- * a list of hosts to query
-
-*/
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+/*
+* a list of hosts to query
+*/
 static  struct host {
    const char *name;
    const char *community;

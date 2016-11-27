@@ -501,6 +501,7 @@ int main(int argc, char * argv[])
           printf("------------------------------------------Results------------------------------------------\n" );
 
           if (master){
+            //TODO: Make SNMP queries frequently during the test
             asynchronousSnmp(controllerHostname);
             if (nNodes > 1) {
               pthread_join(&tid, NULL);

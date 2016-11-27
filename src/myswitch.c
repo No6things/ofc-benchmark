@@ -254,7 +254,6 @@ static int makeFeaturesReply(int id, int xid, char * buf, int buflen){
     struct ofp_switch_features * features;
     const char fake[] =     // stolen from wireshark
     {
-
       0x97,0x06,0x00,0xe0,0x04,0x01,0x00,0x00,0x00,0x00,0x76,0xa9,
       0xd4,0x0d,0x25,0x48,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
       0x00,0x00,0x07,0xff,0x00,0x01,0x1a,0xc1,0x51,0xff,0xef,0x8a,0x76,0x65,0x74,0x68,
@@ -288,7 +287,7 @@ static int  ofp13MakeFeaturesReply(int id, int xid, char * buf, int buflen){
     features->header.xid = xid;
     features->header.length = htons(sizeof(struct ofp131_switch_features));
     features->header.type = OFPT131_FEATURES_REPLY;
-    features->datapath_id = htonll(id);
+    features->datapath_id = htonll(id); //add offset for mutiples switches
     features->n_buffers  = 1;
 		features->n_buffers  = 1;
 		features->auxiliary_id = 0;
@@ -373,6 +372,7 @@ static int packetOutIsLldp(struct ofp_packet_out * po){
 	return ethertype == ETHERTYPE_LLDP;
 }
 /***********************************************************************/
+//TODO: Add offset to swtich_id
 static int ofp13MakePacketIn(int switch_id, int xid, int buffer_id, char * buf, int buflen, int mac_address){
     struct ofp131_packet_in * pi;
     struct ofp_oxm_header *oxm_ptr;

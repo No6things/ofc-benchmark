@@ -3,18 +3,17 @@
 
 #include <pthread.h>
 
-#define PORTREPORT 5001
+#define PORT_DIST 5001
 
-static  struct report {
-  int sock;
-  char *hostname;
-  char *buffer;
- } reports[] = {
-   { 0 , "",		"" },
-   { NULL }
- };
+#define SERVER_MESSAGES 4
+#define CONNECT_REQUEST "1"
+#define CONNECT_ACK "3"
+#define START_ACK "5"
+#define REPORT "6"
 
+#define CLIENT_MESSAGES 3
+#define CONNECT_REPLY "2"
+#define START "4"
+#define REPORT_ACK "7"
 
- void * serverSide(void *s);
- int clientSide(char *nodeMasterHostname, char *reportBuffer);
 #endif
