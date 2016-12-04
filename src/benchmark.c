@@ -22,7 +22,8 @@
 
 #include "../include/myargs.h"
 #include "../include/mysnmp.h"
-#include "../include/mydist.h"
+#include "../include/myserver.h"
+#include "../include/myclient.h"
 #include "../include/benchmark.h"
 #include "../include/myswitch.h"
 

@@ -9,18 +9,24 @@
 #include "../include/mymessages.h"
 
 void *connectReqMessage (void *context) {
-   int n;
    char buffer[256];
    bzero(buffer,256);
-   buffer = &context;
 
-   //TODO: Write id of switch after CONNECT_REPLY
+   //TODO: Write id of switch after CONNECT_REPLY_MESSAGE
 
    return NULL;
 }
 
-void *connectAck (void *context) {
-   int n;
+void *connectRepMessage (void *context) {
+   char buffer[256];
+   bzero(buffer,256);
+
+   //TODO: Write id of switch after CONNECT_REPLY_MESSAGE
+
+   return NULL;
+}
+
+void *connectAckMessage (void *context) {
    char buffer[256];
    bzero(buffer,256);
 
@@ -29,8 +35,16 @@ void *connectAck (void *context) {
    return NULL;
 }
 
+void *startMessage (void *context) {
+   char buffer[256];
+   bzero(buffer,256);
+
+   //TODO: Dont do anything. Delete this function and create timeout
+
+   return NULL;
+}
+
 void *startAckMessage (void *context) {
-   int n;
    char buffer[256];
    bzero(buffer,256);
 
@@ -43,7 +57,7 @@ void *reportMessage (void *context) {
    int n;
    char buffer[256];
    bzero(buffer,256);
-   struct report *reportParams, *reportBlocked;
+   struct report *reportParams;
    reportParams = &context;
 
    pthread_mutex_lock(&reportParams);
@@ -54,10 +68,17 @@ void *reportMessage (void *context) {
         exit(1);
      }
 
-     sprintf("Here is the message: %s\n",buffer);
+     printf("Here is the message: %s\n",buffer);
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
    pthread_mutex_unlock(&reportParams);
+
+   return NULL;
+}
+
+void *reportAckMessage (void *context) {
+   char buffer[256];
+   bzero(buffer,256);
 
    return NULL;
 }

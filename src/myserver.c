@@ -6,19 +6,18 @@
 
 #include <string.h>
 
-#include "../include/myserver.h"
 #include "../include/mymessages.h"
+#include "../include/myserver.h"
 
 static struct report *rp;
 static struct status *clients;
 
 void * serverSide(void *s) {
-   int sockfd, newsockfd, portno, clilen;
-   char buffer[1];
-   bzero(buffer,256);
-
+   socklen_t sockfd, newsockfd;
+   unsigned int n, iThreads, nThreads, threadErr, clilen;
+   char buffer;
+  // bzero(buffer,256);
    struct sockaddr_in serv_addr, cli_addr;
-   int n, iThreads, nThreads, threadErr, clients->reported, nodes;
 
    rp = reports;
    clients = clientsStatuses;
@@ -69,65 +68,65 @@ void * serverSide(void *s) {
 
 
       switch (buffer) {
-        case CONNECT_REQUEST:
+        case CONNECT_REQUEST_MESSAGE:
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
 
           if(threadErr){
-            pthread_join(&nodesThreads[iThreads], NULL);
-            perror("ERROR creating CONNECT_REQUEST thread");
+            pthread_join(nodesThreads[iThreads], NULL);
+            perror("ERROR creating CONNECT_REQUEST_MESSAGE  thread");
             exit(1);
           }
 
           iThreads++;
           break;
-        case CONNECT_ACK:
+        case CONNECT_ACK_MESSAGE:
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectAckMessage, rp);
 
           if(threadErr){
-            pthread_join(&nodesThreads[iThreads], NULL);
-            perror("ERROR creating CONNECT_ACK thread");
+            pthread_join(nodesThreads[iThreads], NULL);
+            perror("ERROR creating CONNECT_ACK_MESSAGE  thread");
             exit(1);
           }
 
           clients->connected++;
           iThreads++;
           break;
-        case START_ACK:
+        case START_ACK_MESSAGE:
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &startAckMessage, rp);
 
           if(threadErr){
-            pthread_join(&nodesThreads[iThreads], NULL);
-            perror("ERROR creating START_ACK thread");
+            pthread_join(nodesThreads[iThreads], NULL);
+            perror("ERROR creating START_ACK_MESSAGE  thread");
             exit(1);
           }
 
           clients->started++;
           iThreads++;
           break;
-        case REPORT:
+        case REPORT_MESSAGE:
           rp->sock = newsockfd;
-          printf("socket: %d, rp->sock: %d\n", newsockfd. rp->sock);
+          printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
           memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
           /* Create thread */
 
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, rp);
 
           if(threadErr){
-            pthread_join(&nodesThreads[iThreads], NULL);
-            perror("ERROR creating REPORT thread");
+            pthread_join(nodesThreads[iThreads], NULL);
+            perror("ERROR creating REPORT_MESSAGE thread");
             exit(1);
           }
 
           rp++;
           clients->reported++;
-          break
+          break;
         default:
-          printf("Message received: '%s'\n",buffer);
+          printf("Message received: '%c'\n",buffer);
           perror("ERROR unknown message header from slave node");
       }
       if (clients->reported == clients->quantity) break;
    }
    for (n = nThreads; n >= 0; n--)
-    pthread_join(&nodesThreads[n], NULL);
-
+    pthread_join(nodesThreads[n], NULL);
+    return 0;
 }
