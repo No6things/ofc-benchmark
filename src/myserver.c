@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 
@@ -15,7 +16,7 @@ static struct status *clients;
 void * serverSide(void *s) {
    socklen_t sockfd, newsockfd;
    unsigned int n, iThreads, nThreads, threadErr, clilen;
-   char buffer;
+   char * buffer;
   // bzero(buffer,256);
    struct sockaddr_in serv_addr, cli_addr;
 
@@ -61,14 +62,15 @@ void * serverSide(void *s) {
       }
 
       n = read(newsockfd, buffer, 1);
+      printf("String, %s.\n", buffer);
+
       if (n < 0) {
         perror("ERROR reading message from slave node");
         exit(1);
       }
 
-
-      switch (buffer) {
-        case CONNECT_REQUEST_MESSAGE:
+      if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
+          printf("Switch condition is good\n");
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
 
           if(threadErr){
@@ -78,8 +80,8 @@ void * serverSide(void *s) {
           }
 
           iThreads++;
-          break;
-        case CONNECT_ACK_MESSAGE:
+
+      } else if(strcmp(buffer, CONNECT_ACK_MESSAGE) == 0) {
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectAckMessage, rp);
 
           if(threadErr){
@@ -90,8 +92,8 @@ void * serverSide(void *s) {
 
           clients->connected++;
           iThreads++;
-          break;
-        case START_ACK_MESSAGE:
+
+      } else if(strcmp(buffer, START_ACK_MESSAGE) == 0) {
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &startAckMessage, rp);
 
           if(threadErr){
@@ -102,8 +104,8 @@ void * serverSide(void *s) {
 
           clients->started++;
           iThreads++;
-          break;
-        case REPORT_MESSAGE:
+
+      } else if(strcmp(buffer, REPORT_MESSAGE) == 0) {
           rp->sock = newsockfd;
           printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
           memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
@@ -119,9 +121,9 @@ void * serverSide(void *s) {
 
           rp++;
           clients->reported++;
-          break;
-        default:
-          printf("Message received: '%c'\n",buffer);
+
+      } else {
+          printf("Message received: '%s'\n",buffer);
           perror("ERROR unknown message header from slave node");
       }
       if (clients->reported == clients->quantity) break;
