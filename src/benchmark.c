@@ -22,6 +22,7 @@
 
 #include "../include/myargs.h"
 #include "../include/mysnmp.h"
+#include "../include/mymessages.h"
 #include "../include/myserver.h"
 #include "../include/myclient.h"
 #include "../include/benchmark.h"
