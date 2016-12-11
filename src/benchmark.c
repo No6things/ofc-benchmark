@@ -433,9 +433,13 @@ int main(int argc, char * argv[])
   initializeSnmp();
 
   //CREATE SERVER THREAD
-  if (nNodes > 1 && master) {
-    int *a = &nNodes;
-    pthread_create(&tid, NULL, &serverSide, (void *)a);
+  if (nNodes > 1) {
+    if (master) {
+      int *a = &nNodes;
+      pthread_create(&tid, NULL, &serverSide, (void *)a);
+    } else {
+      clientSide(nodeMasterHostname);
+    }
   }
 
   switches = malloc(nSwitches * sizeof(struct fakeswitch));
@@ -520,7 +524,7 @@ int main(int argc, char * argv[])
               printf("%s\n",reportBuffer);
             }
           }else{
-            clientSide(nodeMasterHostname, reportBuffer);
+            sendReport = true;
             printf("Report sended to master node\n" );
           }
 

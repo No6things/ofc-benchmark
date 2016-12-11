@@ -10,10 +10,13 @@
 #include "../include/mymessages.h"
 #include "../include/myclient.h"
 
-int clientSide(char *nodeMasterHostname, char *reportBuffer) {
+int clientSide(char *nodeMasterHostname) {
    int sockfd, portno, n, end;
    struct sockaddr_in serv_addr;
    struct hostent *server;
+
+   char *reportBuffer
+
 
    char buffer[BUFSIZ];
 

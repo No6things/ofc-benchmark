@@ -16,6 +16,8 @@
 #define START_MESSAGE "4"
 #define REPORT_ACK_MESSAGE "7"
 
+bool sendReport = false;
+
 static struct report {
   int sock;
   char const *hostname;
