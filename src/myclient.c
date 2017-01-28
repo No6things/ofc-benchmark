@@ -50,7 +50,7 @@ int clientSide(char *nodeMasterHostname) {
    }
 
    bzero(buffer,BUFSIZ);
-   memcpy (buffer, CONNECT_REQUEST_MESSAGE, strlen(CONNECT_REQUEST_MESSAGE)+1);
+   memcpy (buffer, CONNECT_REQUEST_MESSAGE, strlen(CONNECT_REQUEST_MESSAGE) + 1);
    printf("Sending CONNECT_REQUEST_MESSAGE: %s", buffer);
    //   memcpy (buffer, reportBuffer, strlen(reportBuffer)+1);
    /*   Send message to the server */
@@ -63,6 +63,7 @@ int clientSide(char *nodeMasterHostname) {
    }
 
    end = 0;
+
    while (1){
      n = read(sockfd, buffer, 1);
      printf("read: %s.\n",buffer);
@@ -72,32 +73,22 @@ int clientSide(char *nodeMasterHostname) {
      }
 
      if (strcmp(buffer, CONNECT_REPLY_MESSAGE) == 0) {
-       /*bzero(buffer,256);
-       memcpy (buffer, CONNECT_REPLY_MESSAGE, strlen(CONNECT_REPLY_MESSAGE)+1);
-       n = write(sockfd, buffer, strlen(buffer));
-       bzero(buffer,256);
-
-       if (n < 0) {
-          perror("ERROR writing to socket");
-          exit(1);
-       }*/
+       /*
+        TODO: Llamar la funcion CONNECT_ACK_MESSAGE
+       */
      } else if (strcmp(buffer, START_MESSAGE) == 0) {
-       /*bzero(buffer,256);
-       memcpy (buffer, CONNECT_REPLY_MESSAGE, strlen(CONNECT_REPLY_MESSAGE)+1);
-       n = write(sockfd, buffer, strlen(buffer));
-       bzero(buffer,256);
-
-       if (n < 0) {
-          perror("ERROR writing to socket");
-          exit(1);
-       }*/
-     } else if (strcmp(buffer, REPORT_ACK_MESSAGE) == 0) {
        end = 1;
+       /*
+       TODO: Llamar la funcion START_MESSAGE que invoque el benchmark
+       TODO: Considerar recibir de alguna manera el reporte del benchmark
+       TODO: Enviar mensaje REPORT_MESSAGE
+       */
      } else {
        printf("Message received: '%s'\n",buffer);
        perror("ERROR unknown message header from server");
      }
      if (end) break;
   }
+
   return 0;
 }

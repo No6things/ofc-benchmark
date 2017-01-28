@@ -12,7 +12,7 @@ void *connectReqMessage (void *context) {
    char buffer[256];
    bzero(buffer,256);
 
-   //TODO: Write id of switch after CONNECT_REPLY_MESSAGE
+   //TODO: Write CONNECT_REPLY_MESSAGE
 
    return NULL;
 }
@@ -21,7 +21,7 @@ void *connectRepMessage (void *context) {
    char buffer[256];
    bzero(buffer,256);
 
-   //TODO: Write id of switch after CONNECT_REPLY_MESSAGE
+   //TODO: Write CONNECT_REPLY_MESSAGE
 
    return NULL;
 }
@@ -29,18 +29,22 @@ void *connectRepMessage (void *context) {
 void *connectAckMessage (void *context) {
    char buffer[256];
    bzero(buffer,256);
-
-   //TODO: Dont do anything. Delete this function and create timeout management
+   //TODO: Escribir mecanismo antes de enviar el mensaje
+   //     que me permita esperar por los otros hilos
+   //     evaluando una condicion con una variable global que represente
+   //     la cantidad de clientes conectados y un tiempo maximo de espera
+   //     antes de enviar el mensaje
+   //     Candidato: Un loop infinito
+   //TODO: Write START_MESSAGE
 
    return NULL;
 }
 
 void *startMessage (void *context) {
-   char buffer[256];
-   bzero(buffer,256);
 
-   //TODO: Dont do anything. Delete this function and create timeout
-
+   //TODO: Write START_ACK_MESSAGE and call benchmark function
+   //TODO: Considerar que se debe retornar el reporte del benchmark para
+   //     poder enviar el mensaje REPORT_MESSAGE
    return NULL;
 }
 
@@ -48,7 +52,7 @@ void *startAckMessage (void *context) {
    char buffer[256];
    bzero(buffer,256);
 
-   //TODO: Dont do anything. Delete this function and create timeout
+   //TODO: Dont do anything. Delete this function
 
    return NULL;
 }
@@ -72,13 +76,8 @@ void *reportMessage (void *context) {
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
    pthread_mutex_unlock(&reportParams);
-
-   return NULL;
-}
-
-void *reportAckMessage (void *context) {
-   char buffer[256];
-   bzero(buffer,256);
+   //TODO: considerar almacenar la informacion en un archivo o varios archivos
+   //TODO: Enviar mensaje REPORT_ACK_MESSAGE
 
    return NULL;
 }

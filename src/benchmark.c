@@ -437,11 +437,18 @@ int main(int argc, char * argv[])
     if (master) {
       int *a = &nNodes;
       pthread_create(&tid, NULL, &serverSide, (void *)a);
+      //TODO: Considerar manejar el servidor como una funcion en lugar de hilo y\
+      // no haga trabajo de BENCHMARKING
+      //TODO: Manejar los reportes para genera graficos`
     } else {
       clientSide(nodeMasterHostname);
     }
   }
 
+  // STARTS BENCHMARKING
+  //  TODO: meter todo en una funcion, pasarle los parametros necesarios  y
+  // llamar la funcion desde el clientSide una vez se recibe el mensaje
+  // START_MESSAGE
   switches = malloc(nSwitches * sizeof(struct fakeswitch));
   assert(switches);
 

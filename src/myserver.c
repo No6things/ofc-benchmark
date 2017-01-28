@@ -62,6 +62,8 @@ void * serverSide(void *s) {
       }
 
       n = read(newsockfd, buffer, 1);
+      //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
+      // multiples mensajes previo a la lectura
       printf("String, %s.\n", buffer);
 
       if (n < 0) {
@@ -72,7 +74,9 @@ void * serverSide(void *s) {
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
           printf("Switch condition is good\n");
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
-
+          //TODO: Considerar que no todos las funciones de mensajes necesitan
+          // el objecto report. Sin embargo siempre se debe enviar el socket para
+          // responder el mensaje.
           if(threadErr){
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating CONNECT_REQUEST_MESSAGE  thread");
@@ -82,6 +86,8 @@ void * serverSide(void *s) {
           iThreads++;
 
       } else if(strcmp(buffer, CONNECT_ACK_MESSAGE) == 0) {
+          clients->connected++;
+
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectAckMessage, rp);
 
           if(threadErr){
@@ -89,11 +95,11 @@ void * serverSide(void *s) {
             perror("ERROR creating CONNECT_ACK_MESSAGE  thread");
             exit(1);
           }
-
-          clients->connected++;
           iThreads++;
 
       } else if(strcmp(buffer, START_ACK_MESSAGE) == 0) {
+          clients->started++;
+
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &startAckMessage, rp);
 
           if(threadErr){
@@ -102,15 +108,17 @@ void * serverSide(void *s) {
             exit(1);
           }
 
-          clients->started++;
           iThreads++;
 
       } else if(strcmp(buffer, REPORT_MESSAGE) == 0) {
+          clients->reported++;
+
           rp->sock = newsockfd;
           printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
           memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
-          /* Create thread */
 
+          //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
+          //      secuencial
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, rp);
 
           if(threadErr){
@@ -119,14 +127,15 @@ void * serverSide(void *s) {
             exit(1);
           }
 
-          rp++;
-          clients->reported++;
-
+           rp++;
       } else {
           printf("Message received: '%s'\n",buffer);
           perror("ERROR unknown message header from slave node");
       }
       if (clients->reported == clients->quantity) break;
+      //   TODO: Considerar que la cantidad de hilos en iThreads se corresponda a
+      //        la cantidad de hilos que debieron haberse usado
+
    }
    for (n = nThreads; n >= 0; n--)
     pthread_join(nodesThreads[n], NULL);

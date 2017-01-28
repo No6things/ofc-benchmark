@@ -11,13 +11,15 @@
 #define START_ACK_MESSAGE  "5"
 #define REPORT_MESSAGE "6"
 
-#define CLIENT_MESSAGES 3
+#define CLIENT_MESSAGES 2
 #define CONNECT_REPLY_MESSAGE  "2"
 #define START_MESSAGE "4"
-#define REPORT_ACK_MESSAGE "7"
 
 bool sendReport = false;
 
+
+//TODO: Considerar remover el resultado final como un buffer y
+//      enviar todos mensajes impreso por pontalla en forma de archivo
 static struct report {
   int sock;
   char const *hostname;
