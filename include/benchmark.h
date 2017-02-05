@@ -7,4 +7,7 @@
 
 #define OFP131_VERSION 0x04
 #define VERSION "1.0"
+
+int controllerBenchmark();
+
 #endif

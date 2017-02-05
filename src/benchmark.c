@@ -437,7 +437,11 @@ int main(int argc, char * argv[])
     if (master) {
       int *a = &nNodes;
       pthread_create(&tid, NULL, &serverSide, (void *)a);
+<<<<<<< Updated upstream
       //TODO: Considerar manejar el servidor como una funcion en lugar de hilo y\
+=======
+      //TODO: Considerar manejar el servidor como una funcion en lugar de hilo y
+>>>>>>> Stashed changes
       // no haga trabajo de BENCHMARKING
       //TODO: Manejar los reportes para genera graficos`
     } else {
@@ -469,28 +473,29 @@ int main(int argc, char * argv[])
               usleep(connectDelay*1000);
           }
           sock = makeTcpConnection(controllerHostname, controllerPort, 3000, mode!=MODE_THROUGHPUT );
-          if(sock < 0 )
-          {
+          if(sock < 0) {
               fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
               exit(1);
           }
-          if(debug)
+          if(debug) {
               fprintf(stderr,"Initializing switch %d ... ", i+1);
+          }
           fflush(stderr);
           switchInit(&switches[i],dpidOffset+i,sock,BUFLEN, debug, delay, mode, nMacAddresses, learnDstMacs , OFP131_VERSION);
-          if(debug)
+          if(debug) {
               fprintf(stderr," :: done.\n");
+          }
           fflush(stderr);
           if(countBits(i+1) == 0)  // only test for 1,2,4,8,16 switches
               continue;
           if(!testRange && ((i+1) != nSwitches)) // only if testing range or this is last
               continue;
           //RUN
-          for( j = 0; j < loopsPerTest; j ++) {
+          for(j = 0; j < loopsPerTest; j ++) {
               if ( j > 0 ) delay = 0;      // only delay on the first run
               v = 1000.0 * runtTest(i+1, switches, msTestLen, delay);
               results[j] = v;
-        			if(j<warmup || j >= loopsPerTest-cooldown)
+        			if(j < warmup || j >= loopsPerTest-cooldown)
         				continue;
               sum += v;
               if (v > max)
