@@ -63,7 +63,7 @@ struct args options[] = { //Options for Tests. In case of change, also change ma
 
 //RUN TEST
 
-double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int delay)
+double runtTest(int nSwitches, struct fakeswitch *switches, int mstestlen, int delay)
 {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
@@ -82,7 +82,7 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
     {
         gettimeofday(&now, NULL);
         timersub(&now, &then, &diff);
-        if( (1000* diff.tv_sec  + (float)diff.tv_usec/1000)> total_wait)
+        if((1000 * diff.tv_sec  + (float)diff.tv_usec / 1000) > total_wait)
             break;
         for(i = 0; i< nSwitches; i++)
             switchSetPollfd(&switches[i], &pollfds[i]);
@@ -103,7 +103,7 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
         printf("%d  ", count);
         sum += count;
     }
-    passed = 1000 * diff.tv_sec + (double)diff.tv_usec/1000;
+    passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;  // is now per ms
     printf("total = %lf per ms \n", sum);
@@ -164,9 +164,9 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 	hints.ai_canonname      = NULL;
 	hints.ai_next           = NULL;
 
-	snprintf(sport,BUFLEN,"%d",port);
+	snprintf(sport, BUFLEN, "%d", port);
 
-	err = getaddrinfo(hostname,sport,&hints,&res);
+	err = getaddrinfo(hostname, sport, &hints, &res);
 	if(err|| (res==NULL))
 	{
 		if(res)
@@ -206,7 +206,7 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 				return -1;
 			}
 		}
-		ret = select(fd+1, NULL, &fds, NULL, &tv);
+		ret = select(fd + 1, NULL, &fds, NULL, &tv);
 	}
 	freeaddrinfo(res);
 
@@ -229,7 +229,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     int err;
     int zero = 0;
 
-    s = socket(AF_INET,SOCK_STREAM,0);
+    s = socket(AF_INET, SOCK_STREAM,0);
     if(s<0){
         perror("makeTcpConnection: socket");
         exit(1);  // bad socket
@@ -240,11 +240,11 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
         fprintf(stderr,"makeTcpConnection::Unable to disable Nagle's algorithm\n");
         exit(1);
     }
-    local.sin_family=PF_INET;
-    local.sin_addr.s_addr=INADDR_ANY;
-    local.sin_port=htons(sport);
+    local.sin_family = PF_INET;
+    local.sin_addr.s_addr = INADDR_ANY;
+    local.sin_port = htons(sport);
 
-    err=bind(s,(struct sockaddr *)&local, sizeof(local));
+    err=bind(s, (struct sockaddr *)&local, sizeof(local));
     if(err)
     {
         perror("makeTcpConnectionFromPort::bind");
@@ -374,7 +374,7 @@ int main(int argc, char * argv[])
               break;
          case 'n':
               nodeMasterHostname= strdup(optarg);
-              if(strcasecmp(nodeMasterHostname, "localhost")) master = 0;
+              if (strcasecmp(nodeMasterHostname, "localhost")) master = 0;
          case 'N':
               nNodes = atoi(optarg);
               break;
@@ -421,7 +421,7 @@ int main(int argc, char * argv[])
                   "   faking %s %d switches offset %d : %d ms per test\n"
                   "   %s destination mac addresses before the test\n"
                   "   starting test with %d ms delay after features_reply\n",
-                  mode == MODE_THROUGHPUT? "'throughput'": "'latency'",
+                  mode == MODE_THROUGHPUT ? "'throughput'": "'latency'",
                   controllerHostname,  controllerPort,
                   nNodes, nodeMasterHostname,
                   testRange ? "from 1 to": "", nSwitches, dpidOffset, msTestLen,
@@ -437,11 +437,7 @@ int main(int argc, char * argv[])
     if (master) {
       int *a = &nNodes;
       pthread_create(&tid, NULL, &serverSide, (void *)a);
-<<<<<<< Updated upstream
-      //TODO: Considerar manejar el servidor como una funcion en lugar de hilo y\
-=======
       //TODO: Considerar manejar el servidor como una funcion en lugar de hilo y
->>>>>>> Stashed changes
       // no haga trabajo de BENCHMARKING
       //TODO: Manejar los reportes para genera graficos`
     } else {
@@ -462,46 +458,52 @@ int main(int argc, char * argv[])
   double  v;
   results = malloc(loopsPerTest * sizeof(double));
 
-  for( i = 0; i < nSwitches; i++)
+  for(i = 0; i < nSwitches; i++)
       {
           //CONNECTION
           int sock;
           double sum = 0;
           if (connectDelay != 0 && i != 0 && (i % connectGroupSize == 0)) {
-              if(debug)
-                  fprintf(stderr,"Delaying connection by %dms...", connectDelay*1000);
-              usleep(connectDelay*1000);
+              if (debug) {
+                  fprintf(stderr, "Delaying connection by %dms...", connectDelay * 1000);
+              }
+              usleep(connectDelay * 1000);
           }
-          sock = makeTcpConnection(controllerHostname, controllerPort, 3000, mode!=MODE_THROUGHPUT );
+          sock = makeTcpConnection(controllerHostname, controllerPort, 3000, mode != MODE_THROUGHPUT );
           if(sock < 0) {
               fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
               exit(1);
           }
-          if(debug) {
-              fprintf(stderr,"Initializing switch %d ... ", i+1);
+          if (debug) {
+              fprintf(stderr,"Initializing switch %d ... ", i + 1);
           }
           fflush(stderr);
-          switchInit(&switches[i],dpidOffset+i,sock,BUFLEN, debug, delay, mode, nMacAddresses, learnDstMacs , OFP131_VERSION);
-          if(debug) {
+          switchInit(&switches[i], dpidOffset + i, sock, BUFLEN, debug, delay, mode, nMacAddresses, learnDstMacs, OFP131_VERSION);
+          if (debug) {
               fprintf(stderr," :: done.\n");
           }
           fflush(stderr);
-          if(countBits(i+1) == 0)  // only test for 1,2,4,8,16 switches
+          if (countBits(i + 1) == 0)  // only test for 1,2,4,8,16 switches
               continue;
-          if(!testRange && ((i+1) != nSwitches)) // only if testing range or this is last
+          if (!testRange && ((i+1) != nSwitches)) // only if testing range or this is last
               continue;
           //RUN
           for(j = 0; j < loopsPerTest; j ++) {
-              if ( j > 0 ) delay = 0;      // only delay on the first run
+              if (j > 0) {
+                delay = 0;      // only delay on the first run
+              }
               v = 1000.0 * runtTest(i+1, switches, msTestLen, delay);
               results[j] = v;
-        			if(j < warmup || j >= loopsPerTest-cooldown)
+        			if (j < warmup || j >= loopsPerTest - cooldown) {
         				continue;
+              }
               sum += v;
-              if (v > max)
+              if (v > max) {
                 max = v;
-              if (v < min)
+              }
+              if (v < min) {
                 min = v;
+              }
             }
 
           //SHOW RESULTS
@@ -514,11 +516,11 @@ int main(int argc, char * argv[])
           sum = sum / (double)(countedTests);
           double std_dev = sqrt(sum);
 
-          reportBuffer = (char*)malloc(150*sizeof(char));
+          reportBuffer = (char*)malloc(150 * sizeof(char));
           reportBuffer = testResult(mode, i, countedTests, min, max, avg, std_dev);
           printf("------------------------------------------Results------------------------------------------\n" );
 
-          if (master){
+          if (master) {
             //TODO: Make SNMP queries frequently during the test
             asynchronousSnmp(controllerHostname);
             if (nNodes > 1) {
@@ -526,16 +528,16 @@ int main(int argc, char * argv[])
               rp = reports;
               i = nNodes;
               while (i > 0){
-                printf("----Report #%d----\n",i);
-                printf("%s\n\n",rp->buffer );
+                printf("----Report #%d----\n", i);
+                printf("%s\n\n", rp->buffer );
                 rp++;
                 i--;
               }
-            }else{
+            } else {
               printf("----Report----\n");
-              printf("%s\n",reportBuffer);
+              printf("%s\n", reportBuffer);
             }
-          }else{
+          } else {
             sendReport = true;
             printf("Report sended to master node\n" );
           }
