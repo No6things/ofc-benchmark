@@ -3,6 +3,8 @@
 
 #include <pthread.h>
 
+typedef enum { false, true } bool;
+
 #define PORT_DIST 5001
 
 #define SERVER_MESSAGES 4
@@ -15,15 +17,15 @@
 #define CONNECT_REPLY_MESSAGE  "2"
 #define START_MESSAGE "4"
 
-bool sendReport = false;
+static bool sendReport = false;
 
 
 //TODO: Considerar remover el resultado final como un buffer y
 //      enviar todos mensajes impreso por pontalla en forma de archivo
 static struct report {
   int sock;
-  char const *hostname;
-  char const *buffer;
+  const char *hostname; // this shouldnt be const char * ?
+  const char *buffer;
  } reports[] = {
    { 0 , "", "" },
    { '\0' }
@@ -35,7 +37,7 @@ static struct status {
    int started;
    int reported;
  } clientsStatuses [] = {
-   {   -1,   0,   0,   0 },
+   { -1, 0, 0, 0 },
    { '\0' }
  };
 

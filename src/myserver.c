@@ -81,23 +81,24 @@ void * serverSide(void *s) {
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating CONNECT_REQUEST_MESSAGE  thread");
             exit(1);
+          } else {
+            iThreads++;
           }
 
-          iThreads++;
-
-      } else if(strcmp(buffer, CONNECT_ACK_MESSAGE) == 0) {
+      } else if (strcmp(buffer, CONNECT_ACK_MESSAGE) == 0) {
           clients->connected++;
 
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectAckMessage, rp);
 
-          if(threadErr){
+          if (threadErr){
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating CONNECT_ACK_MESSAGE  thread");
             exit(1);
+          } else {
+            iThreads++;
           }
-          iThreads++;
 
-      } else if(strcmp(buffer, START_ACK_MESSAGE) == 0) {
+      } else if (strcmp(buffer, START_ACK_MESSAGE) == 0) {
           clients->started++;
 
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &startAckMessage, rp);
@@ -106,11 +107,11 @@ void * serverSide(void *s) {
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating START_ACK_MESSAGE  thread");
             exit(1);
+          } else {
+            iThreads++;
           }
 
-          iThreads++;
-
-      } else if(strcmp(buffer, REPORT_MESSAGE) == 0) {
+      } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
           clients->reported++;
 
           rp->sock = newsockfd;
@@ -125,9 +126,10 @@ void * serverSide(void *s) {
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating REPORT_MESSAGE thread");
             exit(1);
+          } else {
+            rp++;
           }
 
-           rp++;
       } else {
           printf("Message received: '%s'\n",buffer);
           perror("ERROR unknown message header from slave node");

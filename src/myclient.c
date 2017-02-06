@@ -15,11 +15,9 @@ int clientSide(char *nodeMasterHostname) {
    struct sockaddr_in serv_addr;
    struct hostent *server;
 
-   char *reportBuffer
-
+   char *reportBuffer;
 
    char buffer[BUFSIZ];
-
    portno = PORT_DIST;
 
    /* Create a socket point */
