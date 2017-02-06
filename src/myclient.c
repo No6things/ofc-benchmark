@@ -8,19 +8,20 @@
 #include <string.h>
 
 #include "../include/mymessages.h"
+#include "../include/benchmark.h"
 #include "../include/myclient.h"
 
 int clientSide(char *nodeMasterHostname) {
    int sockfd, portno, n, end;
    struct sockaddr_in serv_addr;
    struct hostent *server;
-
-   char *reportBuffer;
+   struct inputValues *params = &benchmarkArgs;
+   char *reportsBuffer;
 
    char buffer[BUFSIZ];
    portno = PORT_DIST;
 
-   /* Create a socket point */
+   /* CCONNECTION */
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
    if (sockfd < 0) {
@@ -41,7 +42,6 @@ int clientSide(char *nodeMasterHostname) {
    bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
    serv_addr.sin_port = htons(portno);
 
-   /* Now connect to the server */
    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR connecting");
       exit(1);
@@ -62,7 +62,7 @@ int clientSide(char *nodeMasterHostname) {
 
    end = 0;
 
-   while (1){
+   while (1) {
      n = read(sockfd, buffer, 1);
      printf("read: %s.\n",buffer);
      if (n < 0) {
@@ -77,8 +77,7 @@ int clientSide(char *nodeMasterHostname) {
      } else if (strcmp(buffer, START_MESSAGE) == 0) {
        end = 1;
        /*
-       TODO: Llamar la funcion START_MESSAGE que invoque el benchmark
-       TODO: Considerar recibir de alguna manera el reporte del benchmark
+       TODO: Recibir arreglo de reportes de controllerBenchmarking()
        TODO: Enviar mensaje REPORT_MESSAGE
        */
      } else {

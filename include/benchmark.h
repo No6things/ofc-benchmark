@@ -1,6 +1,7 @@
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
 
+#include "../include/openflow.h"
 #include "../include/myargs.h"
 
 #ifndef BUFLEN
@@ -67,7 +68,7 @@ static struct inputValues {
 
 
 
-void controllerBenchmarking();
+char * controllerBenchmarking();
 void initializeBenchmarking(int argc, char * argv[]);
 
 #endif

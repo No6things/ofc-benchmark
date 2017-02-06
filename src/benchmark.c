@@ -17,9 +17,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-
-#include "../include/openflow.h"
-
 #include "../include/mysnmp.h"
 #include "../include/mymessages.h"
 #include "../include/myserver.h"
@@ -76,7 +73,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     return sum;
 }
 
-char * testResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
+char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
 
@@ -370,7 +367,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   printf("-------------------------------------------TEST-------------------------------------------\n" );
 }
 
-void controllerBenchmarking() {
+char * controllerBenchmarking() {
   struct fakeswitch *switches;
   struct inputValues *params = &benchmarkArgs;
   struct report *rp = reports;
@@ -444,32 +441,14 @@ void controllerBenchmarking() {
     double std_dev = sqrt(sum);
 
     reportBuffer = (char*)malloc(150 * sizeof(char));
-    reportBuffer = testResult(params->mode, i, countedTests, min, max, avg, std_dev);
+    reportBuffer = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
 
-    printf("------------------------------------------Results------------------------------------------\n" );
-
-    if (params->master) {
-      //TODO: Make SNMP queries frequently during the test
-      asynchronousSnmp(params->controllerHostname);
-      if (params->nNodes > 1) {
-        //pthread_join(&tid, NULL);
-        i = params->nNodes;
-        while (i > 0) {
-          printf("----Report #%d----\n", i);
-          printf("%s\n\n", rp->buffer );
-          rp++;
-          i--;
-        }
-      } else {
-        printf("----Report----\n");
-        printf("%s\n", reportBuffer);
-      }
-    } else {
-      sendReport = true;
-      printf("Report sended to master node\n" );
-    }
+    //TODO: Store result of switch report
+    printf("%Report\n");
+    printf("%s\n", reportBuffer); //TODO: Remove reporte once return has been implemented
   }
-
+  //Return array of reports
+  return (char *)" ";
 }
 
 //MAIN
@@ -487,13 +466,16 @@ int main(int argc, char * argv[]) {
       //TODO: Manejar los reportes para genera graficos`
     } else {
       clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
+      //  TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
+
     }
   } else  {
     controllerBenchmarking();
+    /*
+    TODO: Recibir arreglo de reportes de controllerBenchmarking()
+    TODO: Imprimir reportes
+    */
   }
 
-  // STARTS BENCHMARKING
-  //  TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje
-  // START_MESSAGE
   return 0;
 }

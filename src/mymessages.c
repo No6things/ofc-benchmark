@@ -36,6 +36,8 @@ void *connectAckMessage (void *context) {
    //     antes de enviar el mensaje
    //     Candidato: Un loop infinito
    //TODO: Write START_MESSAGE
+   //TODO: Make SNMP queries frequently during the test with:
+   //      asynchronousSnmp(params->controllerHostname);
 
    return NULL;
 }
