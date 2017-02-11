@@ -412,11 +412,11 @@ char * controllerBenchmarking() {
     if (!params->testRange && ((i+1) != params->nSwitches)) // only if testing range or this is last
         continue;
     //RUN
-    for(j = 0; j < params->loopsPerTest; j ++) {
+    for(j = 0; j < params->loopsPerTest; j++) {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
-        v = 1000.0 * runtTest(i+1, switches, params->msTestLen, params->delay);
+        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
@@ -463,11 +463,10 @@ int main(int argc, char * argv[]) {
   if (params->nNodes > 1) {
     if (params->master) {
       serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
-      //TODO: Manejar los reportes para genera graficos`
+      //TODO: Manejar los reportes para generar graficos
     } else {
       clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
-      //  TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
-
+      //TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
     }
   } else  {
     controllerBenchmarking();

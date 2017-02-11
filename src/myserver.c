@@ -85,32 +85,6 @@ void * serverSide(void *s) {
             iThreads++;
           }
 
-      } else if (strcmp(buffer, CONNECT_ACK_MESSAGE) == 0) {
-          clients->connected++;
-
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectAckMessage, rp);
-
-          if (threadErr){
-            pthread_join(nodesThreads[iThreads], NULL);
-            perror("ERROR creating CONNECT_ACK_MESSAGE  thread");
-            exit(1);
-          } else {
-            iThreads++;
-          }
-
-      } else if (strcmp(buffer, START_ACK_MESSAGE) == 0) {
-          clients->started++;
-
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &startAckMessage, rp);
-
-          if(threadErr){
-            pthread_join(nodesThreads[iThreads], NULL);
-            perror("ERROR creating START_ACK_MESSAGE  thread");
-            exit(1);
-          } else {
-            iThreads++;
-          }
-
       } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
           clients->reported++;
 

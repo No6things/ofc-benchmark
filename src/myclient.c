@@ -70,11 +70,7 @@ int clientSide(char *nodeMasterHostname) {
        exit(1);
      }
 
-     if (strcmp(buffer, CONNECT_REPLY_MESSAGE) == 0) {
-       /*
-        TODO: Llamar la funcion CONNECT_ACK_MESSAGE
-       */
-     } else if (strcmp(buffer, START_MESSAGE) == 0) {
+     if (strcmp(buffer, START_MESSAGE) == 0) {
        end = 1;
        /*
        TODO: Recibir arreglo de reportes de controllerBenchmarking()
