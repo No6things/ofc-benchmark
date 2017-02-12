@@ -444,7 +444,7 @@ char * controllerBenchmarking() {
     reportBuffer = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
 
     //TODO: Store result of switch report
-    printf("%Report\n");
+    printf("Report\n");
     printf("%s\n", reportBuffer); //TODO: Remove reporte once return has been implemented
   }
   //Return array of reports
@@ -454,21 +454,23 @@ char * controllerBenchmarking() {
 //MAIN
 
 int main(int argc, char * argv[]) {
-  pthread_t tid;
   struct inputValues *params = &benchmarkArgs;
 
   initializeBenchmarking (argc, argv);
-  initializeSnmp();
 
   if (params->nNodes > 1) {
     if (params->master) {
+      initializeSnmp();
+      asynchronousSnmp(params->nodeMasterHostname); //TODO: Make it periodically
       serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
       //TODO: Manejar los reportes para generar graficos
     } else {
       clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
       //TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
     }
-  } else  {
+  } else {
+    initializeSnmp();
+    asynchronousSnmp(params->nodeMasterHostname); //TODO: Make it periodically
     controllerBenchmarking();
     /*
     TODO: Recibir arreglo de reportes de controllerBenchmarking()

@@ -13,7 +13,7 @@
 static struct report *rp;
 static struct status *clients;
 
-void * serverSide(void *s) {
+void * serverSide(unsigned int s) {
    socklen_t sockfd, newsockfd;
    unsigned int n, iThreads, nThreads, threadErr, clilen;
    char * buffer;
@@ -22,7 +22,8 @@ void * serverSide(void *s) {
 
    rp = reports;
    clients = clientsStatuses;
-   clients->quantity = *((int *) s) - 1;
+   clients->quantity = s - 1;
+
    iThreads = 0;
    nThreads = clients->quantity * SERVER_MESSAGES;
    pthread_t nodesThreads [nThreads];
@@ -46,8 +47,8 @@ void * serverSide(void *s) {
    }
 
    /* Now start listening for the clients, here
-      * process will go in sleep mode and will wait
-      * for the incoming connection
+    * process will go in sleep mode and will wait
+    * for the incoming connection
    */
 
    listen(sockfd,5);
@@ -72,7 +73,13 @@ void * serverSide(void *s) {
       }
 
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
-          printf("Switch condition is good\n");
+          pthread_mutex_lock(&lock);
+            clients->connected++;
+            if (clients->connected == clients->quantity) {
+              pthread_cond_broadcast(&sendStart);
+            }
+          pthread_mutex_unlock(&lock);
+
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
           //TODO: Considerar que no todos las funciones de mensajes necesitan
           // el objecto report. Sin embargo siempre se debe enviar el socket para
@@ -88,6 +95,8 @@ void * serverSide(void *s) {
       } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
           clients->reported++;
 
+
+          //delete condition sendStart
           rp->sock = newsockfd;
           printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
           memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
@@ -114,6 +123,9 @@ void * serverSide(void *s) {
 
    }
    for (n = nThreads; n >= 0; n--)
-    pthread_join(nodesThreads[n], NULL);
-    return 0;
+      pthread_join(nodesThreads[n], NULL);
+
+   pthread_mutex_destroy(&lock);
+   pthread_cond_destroy(&sendStart);
+   return 0;
 }

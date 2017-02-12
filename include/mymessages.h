@@ -3,8 +3,6 @@
 
 #include <pthread.h>
 
-typedef enum { false, true } bool;
-
 #define PORT_DIST 5001
 
 #define SERVER_MESSAGES 2
@@ -14,8 +12,9 @@ typedef enum { false, true } bool;
 #define CLIENT_MESSAGES 1
 #define START_MESSAGE "2"
 
-static bool sendReport = false;
 
+static pthread_mutex_t lock = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t sendStart = PTHREAD_MUTEX_INITIALIZER;
 
 //TODO: Considerar remover el resultado final como un buffer y
 //      enviar todos mensajes impreso por pontalla en forma de archivo

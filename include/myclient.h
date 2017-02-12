@@ -1,6 +1,6 @@
 #ifndef MYCLIENT_H
 #define MYCLIENT_H
 
-int clientSide(char *nodeMasterHostname);
+int clientSide(const char *nodeMasterHostname);
 
 #endif

@@ -8,9 +8,23 @@
 
 #include "../include/mymessages.h"
 
+static struct status *clients;
+
 void *connectReqMessage (void *context) {
    char buffer[256];
    bzero(buffer,256);
+   clients = clientsStatuses;
+
+     pthread_mutex_lock(&lock);
+      while(clients->connected != clients->quantity){
+        printf("%d\n", clients->connected);
+        pthread_cond_wait(&sendStart, &lock);
+      }
+      printf("Write to\n");
+
+     pthread_mutex_unlock(&lock);
+
+
    //TODO: Escribir mecanismo antes de enviar el mensaje
    //     que me permita esperar por los otros hilos
    //     evaluando una condicion con una variable global que represente
@@ -20,7 +34,7 @@ void *connectReqMessage (void *context) {
    //TODO: Write START_MESSAGE
    //TODO: Make SNMP queries frequently during the test with:
    //      asynchronousSnmp(params->controllerHostname);
-   return NULL;
+   pthread_exit(NULL);
 }
 
 void *startMessage (void *context) {
@@ -28,7 +42,7 @@ void *startMessage (void *context) {
    //TODO: Write START_ACK_MESSAGE and call benchmark function
    //TODO: Considerar que se debe retornar el reporte del benchmark para
    //     poder enviar el mensaje REPORT_MESSAGE
-   return NULL;
+   pthread_exit(NULL);
 }
 
 void *reportMessage (void *context) {
@@ -38,7 +52,7 @@ void *reportMessage (void *context) {
    struct report *reportParams;
    reportParams = &context;
 
-   pthread_mutex_lock(&reportParams);
+   //pthread_mutex_lock(&reportParams);
      n = read(reportParams->sock,buffer,255);
 
      if (n < 0) {
@@ -49,9 +63,9 @@ void *reportMessage (void *context) {
      printf("Here is the message: %s\n",buffer);
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
-   pthread_mutex_unlock(&reportParams);
+  // pthread_mutex_unlock(&reportParams);
    //TODO: considerar almacenar la informacion en un archivo o varios archivos
    //TODO: Enviar mensaje REPORT_ACK_MESSAGE
 
-   return NULL;
+   pthread_exit(NULL);
 }
