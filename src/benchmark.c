@@ -461,7 +461,7 @@ int main(int argc, char * argv[]) {
   if (params->nNodes > 1) {
     if (params->master) {
       initializeSnmp();
-      asynchronousSnmp(params->nodeMasterHostname); //TODO: Make it periodically
+      asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
       serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
       //TODO: Manejar los reportes para generar graficos
     } else {
@@ -470,7 +470,7 @@ int main(int argc, char * argv[]) {
     }
   } else {
     initializeSnmp();
-    asynchronousSnmp(params->nodeMasterHostname); //TODO: Make it periodically
+    asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
     controllerBenchmarking();
     /*
     TODO: Recibir arreglo de reportes de controllerBenchmarking()

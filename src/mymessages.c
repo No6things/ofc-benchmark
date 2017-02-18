@@ -20,7 +20,7 @@ void *connectReqMessage (void *context) {
         printf("%d\n", clients->connected);
         pthread_cond_wait(&sendStart, &lock);
       }
-      printf("Write to\n");
+      printf("Imaginary implementing write to slave node\n");
 
      pthread_mutex_unlock(&lock);
 

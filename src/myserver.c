@@ -26,7 +26,7 @@ void * serverSide(unsigned int s) {
    printf("There are %d node slaves\n", clients->quantity);
    printf("And we initialize with %d connected\n", clients->connected);
    clients->connected = 0;
-   
+
    iThreads = 0;
    nThreads = clients->quantity * SERVER_MESSAGES;
    pthread_t nodesThreads [nThreads];
@@ -76,6 +76,8 @@ void * serverSide(unsigned int s) {
       }
 
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
+        printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
+
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
           //TODO: Considerar que no todos las funciones de mensajes necesitan
           // el objecto report. Sin embargo siempre se debe enviar el socket para
@@ -95,8 +97,9 @@ void * serverSide(unsigned int s) {
           pthread_mutex_unlock(&lock);
 
       } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
-          clients->reported++;
+        printf("Some node wrote us by a REPORT_MESSAGE\n");
 
+          clients->reported++;
 
           //delete condition sendStart
           rp->sock = newsockfd;
