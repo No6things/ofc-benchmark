@@ -312,6 +312,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
          case 'n':
              params->nodeMasterHostname= strdup(optarg);
              if (strcasecmp(params->nodeMasterHostname, "localhost")) params->master = 0;
+             break;
          case 'N':
              params->nNodes = atoi(optarg);
              break;
