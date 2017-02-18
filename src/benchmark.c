@@ -461,15 +461,18 @@ int main(int argc, char * argv[]) {
 
   if (params->nNodes > 1) {
     if (params->master) {
+      printf("Im the master node\n");
       initializeSnmp();
       asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
       serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
       //TODO: Manejar los reportes para generar graficos
     } else {
+      printf("Im the master node\n");
       clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
       //TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
     }
   } else {
+    printf("Im alone\n");
     initializeSnmp();
     asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
     controllerBenchmarking();

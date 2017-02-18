@@ -22,6 +22,7 @@ int clientSide(const char *nodeMasterHostname) {
    portno = PORT_DIST;
 
    /* CCONNECTION */
+   printf("Establishing connection with %s\n", nodeMasterHostname);
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
    if (sockfd < 0) {
