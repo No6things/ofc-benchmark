@@ -38,7 +38,7 @@ void * serverSide(unsigned int s) {
       exit(1);
    }
 
-   bzero((char *) &serv_addr, sizeof(serv_addr));
+   memset((char *) &serv_addr, 0, sizeof(serv_addr));
 
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -54,7 +54,12 @@ void * serverSide(unsigned int s) {
     * for the incoming connection
    */
 
-   listen(sockfd,5);
+   if (listen(sockfd,5) < 0) {
+     perror("ERROR listening");
+     exit(1);
+   }
+
+
    clilen = sizeof(cli_addr);
 
    while (1) {
@@ -64,11 +69,11 @@ void * serverSide(unsigned int s) {
          perror("ERROR on accept");
          exit(1);
       }
-
+      printf("Client connected.\n");
       n = read(newsockfd, buffer, 1);
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("String, %s.\n", buffer);
+      printf("Buffer received, %s.\n", buffer);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");

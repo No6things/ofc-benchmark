@@ -22,12 +22,14 @@ int clientSide(const char *nodeMasterHostname) {
    portno = PORT_DIST;
 
    /* CCONNECTION */
-   printf("Establishing connection with %s\n", nodeMasterHostname);
+   printf("Establishing connection with %s at port %d\n", nodeMasterHostname, portno);
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
    if (sockfd < 0) {
       perror("ERROR opening socket");
       exit(1);
+   } else {
+     printf("Creation of socket sucessful: %d\n", sockfd);
    }
 
    server = gethostbyname(nodeMasterHostname);
@@ -35,20 +37,25 @@ int clientSide(const char *nodeMasterHostname) {
    if (server == NULL) {
       fprintf(stderr,"ERROR, no such host\n");
       exit(0);
+   } else {
+     printf("Lookup of server hostname successful\n" );
    }
-
-   bzero((char *) &serv_addr, sizeof(serv_addr));
-
+   memset((char *) &serv_addr, 0, sizeof(serv_addr));
    serv_addr.sin_family = AF_INET;
-   bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
+   memcpy(&serv_addr.sin_addr, server->h_addr, server->h_length);
    serv_addr.sin_port = htons(portno);
+   printf("Preparing to connect");
+   printf("q\n");
 
    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+      printf("yikes");
       perror("ERROR connecting");
       exit(1);
+   } else {
+     printf("Connected succesfuly through socket file descriptor %d\n", sockfd);
    }
 
-   bzero(buffer,BUFSIZ);
+   bzero(buffer, BUFSIZ);
    memcpy (buffer, CONNECT_REQUEST_MESSAGE, strlen(CONNECT_REQUEST_MESSAGE) + 1);
    printf("Sending CONNECT_REQUEST_MESSAGE: %s", buffer);
    //   memcpy (buffer, reportBuffer, strlen(reportBuffer)+1);
