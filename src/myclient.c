@@ -23,14 +23,11 @@ int clientSide(const char *nodeMasterHostname) {
    portno = PORT_DIST;
 
    /* CCONNECTION */
-   printf("Establishing connection with %s at port %d\n", nodeMasterHostname, portno);
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
    if (sockfd < 0) {
       perror("ERROR opening socket");
       exit(1);
-   } else {
-     printf("Creation of socket sucessful: %d\n", sockfd);
    }
 
    server = gethostbyname(nodeMasterHostname);
@@ -38,15 +35,14 @@ int clientSide(const char *nodeMasterHostname) {
    if (server == NULL) {
       fprintf(stderr,"ERROR, no such host\n");
       exit(0);
-   } else {
-     printf("Lookup of server hostname successful\n" );
    }
+
    memset((char *) &serv_addr, 0, sizeof(serv_addr));
-   serv_addr.sin_family = AF_INET;
    memcpy(&serv_addr.sin_addr, server->h_addr, server->h_length);
-   serv_addr.sin_port = htons(5101);
-   printf("Preparing to connect");
-   printf("q\n");
+
+   serv_addr.sin_family = AF_INET;
+   serv_addr.sin_port = htons(portno);
+   printf("Establishing connection with %s at port %d\n", nodeMasterHostname, portno);
 
    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR connecting");
@@ -57,22 +53,21 @@ int clientSide(const char *nodeMasterHostname) {
 
    bzero(buffer, BUFSIZ);
    memcpy (buffer, CONNECT_REQUEST_MESSAGE, strlen(CONNECT_REQUEST_MESSAGE) + 1);
-   printf("Sending CONNECT_REQUEST_MESSAGE: %s", buffer);
-   //   memcpy (buffer, reportBuffer, strlen(reportBuffer)+1);
+   printf("Sending CONNECT_REQUEST_MESSAGE: %s.\n", buffer);
+
    /*   Send message to the server */
    n = write(sockfd, buffer, strlen(buffer));
-   bzero(buffer,256);
 
    if (n < 0) {
       perror("ERROR writing to socket");
       exit(1);
    }
 
+   bzero(buffer,256);
    end = 0;
 
    while (1) {
      n = read(sockfd, buffer, 1);
-     printf("read: %s.\n",buffer);
      if (n < 0) {
        perror("ERROR reading message from server");
        exit(1);
@@ -87,6 +82,7 @@ int clientSide(const char *nodeMasterHostname) {
      } else {
        printf("Message received: '%s'\n",buffer);
        perror("ERROR unknown message header from server");
+       exit(1);
      }
      if (end) break;
   }

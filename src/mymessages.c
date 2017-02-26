@@ -17,7 +17,7 @@ void *connectReqMessage (void *context) {
 
      pthread_mutex_lock(&lock);
       while(clients->connected != clients->quantity){
-        printf("%d\n", clients->connected);
+        printf("Blocked slave id: %d.\n", clients->connected);
         pthread_cond_wait(&sendStart, &lock);
       }
       printf("Imaginary implementing write to slave node\n");
@@ -60,7 +60,7 @@ void *reportMessage (void *context) {
         exit(1);
      }
 
-     printf("Here is the message: %s\n",buffer);
+     printf("Report received: %s\n",buffer);
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
   // pthread_mutex_unlock(&reportParams);

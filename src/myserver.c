@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 
 #include <string.h>
@@ -15,26 +16,29 @@ static struct report *rp;
 static struct status *clients;
 
 void * serverSide(unsigned int s) {
-   socklen_t sockfd, newsockfd;
-   unsigned int n, iThreads, nThreads, threadErr, clilen;
    char * buffer;
-  // bzero(buffer,256);
+   char recvBuff[256];
+   memset(recvBuff, '0',sizeof(recvBuff));
+
+   socklen_t sockfd, newsockfd;
+   unsigned int  iThreads, nThreads, threadErr, clilen;
+   int n;
    struct sockaddr_in serv_addr, cli_addr;
 
    rp = reports;
    clients = clientsStatuses;
    clients->quantity = s - 1;
-   printf("There are %d node slaves\n", clients->quantity);
-   printf("And we initialize with %d connected\n", clients->connected);
    clients->connected = 0;
 
    iThreads = 0;
    nThreads = clients->quantity * SERVER_MESSAGES;
    pthread_t nodesThreads [nThreads];
 
-   sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-   if (sockfd < 0) {
+   printf("The network will have %d node slaves\n", clients->quantity);
+
+
+   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("ERROR opening socket");
       exit(1);
    }
@@ -43,7 +47,7 @@ void * serverSide(unsigned int s) {
 
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons(PORT_DIST);
+   serv_addr.sin_port = htons(5101);
 
    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR on binding");
@@ -55,7 +59,7 @@ void * serverSide(unsigned int s) {
     * for the incoming connection
    */
 
-   if (listen(sockfd,5) < 0) {
+   if (listen(sockfd, 5) < 0) {
      perror("ERROR listening");
      exit(1);
    }
@@ -64,18 +68,23 @@ void * serverSide(unsigned int s) {
    clilen = sizeof(cli_addr);
 
    while (1) {
-      printf("waiting for slave\n");
-      newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
-      if (newsockfd < 0) {
+      if ((newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL)) < 0) {
          perror("ERROR on accept");
          exit(1);
       }
-      printf("Client connected.\n");
-      n = read(newsockfd, buffer, 1);
+      printf("Client connected with socket %d.\n", newsockfd);
+      //memset(&buffer, 0, sizeof(buffer));
+      ioctl(newsockfd, FIONREAD, &n);
+      if (n > 0) {
+        printf("ioctl %d\n", n);
+        n = read(newsockfd, recvBuff, sizeof(recvBuff)-1);
+      }
+      printf("after read\n");
+
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("Buffer received, %s.\n", buffer);
+      printf("Message received, %s.\n", buffer);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");
@@ -83,7 +92,7 @@ void * serverSide(unsigned int s) {
       }
 
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
-        printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
+          printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
 
           threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
           //TODO: Considerar que no todos las funciones de mensajes necesitan
@@ -104,7 +113,7 @@ void * serverSide(unsigned int s) {
           pthread_mutex_unlock(&lock);
 
       } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
-        printf("Some node wrote us by a REPORT_MESSAGE\n");
+          printf("Some node wrote us by a REPORT_MESSAGE\n");
 
           clients->reported++;
 
