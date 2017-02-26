@@ -16,7 +16,8 @@ static struct report *rp;
 static struct status *clients;
 
 void * serverSide(unsigned int s) {
-   char buffer;
+   char buffer[1024];
+   memset(buffer, '0',sizeof(buffer));
 
    socklen_t sockfd, newsockfd;
    unsigned int  iThreads, nThreads, threadErr, clilen;
@@ -73,22 +74,28 @@ void * serverSide(unsigned int s) {
       }
       printf("Client connected with socket %d.\n", newsockfd);
       //memset(&buffer, 0, sizeof(buffer));
-      ioctl(newsockfd, FIONREAD, &n);
+      /*ioctl(newsockfd, FIONREAD, &n);
       if (n > 0) {
         printf("ioctl %d\n", n);
-        n = read(newsockfd, buffer, 1);
-      }
-      printf("after read\n");
 
+      }*/
+      while ((n = read(newsockfd, buffer, sizeof(buffer)-1)) > 0)
+      {
+          buffer[n] = 0;
+          printf("%d\n",n );
+          if(fputs(buffer, stdout) == EOF)
+          {
+              printf("\n Error : Fputs error\n");
+          }
+      }
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("Message received, %c.\n", buffer);
+      printf("Message received, '%s' of lenght %d.\n", buffer, n);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");
         exit(1);
       }
-
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
           printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
 
