@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 #include <string.h>
 
@@ -43,12 +44,11 @@ int clientSide(const char *nodeMasterHostname) {
    memset((char *) &serv_addr, 0, sizeof(serv_addr));
    serv_addr.sin_family = AF_INET;
    memcpy(&serv_addr.sin_addr, server->h_addr, server->h_length);
-   serv_addr.sin_port = htons(portno);
+   serv_addr.sin_port = htons(5101);
    printf("Preparing to connect");
    printf("q\n");
 
    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-      printf("yikes");
       perror("ERROR connecting");
       exit(1);
    } else {

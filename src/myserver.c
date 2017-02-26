@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 #include <string.h>
 
@@ -63,6 +64,7 @@ void * serverSide(unsigned int s) {
    clilen = sizeof(cli_addr);
 
    while (1) {
+      printf("waiting for slave\n");
       newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
       if (newsockfd < 0) {
