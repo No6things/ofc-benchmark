@@ -20,7 +20,7 @@ int clientSide(const char *nodeMasterHostname) {
    char *reportsBuffer;
 
    char buffer[BUFSIZ];
-   portno = PORT_DIST;
+   portno = 5101;
 
    /* CCONNECTION */
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -62,6 +62,7 @@ int clientSide(const char *nodeMasterHostname) {
       perror("ERROR writing to socket");
       exit(1);
    }
+   printf("Sent %d byte(s), trough socket file descriptor %d  the content '%s' with length %d \n",n, sockfd, buffer, strlen(buffer));
 
    bzero(buffer,256);
    end = 0;

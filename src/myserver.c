@@ -16,9 +16,7 @@ static struct report *rp;
 static struct status *clients;
 
 void * serverSide(unsigned int s) {
-   char * buffer;
-   char recvBuff[256];
-   memset(recvBuff, '0',sizeof(recvBuff));
+   char buffer;
 
    socklen_t sockfd, newsockfd;
    unsigned int  iThreads, nThreads, threadErr, clilen;
@@ -78,13 +76,13 @@ void * serverSide(unsigned int s) {
       ioctl(newsockfd, FIONREAD, &n);
       if (n > 0) {
         printf("ioctl %d\n", n);
-        n = read(newsockfd, recvBuff, sizeof(recvBuff)-1);
+        n = read(newsockfd, buffer, 1);
       }
       printf("after read\n");
 
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("Message received, %s.\n", buffer);
+      printf("Message received, %c.\n", buffer);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");
