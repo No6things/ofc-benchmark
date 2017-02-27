@@ -16,72 +16,69 @@ static struct report *rp;
 static struct status *clients;
 
 void * serverSide(unsigned int s) {
-   char buffer[1024];
-   memset(buffer, '0',sizeof(buffer));
-
-   socklen_t sockfd, newsockfd;
-   unsigned int  iThreads, nThreads, threadErr, clilen;
-   int n;
+   unsigned int  iThreads, nThreads, threadErr;
+   socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
+   char buffer[1024];
+   int n, bytesRead, portno;
 
+
+
+   // Initializing variables
+   memset(buffer, '0',sizeof(buffer));
    rp = reports;
    clients = clientsStatuses;
    clients->quantity = s - 1;
    clients->connected = 0;
-
-   iThreads = 0;
    nThreads = clients->quantity * SERVER_MESSAGES;
    pthread_t nodesThreads [nThreads];
-
+   iThreads = 0;
+   portno = 5101;
 
    printf("The network will have %d node slaves\n", clients->quantity);
 
-
-   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+   // Opening Socket
+   if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("ERROR opening socket");
       exit(1);
    }
 
+   // Initializing server Internet structures
    memset((char *) &serv_addr, 0, sizeof(serv_addr));
-
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons(5101);
+   serv_addr.sin_port = htons(portno);
 
-   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+   //Binding server socket
+   if (bind(serverFd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR on binding");
       exit(1);
    }
 
-   /* Now start listening for the clients, here
-    * process will go in sleep mode and will wait
-    * for the incoming connection
-   */
-
-   if (listen(sockfd, 5) < 0) {
+   /*Listening for clients*/
+   if (listen(serverFd, 5) < 0) {
      perror("ERROR listening");
      exit(1);
    }
 
-
-   clilen = sizeof(cli_addr);
-
    while (1) {
 
-      if ((newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL)) < 0) {
+      // Accept request connections
+      if ((clientFd = accept(serverFd, (struct sockaddr *)NULL, NULL)) < 0) {
          perror("ERROR on accept");
          exit(1);
       }
-      printf("Client connected with socket %d.\n", newsockfd);
+      printf("Client connected with socket %d.\n", clientFd);
 
-      /*ioctl(newsockfd, FIONREAD, &n);
+      /*ioctl(clientFd, FIONREAD, &n);
       if (n > 0) {
         printf("ioctl %d\n", n);
 
       }*/
-      while ((n = read(newsockfd, buffer, sizeof(buffer)-1)) > 0)
+
+      while ((bytesRead = read(clientFd, buffer, sizeof(buffer)-1)) > 0)
       {
-          buffer[n] = 0;
+          buffer[bytesRead] = 0;
           if(fputs(buffer, stdout) == EOF)
           {
             printf("Error : Fputs error\n");
@@ -91,7 +88,7 @@ void * serverSide(unsigned int s) {
       }
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("Message received, '%s' of lenght %d.\n", buffer, n);
+      printf("Message received, '%s' of lenght %d.\n", buffer, bytesRead);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");
@@ -124,8 +121,8 @@ void * serverSide(unsigned int s) {
           clients->reported++;
 
           //delete condition sendStart
-          rp->sock = newsockfd;
-          printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
+          rp->sock = clientFd;
+          printf("socket: %d, rp->sock: %d\n", clientFd, rp->sock);
           memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
 
           //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
