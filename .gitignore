@@ -1,2 +1,4 @@
-src/obj
+include/*.gch
+src/*/.o
+src/obj/
 src/ofcB
