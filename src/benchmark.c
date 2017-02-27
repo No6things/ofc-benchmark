@@ -17,10 +17,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-
-#include "../include/openflow.h"
-
-#include "../include/myargs.h"
 #include "../include/mysnmp.h"
 #include "../include/mymessages.h"
 #include "../include/myserver.h"
@@ -31,40 +27,8 @@
 
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
-//DEFAULT VALUES
-
-struct args options[] = { //Options for Tests. In case of change, also change main
-    {"cooldown", 'c', "Loops to be disregarded at test end (cooldown)", INTEGER, {.integer = 0}},
-    {"controller",  'C', "Hostname of controller to connect to", STRING, {.string = "localhost"}},
-    {"packet-delay",'d', "Interpacket gap (in ms)", INTEGER, {.integer = 0}},
-    {"delay",       'D', "Delay starting testing after features_reply is received (in ms)", INTEGER, {.integer = 0}},
-    {"debug",      'x', "Debug messages", FLAG, {.flag = 0}},
-    {"fields",      'f', "Packet fields modified", FLAG, {.flag = 0}},
-    {"help",        'h', "Print this manual", NONE, {.none = 0}},
-    {"connect-delay",  'i', "Delay between groups of switches connecting to the controller (in ms)", INTEGER, {.integer = 0}},
-    {"connect-group-size", 'I', "Number of switches in a connection delay group", INTEGER, {.integer = 1}},
-    {"loops", 'l', "Loops per test", INTEGER, {.integer = 16}},
-    {"learn-dst-macs",'L', "Send gratuitious ARP replies to learn destination macs before testing", FLAG, {.flag = 1}},
-    {"ms-per-test", 'm', "Test length in ms", INTEGER, {.integer = 1000}},
-    {"mac-addresses", 'M', "Unique source MAC addresses per switch", INTEGER, {.integer = 100000}},
-    {"node-master", 'n', "Hostname of the node master to send results to", STRING, {.string = "localhost"}},
-    {"nodes",      'N', "Number of nodes in distributed mode", INTEGER, {.integer = 1}},
-    {"dpid-offset",  'O', "Switch DPID offset", INTEGER, {.integer = 1}},
-    {"packets",     'p', "Number of packets", INTEGER, {.integer = 0}},
-    {"port",        'P', "Controller port",  INTEGER, {.integer = OFP_TCP_PORT}},
-    {"ranged-test", 'r', "Test range of 1..$n packages", FLAG, {.flag = 0}},
-    {"random",      'R', "Sending order is random", FLAG, {.flag = 0}},
-    {"switches",    's', "Number of switches", INTEGER, {.integer = 16}},
-    {"size",        'S', "Size of packets", INTEGER, {.integer = 0}}, //todo
-    {"throughput",  't', "Test throughput instead of latency", NONE, {.none = 0}},
-    {"warmup",  'w', "Loops to be disregarded on test start (warmup)", INTEGER, {.integer = 1}},
-    {0, 0, 0, 0}
-};
-
 //RUN TEST
-
-double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int delay)
-{
+double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
     int i;
@@ -78,18 +42,17 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
     gettimeofday(&then,NULL);
-    while(1)
-    {
+    while (1) {
         gettimeofday(&now, NULL);
         timersub(&now, &then, &diff);
-        if( (1000* diff.tv_sec  + (float)diff.tv_usec/1000)> total_wait)
+        if ((1000 * diff.tv_sec  + (float)diff.tv_usec / 1000) > total_wait)
             break;
-        for(i = 0; i< nSwitches; i++)
+        for (i = 0; i< nSwitches; i++)
             switchSetPollfd(&switches[i], &pollfds[i]);
 
         poll(pollfds, nSwitches, 1000);      // block until something is ready or 100ms passes
 
-        for(i = 0; i< nSwitches; i++){
+        for (i = 0; i < nSwitches; i++) {
             ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
         }
     }
@@ -97,13 +60,12 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
     tmNow = localtime(&tNow);
     printf("%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
     usleep(100000); // sleep for 100 ms, to let packets queue
-    for( i = 0 ; i < nSwitches; i++)
-    {
+    for (i = 0 ; i < nSwitches; i++) {
         count = switchGetCount(&switches[i]);
         printf("%d  ", count);
         sum += count;
     }
-    passed = 1000 * diff.tv_sec + (double)diff.tv_usec/1000;
+    passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;  // is now per ms
     printf("total = %lf per ms \n", sum);
@@ -111,11 +73,11 @@ double runtTest(int nSwitches,struct fakeswitch *switches, int mstestlen, int de
     return sum;
 }
 
-char * testResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
+char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
 
-  if (mode == MODE_LATENCY){
+  if (mode == MODE_LATENCY) {
     size = snprintf(NULL, 0, "-Latency result: %d Switches %d Tests "
         "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
             i+1,
@@ -123,13 +85,13 @@ char * testResult (unsigned int mode, unsigned int i, int countedTests, double m
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1,  "-Latency result: %d Switches %d Tests "
+    snprintf(buffer, size + 1, "-Latency result: %d Switches %d Tests "
         "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
             i+1,
             countedTests,
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
-  }else{
-    size = snprintf(NULL, 0,"-Throughput result: %d Switches %d Tests "
+  } else {
+    size = snprintf(NULL, 0, "-Throughput result: %d Switches %d Tests "
         "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
             i+1,
             countedTests,
@@ -164,12 +126,11 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 	hints.ai_canonname      = NULL;
 	hints.ai_next           = NULL;
 
-	snprintf(sport,BUFLEN,"%d",port);
+	snprintf(sport, BUFLEN, "%d", port);
 
-	err = getaddrinfo(hostname,sport,&hints,&res);
-	if(err|| (res==NULL))
-	{
-		if(res)
+	err = getaddrinfo(hostname, sport, &hints, &res);
+	if (err|| (res == NULL)) {
+		if (res)
 			freeaddrinfo(res);
 		return -1;
 	}
@@ -177,12 +138,12 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 
 
 	// set non blocking
-	if((flags = fcntl(fd, F_GETFL)) < 0) {
+	if ((flags = fcntl(fd, F_GETFL)) < 0) {
 		fprintf(stderr, "timeoutConnect: unable to get socket flags\n");
 		freeaddrinfo(res);
 		return -1;
 	}
-	if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
 		fprintf(stderr, "timeoutConnect: unable to put the socket in non-blocking mode\n");
 		freeaddrinfo(res);
 		return -1;
@@ -190,29 +151,25 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
 
-	if(mstimeout >= 0)
-	{
+	if (mstimeout >= 0) {
 		tv.tv_sec = mstimeout / 1000;
 		tv.tv_usec = (mstimeout % 1000) * 1000;
 
 		errno = 0;
 
-		if(connect(fd, res->ai_addr, res->ai_addrlen) < 0)
-		{
-			if((errno != EWOULDBLOCK) && (errno != EINPROGRESS))
-			{
+		if (connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
+			if ((errno != EWOULDBLOCK) && (errno != EINPROGRESS)) {
 				fprintf(stderr, "timeoutConnect: error connecting: %d\n", errno);
 				freeaddrinfo(res);
 				return -1;
 			}
 		}
-		ret = select(fd+1, NULL, &fds, NULL, &tv);
+		ret = select(fd + 1, NULL, &fds, NULL, &tv);
 	}
 	freeaddrinfo(res);
 
-	if(ret != 1)
-	{
-		if(ret == 0)
+	if (ret != 1) {
+		if (ret == 0)
 			return -1;
 		else
 			return ret;
@@ -222,39 +179,37 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 
 
 int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsigned short sport,
-        int mstimeout, int nodelay)
-{
+        int mstimeout, int nodelay) {
     struct sockaddr_in local;
     int s;
     int err;
     int zero = 0;
 
-    s = socket(AF_INET,SOCK_STREAM,0);
-    if(s<0){
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s < 0) {
         perror("makeTcpConnection: socket");
         exit(1);  // bad socket
     }
-    if(nodelay && (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &zero, sizeof(zero)) < 0))
-    {
+
+    if (nodelay && (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &zero, sizeof(zero)) < 0)) {
         perror("setsockopt");
         fprintf(stderr,"makeTcpConnection::Unable to disable Nagle's algorithm\n");
         exit(1);
     }
-    local.sin_family=PF_INET;
-    local.sin_addr.s_addr=INADDR_ANY;
-    local.sin_port=htons(sport);
 
-    err=bind(s,(struct sockaddr *)&local, sizeof(local));
-    if(err)
-    {
+    local.sin_family = PF_INET;
+    local.sin_addr.s_addr = INADDR_ANY;
+    local.sin_port = htons(sport);
+
+    err = bind(s, (struct sockaddr *)&local, sizeof(local));
+    if (err) {
         perror("makeTcpConnectionFromPort::bind");
         return -4;
     }
 
     err = timeoutConnect(s,hostname,port, mstimeout);
 
-    if(err)
-    {
+    if (err) {
         perror("makeTcpConnection: connect");
         close(s);
         return err; // bad connection
@@ -262,15 +217,13 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     return s;
 }
 
-int makeTcpConnection(const char * hostname, unsigned short port, int mstimeout, int nodelay)
-{
+int makeTcpConnection(const char * hostname, unsigned short port, int mstimeout, int nodelay) {
     return makeTcpConnectionFromPort(hostname,port, INADDR_ANY, mstimeout, nodelay);
 }
 
 //UTILS
 
-int countBits(int n)
-{
+int countBits(int n) {
     int count =0;
     int i;
     for(i=0; i< 32;i++)
@@ -279,134 +232,119 @@ int countBits(int n)
     return count;
 }
 
-
-//MAIN
-
-int main(int argc, char * argv[])
-{
-  //INITIALIZE
-  int i=0,
-      j=0;
-
-  struct report *rp;
-  char *reportBuffer;
-  struct fakeswitch *switches;
+void initializeBenchmarking(int argc, char * argv[]) {
+  struct inputValues *params = &benchmarkArgs;
   const struct option * longOpts = argsToLong(options);
   char *  shortOpts =         argsToShort(options);
 
-  char *  controllerHostname =argsGetDefaultStr(options,"controller"),
-       *  nodeMasterHostname =argsGetDefaultStr(options,"node-master");
-  unsigned int
-          cooldown =          argsGetDefaultInt(options, "cooldown"),
-          packetDelay =       argsGetDefaultInt(options, "packet-delay"),
-          delay =             argsGetDefaultInt(options, "delay"),
-          fields =            argsGetDefaultFlag(options, "fields"),
-          connectDelay =      argsGetDefaultInt(options, "connect-delay"),
-          connectGroupSize =  argsGetDefaultInt(options, "connect-group-size"),
-          loopsPerTest =      argsGetDefaultInt(options, "loops"),
-          learnDstMacs =      argsGetDefaultFlag(options, "learn-dst-macs"),
-          msTestLen =         argsGetDefaultInt(options, "ms-per-test"),
-          nMacAddresses =     argsGetDefaultInt(options, "mac-addresses"),
-          dpidOffset =        argsGetDefaultInt(options, "dpid-offset"),
-          nPackets=           argsGetDefaultInt(options, "packets"),
-          controllerPort =    argsGetDefaultInt(options, "port"),
-          testRange =         argsGetDefaultFlag(options, "ranged-test"),
-          random =            argsGetDefaultFlag(options, "random"),
-          nSwitches =         argsGetDefaultInt(options, "switches"),
-          packetSize =        argsGetDefaultInt(options, "size"),
-          warmup =            argsGetDefaultInt(options, "warmup"),
-          debug =             argsGetDefaultFlag(options, "debug"),
-          nNodes =            argsGetDefaultInt(options, "nodes"),
-          master = 1,
-          mode = MODE_LATENCY;
+  params->controllerHostname =argsGetDefaultStr(options,"controller");
+  params->nodeMasterHostname =argsGetDefaultStr(options,"node-master");
+  params->cooldown =          argsGetDefaultInt(options, "cooldown");
+  params->packetDelay =       argsGetDefaultInt(options, "packet-delay");
+  params->delay =             argsGetDefaultInt(options, "delay");
+  params->debug =             argsGetDefaultFlag(options, "debug");
+  params->fields =            argsGetDefaultFlag(options, "fields");
+  params->connectDelay =      argsGetDefaultInt(options, "connect-delay");
+  params->connectGroupSize =  argsGetDefaultInt(options, "connect-group-size");
+  params->loopsPerTest =      argsGetDefaultInt(options, "loops");
+  params->learnDstMacs =      argsGetDefaultFlag(options, "learn-dst-macs");
+  params->msTestLen =         argsGetDefaultInt(options, "ms-per-test");
+  params->nMacAddresses =     argsGetDefaultInt(options, "mac-addresses");
+  params->master = 1,    // TODO: DELIVER BETTER HANDLING OF DEFAULT MASTER ARG
+  params->nNodes =            argsGetDefaultInt(options, "nodes");
+  params->dpidOffset =        argsGetDefaultInt(options, "dpid-offset");
+  params->nPackets=           argsGetDefaultInt(options, "packets");
+  params->controllerPort =    argsGetDefaultInt(options, "port");
+  params->testRange =         argsGetDefaultFlag(options, "ranged-test");
+  params->random =            argsGetDefaultFlag(options, "random");
+  params->nSwitches =         argsGetDefaultInt(options, "switches");
+  params->packetSize =        argsGetDefaultInt(options, "size");
+  params->mode = MODE_LATENCY; // TODO: UPDATE TO RECEIVE PARAMETER
+  params->warmup =            argsGetDefaultInt(options, "warmup");
 
-  pthread_t tid;
-
-  //PARSE ARGS LOOP
   // TODO: HANDLE MALICIOUS DATA
-  while(1)
-  {
+  while(1) {
      int index = 0,
          c = getopt_long(argc, argv, shortOpts, longOpts, &index);
 
      if (c == -1)
          break;
-     switch (c)
-     {
+     switch (c) {
          case 'c' :
-             cooldown = atoi(optarg);
+             params->cooldown = atoi(optarg);
              break;
          case 'C' :
-             controllerHostname = strdup(optarg);
+             params->controllerHostname = strdup(optarg);
              break;
          case 'd':
-             packetDelay = atoi(optarg);
+             params->packetDelay = atoi(optarg);
              break;
          case 'D':
-             delay = atoi(optarg);
+             params->delay = atoi(optarg);
              break;
          case 'f':
-             fields = 1;
+             params->fields = 1;
              break;
          case 'h':
              argsManual(options, PROG_TITLE,  1);
              break;
          case 'i' :
-             connectDelay = atoi(optarg);
+             params->connectDelay = atoi(optarg);
              break;
          case 'I' :
-             connectGroupSize = atoi(optarg);
+             params->connectGroupSize = atoi(optarg);
              break;
          case 'l' :
-             loopsPerTest = atoi(optarg);
+             params->loopsPerTest = atoi(optarg);
              break;
          case 'L':
              if(optarg)
-                 learnDstMacs = ( strcasecmp("true", optarg) == 0 || strcasecmp("on", optarg) == 0 || strcasecmp("1", optarg) == 0);
+                 params->learnDstMacs = ( strcasecmp("true", optarg) == 0 || strcasecmp("on", optarg) == 0 || strcasecmp("1", optarg) == 0);
              else
-                 learnDstMacs = 1;
+                 params->learnDstMacs = 1;
              break;
          case 'm':
-             msTestLen = atoi(optarg);
+             params->msTestLen = atoi(optarg);
              break;
          case 'M' :
-              nMacAddresses = atoi(optarg);
-              break;
+             params->nMacAddresses = atoi(optarg);
+             break;
          case 'n':
-              nodeMasterHostname= strdup(optarg);
-              if(strcasecmp(nodeMasterHostname, "localhost")) master = 0;
+             params->nodeMasterHostname= strdup(optarg);
+             if (strcasecmp(params->nodeMasterHostname, "localhost")) params->master = 0;
+             break;
          case 'N':
-              nNodes = atoi(optarg);
-              break;
+             params->nNodes = atoi(optarg);
+             break;
          case 'O':
-             dpidOffset = atoi(optarg);
+             params->dpidOffset = atoi(optarg);
              break;
          case 'p' :
-             nPackets = atoi(optarg);
+             params->nPackets = atoi(optarg);
              break;
          case 'P' :
-             controllerPort = atoi(optarg);
+             params->controllerPort = atoi(optarg);
              break;
          case 'r':
-             testRange = 1;
+             params->testRange = 1;
              break;
          case 'o':
-             random = 1;
+             params->random = 1;
              break;
          case 's':
-             nSwitches = atoi(optarg);
+             params->nSwitches = atoi(optarg);
              break;
          case 'S':
-             packetSize = atoi(optarg);
+             params->packetSize = atoi(optarg);
              break;
          case 't':
-             mode = MODE_THROUGHPUT;
+             params->mode = MODE_THROUGHPUT;
              break;
          case 'w' :
-             warmup = atoi(optarg);
+             params->warmup = atoi(optarg);
              break;
          case 'x' :
-             debug = atoi(optarg);
+             params->debug = atoi(optarg);
              break;
          default:
           argsManual(options, PROG_TITLE, 1);
@@ -421,121 +359,128 @@ int main(int argc, char * argv[])
                   "   faking %s %d switches offset %d : %d ms per test\n"
                   "   %s destination mac addresses before the test\n"
                   "   starting test with %d ms delay after features_reply\n",
-                  mode == MODE_THROUGHPUT? "'throughput'": "'latency'",
-                  controllerHostname,  controllerPort,
-                  nNodes, nodeMasterHostname,
-                  testRange ? "from 1 to": "", nSwitches, dpidOffset, msTestLen,
-                  learnDstMacs ? "learning" : "NOT learning",
-                  delay);
+                  params->mode == MODE_THROUGHPUT ? "'throughput'": "'latency'",
+                  params->controllerHostname, params->controllerPort,
+                  params->nNodes, params->nodeMasterHostname,
+                  params->testRange ? "from 1 to": "", params->nSwitches, params->dpidOffset, params->msTestLen,
+                  params->learnDstMacs ? "learning" : "NOT learning",
+                  params->delay);
   printf("-------------------------------------------TEST-------------------------------------------\n" );
+}
 
-  //TEST INIT
-  initializeSnmp();
+char * controllerBenchmarking() {
+  struct fakeswitch *switches;
+  struct inputValues *params = &benchmarkArgs;
+  struct report *rp = reports;
+  char *reportBuffer;
+  int i, j;
 
-  //CREATE SERVER THREAD
-  if (nNodes > 1) {
-    if (master) {
-      int *a = &nNodes;
-      pthread_create(&tid, NULL, &serverSide, (void *)a);
-      //TODO: Considerar manejar el servidor como una funcion en lugar de hilo y\
-      // no haga trabajo de BENCHMARKING
-      //TODO: Manejar los reportes para genera graficos`
-    } else {
-      clientSide(nodeMasterHostname);
-    }
-  }
-
-  // STARTS BENCHMARKING
-  //  TODO: meter todo en una funcion, pasarle los parametros necesarios  y
-  // llamar la funcion desde el clientSide una vez se recibe el mensaje
-  // START_MESSAGE
-  switches = malloc(nSwitches * sizeof(struct fakeswitch));
+  switches = malloc(params->nSwitches * sizeof(struct fakeswitch));
   assert(switches);
 
   double *results;
   double  min = DBL_MAX;
   double  max = 0.0;
   double  v;
-  results = malloc(loopsPerTest * sizeof(double));
+  results = malloc(params->loopsPerTest * sizeof(double));
 
-  for( i = 0; i < nSwitches; i++)
-      {
-          //CONNECTION
-          int sock;
-          double sum = 0;
-          if (connectDelay != 0 && i != 0 && (i % connectGroupSize == 0)) {
-              if(debug)
-                  fprintf(stderr,"Delaying connection by %dms...", connectDelay*1000);
-              usleep(connectDelay*1000);
-          }
-          sock = makeTcpConnection(controllerHostname, controllerPort, 3000, mode!=MODE_THROUGHPUT );
-          if(sock < 0 )
-          {
-              fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
-              exit(1);
-          }
-          if(debug)
-              fprintf(stderr,"Initializing switch %d ... ", i+1);
-          fflush(stderr);
-          switchInit(&switches[i],dpidOffset+i,sock,BUFLEN, debug, delay, mode, nMacAddresses, learnDstMacs , OFP131_VERSION);
-          if(debug)
-              fprintf(stderr," :: done.\n");
-          fflush(stderr);
-          if(countBits(i+1) == 0)  // only test for 1,2,4,8,16 switches
-              continue;
-          if(!testRange && ((i+1) != nSwitches)) // only if testing range or this is last
-              continue;
-          //RUN
-          for( j = 0; j < loopsPerTest; j ++) {
-              if ( j > 0 ) delay = 0;      // only delay on the first run
-              v = 1000.0 * runtTest(i+1, switches, msTestLen, delay);
-              results[j] = v;
-        			if(j<warmup || j >= loopsPerTest-cooldown)
-        				continue;
-              sum += v;
-              if (v > max)
-                max = v;
-              if (v < min)
-                min = v;
-            }
+  for(i = 0; i < params->nSwitches; i++) {
+    //CONNECTION
+    int sock;
+    double sum = 0;
+    if (params->connectDelay != 0 && i != 0 && (i % params->connectGroupSize == 0)) {
+        if (params->debug) {
+            fprintf(stderr, "Delaying connection by %dms...", params->connectDelay * 1000);
+        }
+        usleep(params->connectDelay * 1000);
+    }
+    sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
+    if(sock < 0) {
+        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
+        exit(1);
+    }
+    if (params->debug) {
+        fprintf(stderr,"Initializing switch %d ... ", i + 1);
+    }
+    fflush(stderr);
+    switchInit(&switches[i], params->dpidOffset + i, sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
+    if (params->debug) {
+        fprintf(stderr," :: done.\n");
+    }
+    fflush(stderr);
+    if (countBits(i + 1) == 0)  // only test for 1,2,4,8,16 switches
+        continue;
+    if (!params->testRange && ((i+1) != params->nSwitches)) // only if testing range or this is last
+        continue;
+    //RUN
+    for(j = 0; j < params->loopsPerTest; j++) {
+        if (j > 0) {
+          params->delay = 0;      // only delay on the first run
+        }
+        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay);
+        results[j] = v;
+        if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
+          continue;
+        }
+        sum += v;
+        if (v > max) {
+          max = v;
+        }
+        if (v < min) {
+          min = v;
+        }
+    }
 
-          //SHOW RESULTS
-  		    int countedTests = (loopsPerTest - warmup - cooldown);
-          double avg = sum / countedTests;
-          sum = 0.0;
-          for (j = warmup; j < loopsPerTest-cooldown; ++j) {
-            sum += pow(results[j] - avg, 2);
-          }
-          sum = sum / (double)(countedTests);
-          double std_dev = sqrt(sum);
+    //SHOW RESULTS
+    int countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
+    double avg = sum / countedTests;
+    sum = 0.0;
+    for (j = params->warmup; j < params->loopsPerTest-params->cooldown; ++j) {
+      sum += pow(results[j] - avg, 2);
+    }
+    sum = sum / (double)(countedTests);
+    double std_dev = sqrt(sum);
 
-          reportBuffer = (char*)malloc(150*sizeof(char));
-          reportBuffer = testResult(mode, i, countedTests, min, max, avg, std_dev);
-          printf("------------------------------------------Results------------------------------------------\n" );
+    reportBuffer = (char*)malloc(150 * sizeof(char));
+    reportBuffer = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
 
-          if (master){
-            //TODO: Make SNMP queries frequently during the test
-            asynchronousSnmp(controllerHostname);
-            if (nNodes > 1) {
-              pthread_join(&tid, NULL);
-              rp = reports;
-              i = nNodes;
-              while (i > 0){
-                printf("----Report #%d----\n",i);
-                printf("%s\n\n",rp->buffer );
-                rp++;
-                i--;
-              }
-            }else{
-              printf("----Report----\n");
-              printf("%s\n",reportBuffer);
-            }
-          }else{
-            sendReport = true;
-            printf("Report sended to master node\n" );
-          }
+    //TODO: Store result of switch report
+    printf("Report\n");
+    printf("%s\n", reportBuffer); //TODO: Remove reporte once return has been implemented
+  }
+  //Return array of reports
+  return (char *)" ";
+}
 
-      }
+//MAIN
 
-  return(0);
+int main(int argc, char * argv[]) {
+  struct inputValues *params = &benchmarkArgs;
+
+  initializeBenchmarking (argc, argv);
+
+  if (params->nNodes > 1) {
+    if (params->master) {
+      printf("Im the master node\n");
+      initializeSnmp();
+      asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
+      serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
+      //TODO: Manejar los reportes para generar graficos
+    } else {
+      printf("Im one of the slaves node\n");
+      clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
+      //TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
+    }
+  } else {
+    printf("Im alone\n");
+    initializeSnmp();
+    asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
+    controllerBenchmarking();
+    /*
+    TODO: Recibir arreglo de reportes de controllerBenchmarking()
+    TODO: Imprimir reportes
+    */
+  }
+
+  return 0;
 }
