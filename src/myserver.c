@@ -73,7 +73,7 @@ void * serverSide(unsigned int s) {
          exit(1);
       }
       printf("Client connected with socket %d.\n", newsockfd);
-      //memset(&buffer, 0, sizeof(buffer));
+
       /*ioctl(newsockfd, FIONREAD, &n);
       if (n > 0) {
         printf("ioctl %d\n", n);
@@ -82,10 +82,11 @@ void * serverSide(unsigned int s) {
       while ((n = read(newsockfd, buffer, sizeof(buffer)-1)) > 0)
       {
           buffer[n] = 0;
-          printf("%d\n",n );
           if(fputs(buffer, stdout) == EOF)
           {
-              printf("\n Error : Fputs error\n");
+            printf("Error : Fputs error\n");
+          } else {
+            printf("There is more to read, but now we have %s\n", buffer);
           }
       }
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
