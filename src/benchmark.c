@@ -250,7 +250,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->learnDstMacs =      argsGetDefaultFlag(options, "learn-dst-macs");
   params->msTestLen =         argsGetDefaultInt(options, "ms-per-test");
   params->nMacAddresses =     argsGetDefaultInt(options, "mac-addresses");
-  params->master = 1,    // TODO: DELIVER BETTER HANDLING OF DEFAULT MASTER ARG
+  params->master = 0,    // TODO: DELIVER BETTER HANDLING OF DEFAULT MASTER ARG
   params->nNodes =            argsGetDefaultInt(options, "nodes");
   params->dpidOffset =        argsGetDefaultInt(options, "dpid-offset");
   params->nPackets=           argsGetDefaultInt(options, "packets");

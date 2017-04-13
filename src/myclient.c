@@ -67,7 +67,7 @@ int writeSocket(int fd, char* array, int SIZE, int sz_emit)
   {
       while(sz_emit-sz)
       {
-        written=write(id, array+i+sz, sz_emit-sz);
+        written=write(fd, array+i+sz, sz_emit-sz);
         if (written == -1) {
           perror("writeToClient -1\n");
         } else {
