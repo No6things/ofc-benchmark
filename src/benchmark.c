@@ -459,7 +459,7 @@ int main(int argc, char * argv[]) {
 
   initializeBenchmarking (argc, argv);
 
-  if (params->nNodes > 0) {
+  if (params->nNodes > 1) {
     if (params->master) {
       printf("Im the master node\n");
       initializeSnmp();

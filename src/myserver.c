@@ -13,7 +13,6 @@
 #include "../include/myserver.h"
 
 static struct report *rp;
-static struct status *clients;
 
 //in @param
 //@param fd is the file descriptor of the socket to read from
@@ -30,19 +29,17 @@ void * serverSide(unsigned int s) {
    struct sockaddr_in serv_addr, cli_addr;
    char* buffer;
    int n, bytesRead, portno, BUFFER_SIZE = 100;
-;
 
    // Initializing variables
    rp = reports;
-   clients = clientsStatuses;
-   clients->quantity = s - 1;
-   clients->connected = 0;
-   nThreads = clients->quantity * SERVER_MESSAGES;
+   clientsStatuses.quantity = s - 1;
+   clientsStatuses.connected = 0;
+   nThreads = clientsStatuses.quantity * SERVER_MESSAGES;
    pthread_t nodesThreads [nThreads];
    iThreads = 0;
    portno = 5101;
 
-   printf("The network will have %d node slaves\n", clients->quantity);
+   printf("The network will have %d node slaves\n", clientsStatuses.quantity);
 
    // Opening Socket
    if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -62,10 +59,10 @@ void * serverSide(unsigned int s) {
       exit(1);
    }
 
-   //Listening for clients
+   //Listening for clientsStatuses
    if (listen(serverFd, 5) < 0) {
-     perror("ERROR listening");
-     exit(1);
+      perror("ERROR listening");
+      exit(1);
    }
 
    while (1) {
@@ -89,8 +86,9 @@ void * serverSide(unsigned int s) {
       }
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
           printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
+          printf("connected server: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
 
-          threadErr = pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
+          threadErr = pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, &clientFd);
           //TODO: Considerar que no todos las funciones de mensajes necesitan
           // el objecto report. Sin embargo siempre se debe enviar el socket para
           // responder el mensaje.
@@ -102,8 +100,8 @@ void * serverSide(unsigned int s) {
             iThreads++;
           }
           pthread_mutex_lock(&lock);
-            clients->connected++;
-            if (clients->connected == clients->quantity) {
+            clientsStatuses.connected++;
+            if (clientsStatuses.connected == clientsStatuses.quantity) {
               pthread_cond_broadcast(&sendStart);
             }
           pthread_mutex_unlock(&lock);
@@ -111,7 +109,7 @@ void * serverSide(unsigned int s) {
       } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
           printf("Some node wrote us by a REPORT_MESSAGE\n");
 
-          clients->reported++;
+          clientsStatuses.reported++;
 
           //delete condition sendStart
           rp->sock = clientFd;
@@ -134,7 +132,7 @@ void * serverSide(unsigned int s) {
           printf("Message received: '%s'\n",buffer);
           perror("ERROR unknown message header from slave node");
       }
-      if (clients->reported == clients->quantity) break;
+      if (clientsStatuses.reported == clientsStatuses.quantity) break;
       //   TODO: Considerar que la cantidad de hilos en iThreads se corresponda a
       //        la cantidad de hilos que debieron haberse usado
 

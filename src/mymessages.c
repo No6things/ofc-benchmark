@@ -12,7 +12,7 @@
 
 #include "../include/mymessages.h"
 
-static struct status *clients;
+status clientsStatuses;
 
 char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 {
@@ -47,27 +47,26 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 }
 
 void *connectReqMessage (void *context) {
-  char buffer[256];
-  bzero(buffer,256);
-  clients = clientsStatuses;
+  int clientFd = *((int*)context);
+  int bytesWritten;
+  char buffer[BUFSIZ];
+  bzero(buffer, BUFSIZ);
+  memcpy (buffer, START_MESSAGE, strlen(START_MESSAGE) + 1);
 
+  printf("connected mymsg: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
   pthread_mutex_lock(&lock);
-  while(clients->connected != clients->quantity){
-    printf("Blocked slave id: %d.\n", clients->connected);
+  while(clientsStatuses.connected != clientsStatuses.quantity){
+    //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
+    printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
     pthread_cond_wait(&sendStart, &lock);
   }
-  printf("Imaginary implementing write to slave node\n");
   pthread_mutex_unlock(&lock);
 
-  //TODO: Escribir mecanismo antes de enviar el mensaje
-  //     que me permita esperar por los otros hilos
-  //     evaluando una condicion con una variable global que represente
-  //     la cantidad de clientes conectados y un tiempo maximo de espera
-  //     antes de enviar el mensaje
-  //     Candidato: Un loop infinito
-  //TODO: Write START_MESSAGE
-  //TODO: Make SNMP queries frequently during the test with:
-  //      asynchronousSnmp(params->controllerHostname);
+  bytesWritten = write(clientFd, buffer, strlen(buffer));
+  if (bytesWritten < 0) {
+    perror("connectReqMessage");
+    exit(0);
+  }
   pthread_exit(NULL);
 }
 

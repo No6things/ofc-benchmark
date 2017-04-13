@@ -84,7 +84,6 @@ int clientSide(const char *nodeMasterHostname) {
    int serverFd, portno, bytes, end;
    struct sockaddr_in serv_addr;
    struct hostent *server;
-   //struct inputValues *params = &benchmarkArgs; TODO: UNUSED
    //char *reportsBuffer; TODO: UNUSED
 
    /* Initializing*/
