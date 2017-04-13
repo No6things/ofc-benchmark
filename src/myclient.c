@@ -11,7 +11,7 @@
 #include "../include/mymessages.h"
 #include "../include/benchmark.h"
 #include "../include/myclient.h"
-
+/*
 void enqueue(char* item)
 {
     struct node *nptr = malloc(sizeof(struct node));
@@ -56,7 +56,7 @@ void dequeue()
         free(temp);
     }
 }
-
+*/
 int writeSocket(int fd, char* array, int SIZE, int sz_emit)
 {
   //#######################

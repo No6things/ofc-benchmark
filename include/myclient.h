@@ -3,7 +3,7 @@
 
 int clientSide(const char *nodeMasterHostname);
 
-struct node
+/*struct node
 {
     char* data;
     struct node *next;
@@ -11,5 +11,5 @@ struct node
 
 struct node *front = NULL;
 struct node *rear = NULL;
-
+*/
 #endif

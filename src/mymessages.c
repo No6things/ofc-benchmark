@@ -26,7 +26,7 @@ char* readSocket(int fd, int SIZE, int sz_received, int* length, int* read_err)
         if(rt==-1)
         {
           *read_err=rt;
-          printf("an error occurs\n");
+          perror("readSocket: An error occured while reading from socket\n");
           goto l;
         }
         if(!rt)goto l;
