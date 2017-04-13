@@ -27,7 +27,7 @@
 
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
-//RUN TEST
+//BENCHMARKING || Prints interval messages
 double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
@@ -74,6 +74,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     return sum;
 }
 
+// FINAL RESULT || Returns final report
 char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
@@ -106,6 +107,7 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   }
   return buffer;
 }
+
 //CONNECTION
 
 int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
@@ -135,8 +137,6 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 			freeaddrinfo(res);
 		return -1;
 	}
-
-
 
 	// set non blocking
 	if ((flags = fcntl(fd, F_GETFL)) < 0) {
@@ -178,7 +178,6 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 	return 0;
 }
 
-
 int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsigned short sport,
         int mstimeout, int nodelay) {
     struct sockaddr_in local;
@@ -189,7 +188,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
         perror("makeTcpConnection: socket");
-        exit(1);  // bad socket
+        exit(1);
     }
 
     if (nodelay && (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &zero, sizeof(zero)) < 0)) {
@@ -213,7 +212,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     if (err) {
         perror("makeTcpConnection: connect");
         close(s);
-        return err; // bad connection
+        return err;
     }
     return s;
 }
@@ -352,7 +351,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
      }
   }
 
-  //STATUS MSGS
+  //START APPLICATION MESSAGE
   fprintf(stderr, "ofcB: OpenFlow Controller Benchmarking Tool\n"
                   "   running in mode %s\n"
                   "   connecting to controller at %s:%d \n"
@@ -447,7 +446,7 @@ char * controllerBenchmarking() {
 
     //TODO: Store result of switch report
     printf("Report\n");
-    printf("%s\n", reportBuffer); //TODO: Remove reporte once return has been implemented
+    printf("%s\n", reportBuffer); //TODO: Remove report once return has been implemented
   }
   //Return array of reports
   return (char *)" ";
