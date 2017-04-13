@@ -37,7 +37,7 @@ static struct status {
    { '\0' }
  };
 
-char *readSocket(int fd, int SIZE, int sz_received, int* length, int* read_err);
+char *readSocket(int fd, int SIZE, int sz_received, int* length);
 
 void *connectReqMessage (void *context);
 

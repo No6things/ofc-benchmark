@@ -1,41 +1,48 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <errno.h>
 #include <unistd.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/socket.h>
 #include <string.h>
 
 #include "../include/mymessages.h"
 
 static struct status *clients;
 
-char* readSocket(int fd, int SIZE, int sz_received, int* length, int* read_err)
+char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 {
-  *read_err = 0;
   int i = 0, sz = 0, rt = 0, count=0;
-  char *array = (char *)malloc(SIZE);
-  memset(array, 0, SIZE);
-  for (i = 0; i < SIZE; i += sz_received)
+  char *array = (char *)malloc(BUFFER_SIZE);
+  memset(array, 0, BUFFER_SIZE);
+  fcntl(fd, F_SETFL, O_NONBLOCK);
+  for (i = 0; i < BUFFER_SIZE; i += sz_received)
+  {
+    while(sz_received-sz)
     {
-      while(sz_received-sz)
+      rt = read(fd, array + i + sz, sz_received-sz);
+      if(rt < 1)
       {
-        rt = read(fd, array + i + sz, sz_received-sz);
-        if(rt==-1)
-        {
-          *read_err=rt;
-          perror("readSocket: An error occured while reading from socket\n");
-          goto l;
+        if (errno == EAGAIN) {
+            fcntl(fd, F_SETFL, 0);
+            *bytesRead = count;
+            return array;
+        } else {
+            perror("readSocket");
+            exit(1);
         }
-        if(!rt)goto l;
-        sz+=rt;
-        count += sz;
       }
-      sz = 0;
+      sz += rt;
+      count += sz;
     }
-  l: *length = count;
+    sz = 0;
+  }
+  fcntl(fd, F_SETFL, 0);
+  *bytesRead = count;
   return array;
 }
 

@@ -29,12 +29,10 @@ void * serverSide(unsigned int s) {
    socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
    char* buffer;
-   int n, bytesRead, portno;
-
-
+   int n, bytesRead, portno, BUFFER_SIZE = 100;
+;
 
    // Initializing variables
-//   memset(buffer, '0',sizeof(buffer));
    rp = reports;
    clients = clientsStatuses;
    clients->quantity = s - 1;
@@ -64,7 +62,7 @@ void * serverSide(unsigned int s) {
       exit(1);
    }
 
-   /*Listening for clients*/
+   //Listening for clients
    if (listen(serverFd, 5) < 0) {
      perror("ERROR listening");
      exit(1);
@@ -78,23 +76,9 @@ void * serverSide(unsigned int s) {
          exit(1);
       }
       printf("Client connected with socket %d.\n", clientFd);
-      int SIZE = 100000000, length = 0, read_err=0;
       buffer = NULL;
-      buffer = readSocket(clientFd, SIZE, 4, &length, &read_err);
-      if(!read_err)printf("get some data\n");
+      buffer = readSocket(clientFd, BUFFER_SIZE, 1, &bytesRead);
 
-
-      /* if readSocket works, destroy this function
-      while ((bytesRead = read(clientFd, buffer, sizeof(buffer)-1)) > 0)
-      {
-          buffer[bytesRead] = 0;
-          if(fputs(buffer, stdout) == EOF)
-          {
-            printf("Error : Fputs error\n");
-          } else {
-            printf("There is more to read, but now we have %s\n", buffer);
-          }
-      }*/
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
       printf("Message received, '%s' of length %d.\n", buffer, bytesRead);
@@ -106,7 +90,7 @@ void * serverSide(unsigned int s) {
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
           printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
 
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
+          threadErr = pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
           //TODO: Considerar que no todos las funciones de mensajes necesitan
           // el objecto report. Sin embargo siempre se debe enviar el socket para
           // responder el mensaje.
