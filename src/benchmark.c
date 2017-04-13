@@ -250,7 +250,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->learnDstMacs =      argsGetDefaultFlag(options, "learn-dst-macs");
   params->msTestLen =         argsGetDefaultInt(options, "ms-per-test");
   params->nMacAddresses =     argsGetDefaultInt(options, "mac-addresses");
-  params->master = 1,    // TODO: DELIVER BETTER HANDLING OF DEFAULT MASTER ARG
+  params->master =            1;
   params->nNodes =            argsGetDefaultInt(options, "nodes");
   params->dpidOffset =        argsGetDefaultInt(options, "dpid-offset");
   params->nPackets=           argsGetDefaultInt(options, "packets");
@@ -259,7 +259,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->random =            argsGetDefaultFlag(options, "random");
   params->nSwitches =         argsGetDefaultInt(options, "switches");
   params->packetSize =        argsGetDefaultInt(options, "size");
-  params->mode = MODE_LATENCY; // TODO: UPDATE TO RECEIVE PARAMETER
+  params->mode =              MODE_LATENCY;
   params->warmup =            argsGetDefaultInt(options, "warmup");
 
   // TODO: HANDLE MALICIOUS DATA
@@ -310,7 +310,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
              params->nMacAddresses = atoi(optarg);
              break;
          case 'n':
-             params->nodeMasterHostname= strdup(optarg);
+             params->nodeMasterHostname = strdup(optarg);
              if (strcasecmp(params->nodeMasterHostname, "localhost")) params->master = 0;
              break;
          case 'N':
@@ -435,7 +435,7 @@ char * controllerBenchmarking() {
     int countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
     double avg = sum / countedTests;
     sum = 0.0;
-    for (j = params->warmup; j < params->loopsPerTest-params->cooldown; ++j) {
+    for (j = params->warmup; j < params->loopsPerTest - params->cooldown; ++j) {
       sum += pow(results[j] - avg, 2);
     }
     sum = sum / (double)(countedTests);
@@ -459,7 +459,7 @@ int main(int argc, char * argv[]) {
 
   initializeBenchmarking (argc, argv);
 
-  if (params->nNodes > 1) {
+  if (params->nNodes > 0) {
     if (params->master) {
       printf("Im the master node\n");
       initializeSnmp();

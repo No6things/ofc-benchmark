@@ -47,30 +47,28 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 }
 
 void *connectReqMessage (void *context) {
-   char buffer[256];
-   bzero(buffer,256);
-   clients = clientsStatuses;
+  char buffer[256];
+  bzero(buffer,256);
+  clients = clientsStatuses;
 
-     pthread_mutex_lock(&lock);
-      while(clients->connected != clients->quantity){
-        printf("Blocked slave id: %d.\n", clients->connected);
-        pthread_cond_wait(&sendStart, &lock);
-      }
-      printf("Imaginary implementing write to slave node\n");
+  pthread_mutex_lock(&lock);
+  while(clients->connected != clients->quantity){
+    printf("Blocked slave id: %d.\n", clients->connected);
+    pthread_cond_wait(&sendStart, &lock);
+  }
+  printf("Imaginary implementing write to slave node\n");
+  pthread_mutex_unlock(&lock);
 
-     pthread_mutex_unlock(&lock);
-
-
-   //TODO: Escribir mecanismo antes de enviar el mensaje
-   //     que me permita esperar por los otros hilos
-   //     evaluando una condicion con una variable global que represente
-   //     la cantidad de clientes conectados y un tiempo maximo de espera
-   //     antes de enviar el mensaje
-   //     Candidato: Un loop infinito
-   //TODO: Write START_MESSAGE
-   //TODO: Make SNMP queries frequently during the test with:
-   //      asynchronousSnmp(params->controllerHostname);
-   pthread_exit(NULL);
+  //TODO: Escribir mecanismo antes de enviar el mensaje
+  //     que me permita esperar por los otros hilos
+  //     evaluando una condicion con una variable global que represente
+  //     la cantidad de clientes conectados y un tiempo maximo de espera
+  //     antes de enviar el mensaje
+  //     Candidato: Un loop infinito
+  //TODO: Write START_MESSAGE
+  //TODO: Make SNMP queries frequently during the test with:
+  //      asynchronousSnmp(params->controllerHostname);
+  pthread_exit(NULL);
 }
 
 void *startMessage (void *context) {
