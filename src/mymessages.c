@@ -1,14 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 #include <string.h>
 
 #include "../include/mymessages.h"
 
 static struct status *clients;
+
+char* readSocket(int fd, int SIZE, int sz_received, int* length, int* read_err)
+{
+  *read_err = 0;
+  int i = 0, sz = 0, rt = 0, count=0;
+  char *array = (char *)malloc(SIZE);
+  memset(array, 0, SIZE);
+  for (i = 0; i < SIZE; i += sz_received)
+    {
+      while(sz_received-sz)
+      {
+        rt = read(fd, array + i + sz, sz_received-sz);
+        if(rt==-1)
+        {
+          *read_err=rt;
+          printf("an error occurs\n");
+          goto l;
+        }
+        if(!rt)goto l;
+        sz+=rt;
+        count += sz;
+      }
+      sz = 0;
+    }
+  l: *length = count;
+  return array;
+}
 
 void *connectReqMessage (void *context) {
    char buffer[256];

@@ -58,6 +58,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     }
     tNow = now.tv_sec;
     tmNow = localtime(&tNow);
+    //TODO: store this in a file
     printf("%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
     usleep(100000); // sleep for 100 ms, to let packets queue
     for (i = 0 ; i < nSwitches; i++) {

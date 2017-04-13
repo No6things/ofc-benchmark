@@ -15,17 +15,26 @@
 static struct report *rp;
 static struct status *clients;
 
+//in @param
+//@param fd is the file descriptor of the socket to read from
+//@param SIZE the size of datas you want to read from the socket
+//@param sz_received the size of byte to read in one loop step
+//@param length, the length of data received
+//@param read_err if 0 no error if -1 an error occurs use errno from #include <errno.h> to know more about that error
+//out @param
+//a pointer to an array of size SIZE containing the data readed
+
 void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;
    socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
-   char buffer[1024];
+   char* buffer;
    int n, bytesRead, portno;
 
 
 
    // Initializing variables
-   memset(buffer, '0',sizeof(buffer));
+//   memset(buffer, '0',sizeof(buffer));
    rp = reports;
    clients = clientsStatuses;
    clients->quantity = s - 1;
@@ -69,13 +78,13 @@ void * serverSide(unsigned int s) {
          exit(1);
       }
       printf("Client connected with socket %d.\n", clientFd);
+      int SIZE = 100000000, length = 0, read_err=0;
+      buffer = NULL;
+      buffer = readSocket(clientFd, SIZE, 4, &length, &read_err);
+      if(!read_err)printf("get some data\n");
 
-      /*ioctl(clientFd, FIONREAD, &n);
-      if (n > 0) {
-        printf("ioctl %d\n", n);
 
-      }*/
-
+      /* if readSocket works, destroy this function
       while ((bytesRead = read(clientFd, buffer, sizeof(buffer)-1)) > 0)
       {
           buffer[bytesRead] = 0;
@@ -85,10 +94,10 @@ void * serverSide(unsigned int s) {
           } else {
             printf("There is more to read, but now we have %s\n", buffer);
           }
-      }
+      }*/
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("Message received, '%s' of lenght %d.\n", buffer, bytesRead);
+      printf("Message received, '%s' of length %d.\n", buffer, bytesRead);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");
@@ -123,7 +132,7 @@ void * serverSide(unsigned int s) {
           //delete condition sendStart
           rp->sock = clientFd;
           printf("socket: %d, rp->sock: %d\n", clientFd, rp->sock);
-          memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
+          memcpy(rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
 
           //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
           //      secuencial
