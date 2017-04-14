@@ -6,7 +6,7 @@
 
 #include "../include/myreport.h"
 
-void display(report *myreport)
+void displayMessages(struct report *myreport)
 {
   struct message *temp;
   temp = myreport->list;
@@ -18,8 +18,7 @@ void display(report *myreport)
   }
 }
 
-
-void enqueue(char* item, report *myreport)
+void enqueueMessages(char* item, struct report *myreport)
 {
   struct message *temp = (struct message *)malloc(sizeof(struct message));
   temp->buffer = item;
@@ -27,8 +26,7 @@ void enqueue(char* item, report *myreport)
   myreport->list = temp;
 }
 
-
-void dequeue(report *myreport)
+void dequeueMessages(struct report *myreport)
 {
   if (myreport->list == NULL) {
     printf("\n\nqueue is empty \n");
