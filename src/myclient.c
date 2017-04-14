@@ -109,7 +109,7 @@ int clientSide(const char *nodeMasterHostname) {
      char * buffer2;
      buffer2 = NULL;
      /*Read server response*/
-     buffer2 = readSocket(serverFd, 2, 1, &bytes);
+     buffer2 = readSocket(serverFd, 1, 1, &bytes);
 
      if (strcmp(buffer2, START_MESSAGE) == 0) {
        end = 1;

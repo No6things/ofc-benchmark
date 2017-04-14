@@ -74,7 +74,7 @@ void * serverSide(unsigned int s) {
       }
       printf("Client connected with socket %d.\n", clientFd);
       buffer = NULL;
-      buffer = readSocket(clientFd, 2, 1, &bytesRead);
+      buffer = readSocket(clientFd, 1, 1, &bytesRead);
 
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
