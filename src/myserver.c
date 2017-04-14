@@ -15,14 +15,6 @@
 
 static struct report *rp;
 
-//in @param
-//@param fd is the file descriptor of the socket to read from
-//@param SIZE the size of datas you want to read from the socket
-//@param sz_received the size of byte to read in one loop step
-//@param length, the length of data received
-//@param read_err if 0 no error if -1 an error occurs use errno from #include <errno.h> to know more about that error
-//out @param
-//a pointer to an array of size SIZE containing the data readed
 
 void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;

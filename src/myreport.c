@@ -1,46 +1,42 @@
-/*
-void enqueue(char* item)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+
+#include "../include/myreport.h"
+
+void display(report *myreport)
 {
-    struct node *nptr = malloc(sizeof(struct node));
-    nptr->data = item;
-    nptr->next = NULL;
-    if (rear == NULL)
-    {
-        front = nptr;
-        rear = nptr;
-    }
-    else
-    {
-        rear->next = nptr;
-        rear = rear->next;
-    }
+  struct message *temp;
+  temp = myreport->list;
+  printf(" \n");
+  while (temp != NULL)
+  {
+    printf("%s\t", temp->buffer);
+    temp = temp->next;
+  }
 }
 
-void display()
+
+void enqueue(char* item, report *myreport)
 {
-    struct node *temp;
-    temp = front;
-    printf("\n");
-    while (temp != NULL)
-    {
-        printf("%s\t", temp->data);
-        temp = temp->next;
-    }
+  struct message *temp = (struct message *)malloc(sizeof(struct message));
+  temp->buffer = item;
+  temp->next = myreport->list;
+  myreport->list = temp;
 }
 
-void dequeue()
+
+void dequeue(report *myreport)
 {
-    if (front == NULL)
-    {
-        printf("\n\nqueue is empty \n");
-    }
-    else
-    {
-        struct node *temp;
-        temp = front;
-        front = front->next;
-        printf("\n\n%d deleted", temp->data);
-        free(temp);
-    }
+  if (myreport->list == NULL) {
+    printf("\n\nqueue is empty \n");
+  } else {
+    struct message *temp;
+    temp = myreport->list;
+    myreport->list = temp->next;
+    printf("\n\n%s deleted", temp->buffer);
+    free(temp);
+  }
 }
-*/
