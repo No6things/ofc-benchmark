@@ -35,7 +35,9 @@ typedef struct {
 
 extern status clientsStatuses;
 
-char *readSocket(int fd, int SIZE, int sz_received, int* length);
+char *readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead);
+
+int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit);
 
 void *connectReqMessage (void *context);
 

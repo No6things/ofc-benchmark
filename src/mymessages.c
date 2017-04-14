@@ -16,13 +16,13 @@ status clientsStatuses;
 
 char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 {
-  int i = 0, sz = 0, rt = 0, count=0;
+  int i = 0, sz = 0, rt = 0, count = 0;
   char *array = (char *)malloc(BUFFER_SIZE);
   memset(array, 0, BUFFER_SIZE);
   fcntl(fd, F_SETFL, O_NONBLOCK);
   for (i = 0; i < BUFFER_SIZE; i += sz_received)
   {
-    while(sz_received-sz)
+    while(sz_received - sz)
     {
       rt = read(fd, array + i + sz, sz_received-sz);
       if(rt < 1)
@@ -46,12 +46,32 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
   return array;
 }
 
+int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit)
+{
+  int i = 0, sz = 0, written = 0;
+  for(i = 0; i < BUFFER_SIZE; i += sz_emit )
+  {
+      while(sz_emit - sz)
+      {
+        written = write(fd, array + i + sz, sz_emit - sz);
+        if (written == -1) {
+          perror("writeSocket");
+          exit(1);
+        } else {
+          sz += written;
+        }
+      }
+      sz = 0;
+  }
+  return i;
+}
+
 void *connectReqMessage (void *context) {
   int clientFd = *((int*)context);
   int bytesWritten;
-  char buffer[BUFSIZ];
-  bzero(buffer, BUFSIZ);
-  memcpy (buffer, START_MESSAGE, strlen(START_MESSAGE) + 1);
+  char * buffer;
+  buffer = (char *)malloc(strlen(START_MESSAGE) + 1);
+  snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
 
   printf("connected mymsg: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
   pthread_mutex_lock(&lock);
@@ -62,7 +82,9 @@ void *connectReqMessage (void *context) {
   }
   pthread_mutex_unlock(&lock);
 
-  bytesWritten = write(clientFd, buffer, strlen(buffer));
+
+  bytesWritten = writeSocket(clientFd, buffer, 2, 1);
+
   if (bytesWritten < 0) {
     perror("connectReqMessage");
     exit(0);
@@ -70,13 +92,6 @@ void *connectReqMessage (void *context) {
   pthread_exit(NULL);
 }
 
-void *startMessage (void *context) {
-
-   //TODO: Write START_ACK_MESSAGE and call benchmark function
-   //TODO: Considerar que se debe retornar el reporte del benchmark para
-   //     poder enviar el mensaje REPORT_MESSAGE
-   pthread_exit(NULL);
-}
 
 void *reportMessage (void *context) {
    int n;

@@ -57,28 +57,6 @@ void dequeue()
     }
 }
 */
-int writeSocket(int fd, char* array, int SIZE, int sz_emit)
-{
-  //#######################
-  //    server code
-  //#######################
-  int i=0, sz=0, written = 0;
-  for(i = 0; i < SIZE; i += sz_emit )
-  {
-      while(sz_emit-sz)
-      {
-        written=write(fd, array+i+sz, sz_emit-sz);
-        if (written == -1) {
-          perror("writeToClient -1\n");
-        } else {
-          sz += written;
-        }
-      }
-      sz = 0;
-  }
-  return i;
-}
-
 
 int clientSide(const char *nodeMasterHostname) {
    int serverFd, portno, bytes, end;
@@ -87,9 +65,9 @@ int clientSide(const char *nodeMasterHostname) {
    //char *reportsBuffer; TODO: UNUSED
 
    /* Initializing*/
-   char buffer[BUFSIZ];
-   bzero(buffer, BUFSIZ);
-   memcpy (buffer, CONNECT_REQUEST_MESSAGE, strlen(CONNECT_REQUEST_MESSAGE) + 1);
+   char * buffer;
+   buffer = (char *)malloc(strlen(CONNECT_REQUEST_MESSAGE) + 1);
+   snprintf(buffer, strlen(CONNECT_REQUEST_MESSAGE) + 1, CONNECT_REQUEST_MESSAGE);
    portno = 5101;
 
    /* Opening Socket */
@@ -122,7 +100,8 @@ int clientSide(const char *nodeMasterHostname) {
 
    /*Sending CONNECT_REQUEST_MESSAGE to the server */
    printf("Sending CONNECT_REQUEST_MESSAGE: %s.\n", buffer);
-   bytes = write(serverFd, buffer, strlen(buffer));
+   bytes = writeSocket(serverFd, buffer, 2, 1);
+
    if (bytes < 0) {
       perror("ERROR writing to socket");
       exit(1);
@@ -134,8 +113,9 @@ int clientSide(const char *nodeMasterHostname) {
    bzero(buffer,256);
    end = 0;
    while (1) {
+     bytes = 0;
      /*Read server response*/
-     bytes = read(serverFd, buffer, 1);
+     buffer = readSocket(serverFd, 2, 1,&bytes);
      printf("buffer");
      if (bytes < 0) {
        perror("ERROR reading message from server");
