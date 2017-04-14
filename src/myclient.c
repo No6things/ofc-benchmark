@@ -103,17 +103,12 @@ int clientSide(const char *nodeMasterHostname) {
    bytes = writeSocket(serverFd, buffer, 2, 1);
 
    /* Reinitilize buffer*/
-   bzero(buffer,256);
    end = 0;
    while (1) {
      bytes = 0;
+     *buffer = NULL;
      /*Read server response*/
      buffer = readSocket(serverFd, 2, 1,&bytes);
-     printf("buffer");
-     if (bytes < 0) {
-       perror("ERROR reading message from server");
-       exit(1);
-     }
 
      if (strcmp(buffer, START_MESSAGE) == 0) {
        end = 1;
@@ -123,8 +118,8 @@ int clientSide(const char *nodeMasterHostname) {
        TODO: Enviar mensaje REPORT_MESSAGE
        */
      } else {
-       printf("Message received: '%s'\n",buffer);
-       perror("ERROR unknown message header from server");
+       printf("received: '%s'\n",buffer);
+       perror("Uknown message for distributed mode");
        exit(1);
      }
      if (end) break;
