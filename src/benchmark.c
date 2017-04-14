@@ -18,6 +18,7 @@
 #include <sys/time.h>
 
 #include "../include/mysnmp.h"
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 #include "../include/myserver.h"
 #include "../include/myclient.h"
@@ -373,7 +374,7 @@ char * controllerBenchmarking() {
   struct inputValues *params = &benchmarkArgs;
   struct report *rp = reports;
   char *reportBuffer;
-  int i, j;
+  unsigned int i, j;
 
   switches = malloc(params->nSwitches * sizeof(struct fakeswitch));
   assert(switches);
@@ -410,7 +411,7 @@ char * controllerBenchmarking() {
     fflush(stderr);
     if (countBits(i + 1) == 0)  // only test for 1,2,4,8,16 switches
         continue;
-    if (!params->testRange && ((i+1) != params->nSwitches)) // only if testing range or this is last
+    if (!params->testRange && ((i + 1) != params->nSwitches)) // only if testing range or this is last
         continue;
     //RUN
     for(j = 0; j < params->loopsPerTest; j++) {

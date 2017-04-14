@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 #include "../include/myserver.h"
 

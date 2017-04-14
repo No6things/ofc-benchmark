@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <string.h>
 
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 
 status clientsStatuses;

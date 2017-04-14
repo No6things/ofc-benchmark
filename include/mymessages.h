@@ -18,15 +18,6 @@ static pthread_cond_t sendStart = PTHREAD_MUTEX_INITIALIZER;
 
 //TODO: Considerar remover el resultado final como un buffer y
 
-static struct report {
-  int sock;
-  const char *hostname;
-  const char *buffer;
- } reports[] = {
-   { 0 , "", "" },
-   { '\0' }
- };
-
 typedef struct {
    int quantity;
    int connected;
