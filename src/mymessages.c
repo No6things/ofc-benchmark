@@ -19,14 +19,17 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
   int i = 0, sz = 0, rt = 0, count = 0;
   char *array = (char *)malloc(BUFFER_SIZE);
   memset(array, 0, BUFFER_SIZE);
-  //fcntl(fd, F_SETFL, O_NONBLOCK);
   for (i = 0; i < BUFFER_SIZE; i += sz_received)
   {
     while(sz_received - sz)
     {
+      printf("sz_received-sz = %d\n", sz_received-sz);
       rt = read(fd, array + i + sz, sz_received-sz);
       if(rt < 1)
       {
+        if (rt == 0) {
+          printf("count while reading = 0\n");
+        }
         if (errno != EAGAIN) {
           perror("readSocket");
           exit(1);
@@ -37,7 +40,6 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
     }
     sz = 0;
   }
-  //fcntl(fd, F_SETFL, 0);
   *bytesRead = count;
   printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
   return array;
