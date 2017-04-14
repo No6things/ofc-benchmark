@@ -106,7 +106,7 @@ int clientSide(const char *nodeMasterHostname) {
    end = 0;
    while (1) {
      bytes = 0;
-     *buffer = NULL;
+     memset(buffer, 0, 2);
      /*Read server response*/
      buffer = readSocket(serverFd, 2, 1,&bytes);
 
