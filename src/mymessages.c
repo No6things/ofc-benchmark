@@ -63,6 +63,7 @@ int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit)
       }
       sz = 0;
   }
+  printf("Sent %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", written, fd, array, strlen(array));
   return i;
 }
 
@@ -75,16 +76,16 @@ void *connectReqMessage (void *context) {
 
   printf("connected mymsg: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
   pthread_mutex_lock(&lock);
-  while(clientsStatuses.connected != clientsStatuses.quantity){
+  while(clientsStatuses.connected < clientsStatuses.quantity){
     //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
     printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
     pthread_cond_wait(&sendStart, &lock);
   }
   pthread_mutex_unlock(&lock);
 
+  printf("about to write %s\n", buffer);
 
   bytesWritten = writeSocket(clientFd, buffer, 2, 1);
-
   if (bytesWritten < 0) {
     perror("connectReqMessage");
     exit(0);

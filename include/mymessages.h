@@ -6,11 +6,11 @@
 #define PORT_DIST 5001
 
 #define SERVER_MESSAGES 2
-#define CONNECT_REQUEST_MESSAGE  "1\0"
-#define REPORT_MESSAGE "3\0"
+#define CONNECT_REQUEST_MESSAGE  "1"
+#define REPORT_MESSAGE "3"
 
 #define CLIENT_MESSAGES 1
-#define START_MESSAGE "2\0"
+#define START_MESSAGE "2"
 
 
 static pthread_mutex_t lock = PTHREAD_COND_INITIALIZER;

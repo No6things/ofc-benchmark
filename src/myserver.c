@@ -101,7 +101,9 @@ void * serverSide(unsigned int s) {
           }
           pthread_mutex_lock(&lock);
             clientsStatuses.connected++;
+            printf("inside lock: %d\n", clientsStatuses.connected);
             if (clientsStatuses.connected == clientsStatuses.quantity) {
+              printf("inside if\n");
               pthread_cond_broadcast(&sendStart);
             }
           pthread_mutex_unlock(&lock);
@@ -111,7 +113,6 @@ void * serverSide(unsigned int s) {
 
           clientsStatuses.reported++;
 
-          //delete condition sendStart
           rp->sock = clientFd;
           printf("socket: %d, rp->sock: %d\n", clientFd, rp->sock);
           memcpy(rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));

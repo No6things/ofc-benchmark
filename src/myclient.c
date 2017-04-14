@@ -102,13 +102,6 @@ int clientSide(const char *nodeMasterHostname) {
    printf("Sending CONNECT_REQUEST_MESSAGE: %s.\n", buffer);
    bytes = writeSocket(serverFd, buffer, 2, 1);
 
-   if (bytes < 0) {
-      perror("ERROR writing to socket");
-      exit(1);
-   } else {
-     printf("Sent %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", bytes, serverFd, buffer, strlen(buffer));
-   }
-
    /* Reinitilize buffer*/
    bzero(buffer,256);
    end = 0;
