@@ -1,49 +1,97 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <errno.h>
+#include <unistd.h>
 #include <netdb.h>
-#include <netinet/in.h>
 
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/socket.h>
 #include <string.h>
 
 #include "../include/mymessages.h"
 
-static struct status *clients;
+status clientsStatuses;
+
+char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
+{
+  int i = 0, sz = 0, rt = 0, count = 0;
+  char *array = (char *)malloc(BUFFER_SIZE);
+  memset(array, 0, BUFFER_SIZE);
+  for (i = 0; i < BUFFER_SIZE; i += sz_received)
+  {
+    while(sz_received - sz)
+    {
+      printf("sz_received-sz = %d\n", sz_received-sz);
+      rt = read(fd, array + i + sz, sz_received-sz);
+      if(rt < 1)
+      {
+        if (rt == 0) {
+          printf("count while reading = 0\n");
+        }
+        if (errno != EAGAIN) {
+          perror("readSocket");
+          exit(1);
+        }
+      }
+      sz += rt;
+      count += sz;
+    }
+    sz = 0;
+  }
+  *bytesRead = count;
+  printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
+  return array;
+}
+
+int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit)
+{
+  int i = 0, sz = 0, written = 0;
+  for(i = 0; i < BUFFER_SIZE; i += sz_emit )
+  {
+      while(sz_emit - sz)
+      {
+        written = write(fd, array + i + sz, sz_emit - sz);
+        if (written == -1) {
+          perror("writeSocket");
+          exit(1);
+        } else {
+          sz += written;
+        }
+      }
+      sz = 0;
+  }
+  printf("Sent %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", written, fd, array, strlen(array));
+  return i;
+}
 
 void *connectReqMessage (void *context) {
-   char buffer[256];
-   bzero(buffer,256);
-   clients = clientsStatuses;
+  int clientFd = *((int*)context);
+  int bytesWritten;
+  char * buffer;
+  buffer = (char *)malloc(strlen(START_MESSAGE) + 1);
+  snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
 
-     pthread_mutex_lock(&lock);
-      while(clients->connected != clients->quantity){
-        printf("Blocked slave id: %d.\n", clients->connected);
-        pthread_cond_wait(&sendStart, &lock);
-      }
-      printf("Imaginary implementing write to slave node\n");
+  printf("connected mymsg: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
+  pthread_mutex_lock(&lock);
+  while(clientsStatuses.connected < clientsStatuses.quantity){
+    //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
+    printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
+    pthread_cond_wait(&sendStart, &lock);
+  }
+  pthread_mutex_unlock(&lock);
 
-     pthread_mutex_unlock(&lock);
+  printf("about to write %s\n", buffer);
 
-
-   //TODO: Escribir mecanismo antes de enviar el mensaje
-   //     que me permita esperar por los otros hilos
-   //     evaluando una condicion con una variable global que represente
-   //     la cantidad de clientes conectados y un tiempo maximo de espera
-   //     antes de enviar el mensaje
-   //     Candidato: Un loop infinito
-   //TODO: Write START_MESSAGE
-   //TODO: Make SNMP queries frequently during the test with:
-   //      asynchronousSnmp(params->controllerHostname);
-   pthread_exit(NULL);
+  bytesWritten = writeSocket(clientFd, buffer, 2, 1);
+  if (bytesWritten < 0) {
+    perror("connectReqMessage");
+    exit(0);
+  }
+  pthread_exit(NULL);
 }
 
-void *startMessage (void *context) {
-
-   //TODO: Write START_ACK_MESSAGE and call benchmark function
-   //TODO: Considerar que se debe retornar el reporte del benchmark para
-   //     poder enviar el mensaje REPORT_MESSAGE
-   pthread_exit(NULL);
-}
 
 void *reportMessage (void *context) {
    int n;

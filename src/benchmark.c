@@ -27,7 +27,7 @@
 
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
-//RUN TEST
+//BENCHMARKING || Prints interval messages
 double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
@@ -58,6 +58,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     }
     tNow = now.tv_sec;
     tmNow = localtime(&tNow);
+    //TODO: store this in a file
     printf("%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
     usleep(100000); // sleep for 100 ms, to let packets queue
     for (i = 0 ; i < nSwitches; i++) {
@@ -73,6 +74,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     return sum;
 }
 
+// FINAL RESULT || Returns final report
 char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
@@ -105,6 +107,7 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   }
   return buffer;
 }
+
 //CONNECTION
 
 int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
@@ -134,8 +137,6 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 			freeaddrinfo(res);
 		return -1;
 	}
-
-
 
 	// set non blocking
 	if ((flags = fcntl(fd, F_GETFL)) < 0) {
@@ -177,7 +178,6 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 	return 0;
 }
 
-
 int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsigned short sport,
         int mstimeout, int nodelay) {
     struct sockaddr_in local;
@@ -188,7 +188,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
         perror("makeTcpConnection: socket");
-        exit(1);  // bad socket
+        exit(1);
     }
 
     if (nodelay && (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &zero, sizeof(zero)) < 0)) {
@@ -212,7 +212,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     if (err) {
         perror("makeTcpConnection: connect");
         close(s);
-        return err; // bad connection
+        return err;
     }
     return s;
 }
@@ -250,7 +250,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->learnDstMacs =      argsGetDefaultFlag(options, "learn-dst-macs");
   params->msTestLen =         argsGetDefaultInt(options, "ms-per-test");
   params->nMacAddresses =     argsGetDefaultInt(options, "mac-addresses");
-  params->master = 1,    // TODO: DELIVER BETTER HANDLING OF DEFAULT MASTER ARG
+  params->master =            1;
   params->nNodes =            argsGetDefaultInt(options, "nodes");
   params->dpidOffset =        argsGetDefaultInt(options, "dpid-offset");
   params->nPackets=           argsGetDefaultInt(options, "packets");
@@ -259,7 +259,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->random =            argsGetDefaultFlag(options, "random");
   params->nSwitches =         argsGetDefaultInt(options, "switches");
   params->packetSize =        argsGetDefaultInt(options, "size");
-  params->mode = MODE_LATENCY; // TODO: UPDATE TO RECEIVE PARAMETER
+  params->mode =              MODE_LATENCY;
   params->warmup =            argsGetDefaultInt(options, "warmup");
 
   // TODO: HANDLE MALICIOUS DATA
@@ -310,7 +310,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
              params->nMacAddresses = atoi(optarg);
              break;
          case 'n':
-             params->nodeMasterHostname= strdup(optarg);
+             params->nodeMasterHostname = strdup(optarg);
              if (strcasecmp(params->nodeMasterHostname, "localhost")) params->master = 0;
              break;
          case 'N':
@@ -351,7 +351,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
      }
   }
 
-  //STATUS MSGS
+  //START APPLICATION MESSAGE
   fprintf(stderr, "ofcB: OpenFlow Controller Benchmarking Tool\n"
                   "   running in mode %s\n"
                   "   connecting to controller at %s:%d \n"
@@ -435,7 +435,7 @@ char * controllerBenchmarking() {
     int countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
     double avg = sum / countedTests;
     sum = 0.0;
-    for (j = params->warmup; j < params->loopsPerTest-params->cooldown; ++j) {
+    for (j = params->warmup; j < params->loopsPerTest - params->cooldown; ++j) {
       sum += pow(results[j] - avg, 2);
     }
     sum = sum / (double)(countedTests);
@@ -446,7 +446,7 @@ char * controllerBenchmarking() {
 
     //TODO: Store result of switch report
     printf("Report\n");
-    printf("%s\n", reportBuffer); //TODO: Remove reporte once return has been implemented
+    printf("%s\n", reportBuffer); //TODO: Remove report once return has been implemented
   }
   //Return array of reports
   return (char *)" ";

@@ -1,1 +1,0 @@
-Added pthread management with client/server report sending/receiving management for distributed mode, there is needed tests for futher conclusion

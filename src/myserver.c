@@ -13,85 +13,72 @@
 #include "../include/myserver.h"
 
 static struct report *rp;
-static struct status *clients;
+
+//in @param
+//@param fd is the file descriptor of the socket to read from
+//@param SIZE the size of datas you want to read from the socket
+//@param sz_received the size of byte to read in one loop step
+//@param length, the length of data received
+//@param read_err if 0 no error if -1 an error occurs use errno from #include <errno.h> to know more about that error
+//out @param
+//a pointer to an array of size SIZE containing the data readed
 
 void * serverSide(unsigned int s) {
-   char buffer[1024];
-   memset(buffer, '0',sizeof(buffer));
-
-   socklen_t sockfd, newsockfd;
-   unsigned int  iThreads, nThreads, threadErr, clilen;
-   int n;
+   unsigned int  iThreads, nThreads, threadErr;
+   socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
+   char* buffer;
+   int n, bytesRead, portno, BUFFER_SIZE = 100;
 
+   // Initializing variables
    rp = reports;
-   clients = clientsStatuses;
-   clients->quantity = s - 1;
-   clients->connected = 0;
-
-   iThreads = 0;
-   nThreads = clients->quantity * SERVER_MESSAGES;
+   clientsStatuses.quantity = s - 1;
+   clientsStatuses.connected = 0;
+   nThreads = clientsStatuses.quantity * SERVER_MESSAGES;
    pthread_t nodesThreads [nThreads];
+   iThreads = 0;
+   portno = 5101;
 
+   printf("The network will have %d node slaves\n", clientsStatuses.quantity);
 
-   printf("The network will have %d node slaves\n", clients->quantity);
-
-
-   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+   // Opening Socket
+   if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("ERROR opening socket");
       exit(1);
    }
 
+   // Initializing server Internet structures
    memset((char *) &serv_addr, 0, sizeof(serv_addr));
-
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons(5101);
+   serv_addr.sin_port = htons(portno);
 
-   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+   //Binding server socket
+   if (bind(serverFd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
       perror("ERROR on binding");
       exit(1);
    }
 
-   /* Now start listening for the clients, here
-    * process will go in sleep mode and will wait
-    * for the incoming connection
-   */
-
-   if (listen(sockfd, 5) < 0) {
-     perror("ERROR listening");
-     exit(1);
+   //Listening for clientsStatuses
+   if (listen(serverFd, 5) < 0) {
+      perror("ERROR listening");
+      exit(1);
    }
-
-
-   clilen = sizeof(cli_addr);
 
    while (1) {
 
-      if ((newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL)) < 0) {
+      // Accept request connections
+      if ((clientFd = accept(serverFd, (struct sockaddr *)NULL, NULL)) < 0) {
          perror("ERROR on accept");
          exit(1);
       }
-      printf("Client connected with socket %d.\n", newsockfd);
+      printf("Client connected with socket %d.\n", clientFd);
+      buffer = NULL;
+      buffer = readSocket(clientFd, 2, 1, &bytesRead);
 
-      /*ioctl(newsockfd, FIONREAD, &n);
-      if (n > 0) {
-        printf("ioctl %d\n", n);
-
-      }*/
-      while ((n = read(newsockfd, buffer, sizeof(buffer)-1)) > 0)
-      {
-          buffer[n] = 0;
-          if(fputs(buffer, stdout) == EOF)
-          {
-            printf("Error : Fputs error\n");
-          } else {
-            printf("There is more to read, but now we have %s\n", buffer);
-          }
-      }
       //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
       // multiples mensajes previo a la lectura
-      printf("Message received, '%s' of lenght %d.\n", buffer, n);
+      printf("Message received, '%s' of length %d.\n", buffer, bytesRead);
 
       if (n < 0) {
         perror("ERROR reading message from slave node");
@@ -99,8 +86,9 @@ void * serverSide(unsigned int s) {
       }
       if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
           printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
+          printf("connected server: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
 
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
+          threadErr = pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, &clientFd);
           //TODO: Considerar que no todos las funciones de mensajes necesitan
           // el objecto report. Sin embargo siempre se debe enviar el socket para
           // responder el mensaje.
@@ -112,8 +100,10 @@ void * serverSide(unsigned int s) {
             iThreads++;
           }
           pthread_mutex_lock(&lock);
-            clients->connected++;
-            if (clients->connected == clients->quantity) {
+            clientsStatuses.connected++;
+            printf("inside lock: %d\n", clientsStatuses.connected);
+            if (clientsStatuses.connected == clientsStatuses.quantity) {
+              printf("inside if\n");
               pthread_cond_broadcast(&sendStart);
             }
           pthread_mutex_unlock(&lock);
@@ -121,12 +111,11 @@ void * serverSide(unsigned int s) {
       } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
           printf("Some node wrote us by a REPORT_MESSAGE\n");
 
-          clients->reported++;
+          clientsStatuses.reported++;
 
-          //delete condition sendStart
-          rp->sock = newsockfd;
-          printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
-          memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
+          rp->sock = clientFd;
+          printf("socket: %d, rp->sock: %d\n", clientFd, rp->sock);
+          memcpy(rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
 
           //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
           //      secuencial
@@ -144,7 +133,7 @@ void * serverSide(unsigned int s) {
           printf("Message received: '%s'\n",buffer);
           perror("ERROR unknown message header from slave node");
       }
-      if (clients->reported == clients->quantity) break;
+      if (clientsStatuses.reported == clientsStatuses.quantity) break;
       //   TODO: Considerar que la cantidad de hilos en iThreads se corresponda a
       //        la cantidad de hilos que debieron haberse usado
 
