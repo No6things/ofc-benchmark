@@ -27,12 +27,7 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
       rt = read(fd, array + i + sz, sz_received-sz);
       if(rt < 1)
       {
-        if (errno == EAGAIN) {
-            fcntl(fd, F_SETFL, 0);
-            *bytesRead = count;
-            printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
-            return array;
-        } else {
+        if (errno != EAGAIN) {
             perror("readSocket");
             exit(1);
         }

@@ -7,10 +7,10 @@
 
 #define SERVER_MESSAGES 2
 #define CONNECT_REQUEST_MESSAGE  "1"
-#define REPORT_MESSAGE "3"
+#define REPORT_MESSAGE  "3"
 
 #define CLIENT_MESSAGES 1
-#define START_MESSAGE "2"
+#define START_MESSAGE  "2"
 
 
 static pthread_mutex_t lock = PTHREAD_COND_INITIALIZER;

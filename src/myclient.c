@@ -106,19 +106,21 @@ int clientSide(const char *nodeMasterHostname) {
    end = 0;
    while (1) {
      bytes = 0;
-     memset(buffer, 0, 2);
+     char * buffer2;
+     buffer2 = NULL;
      /*Read server response*/
-     buffer = readSocket(serverFd, 2, 1,&bytes);
+     buffer2 = readSocket(serverFd, 2, 1, &bytes);
 
-     if (strcmp(buffer, START_MESSAGE) == 0) {
+     if (strcmp(buffer2, START_MESSAGE) == 0) {
        end = 1;
        printf("received START_MESSAGE\n");
        /*
+       controllerBenchmarking()
        TODO: Recibir arreglo de reportes de controllerBenchmarking()
        TODO: Enviar mensaje REPORT_MESSAGE
        */
      } else {
-       printf("received: '%s'\n",buffer);
+       printf("received: '%s'\n",buffer2);
        perror("Uknown message for distributed mode");
        exit(1);
      }
