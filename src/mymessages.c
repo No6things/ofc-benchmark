@@ -109,7 +109,6 @@ void *connectReqMessage (void *context) {
   buffer = (char *)malloc(strlen(START_MESSAGE) + 1);
   snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
 
-  printf("connected mymsg: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
   pthread_mutex_lock(&lock);
   while(clientsStatuses.connected < clientsStatuses.quantity){
     //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
@@ -118,7 +117,6 @@ void *connectReqMessage (void *context) {
   }
   pthread_mutex_unlock(&lock);
 
-  printf("about to write %s\n", buffer);
 
   bytesWritten = writeSocket(clientFd, buffer, 2, 1);
   if (bytesWritten < 0) {
@@ -138,7 +136,7 @@ void *reportMessage (void *context) {
 
     reportParams = (report *)context;
 
-   //pthread_mutex_lock(&reportParams);
+    //pthread_mutex_lock(&reportParams);
      n = read(reportParams->sock,buffer,255);
 
      if (n < 0) {
@@ -149,9 +147,9 @@ void *reportMessage (void *context) {
      printf("Report received: %s\n",buffer);
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
-    // pthread_mutex_unlock(&reportParams);
-   //TODO: considerar almacenar la informacion en un archivo o varios archivos
-   //TODO: Enviar mensaje REPORT_ACK_MESSAGE
+     // pthread_mutex_unlock(&reportParams);
+     //TODO: considerar almacenar la informacion en un archivo o varios archivos
+     //TODO: Enviar mensaje REPORT_ACK_MESSAGE
    */
    pthread_exit(NULL);
 }

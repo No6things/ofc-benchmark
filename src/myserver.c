@@ -38,6 +38,7 @@ void * serverSide(unsigned int s) {
    memset((char *) &serv_addr, 0, sizeof(serv_addr));
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
+   printf("SERVER_PORT %d\n",SERVER_PORT);
    serv_addr.sin_port = htons(SERVER_PORT);
 
    //Binding server socket
@@ -55,11 +56,13 @@ void * serverSide(unsigned int s) {
    while (1) {
       // Accept request connections
       if ((clientFd = accept(serverFd, (struct sockaddr *)NULL, NULL)) < 0) {
-         perror("ERROR on accept");
+         perror("ERROR accepting slave");
          exit(1);
       }
+
       printf("Client connected with socket %d.\n", clientFd);
       threadErr = pthread_create(&nodesThreads[iThreads], NULL, &clientManagement, &clientFd);
+
       if (threadErr) {
         pthread_join(nodesThreads[iThreads], NULL);
         perror("Creating clientManagement thread");
@@ -67,9 +70,8 @@ void * serverSide(unsigned int s) {
       }
       iThreads++;
 
-      if (iThreads == nThreads) break;
+      if (clientsStatuses.reported == clientsStatuses.quantity) break;
    }
-
    for (n = nThreads; n >= 0; n--)
       pthread_join(nodesThreads[n], NULL);
 
