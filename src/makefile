@@ -1,5 +1,5 @@
 CC =gcc
-CFLAGS =-isystem $(IDIR)
+CFLAGS =-I$(IDIR)
 
 IDIR =../include
 ODIR =obj
