@@ -18,15 +18,19 @@ void displayMessages(struct report *myreport)
   }
 }
 
-void enqueueMessages(char* item, struct report *myreport)
+void enqueueMessage(char* item, struct report *myreport)
 {
+  printf("about to enque %s\n", item);
   struct message *temp = (struct message *)malloc(sizeof(struct message));
   temp->buffer = item;
   temp->next = myreport->list;
+  printf("last item - %s |", (myreport->list)->buffer); //it may be needed to use & instead
   myreport->list = temp;
+  printf("new last item - %s\n", (myreport->list)->buffer);
+  printf("end of queue\n");
 }
 
-void dequeueMessages(struct report *myreport)
+void dequeueMessage(struct report *myreport)
 {
   if (myreport->list == NULL) {
     printf("\n\nqueue is empty \n");

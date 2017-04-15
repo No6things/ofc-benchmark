@@ -29,48 +29,58 @@
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
 //BENCHMARKING || Prints interval messages
-double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay) {
+double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, struct report *rp) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
     int i;
     double sum = 0;
     double passed;
     int count;
-
     int total_wait = mstestlen + delay;
     time_t tNow;
     struct tm *tmNow;
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
-    gettimeofday(&then,NULL);
+    gettimeofday(&then, NULL);
+    int size = 100;
+    char* message = malloc(size);
+    int written = 0;
+    char* tmp;
     while (1) {
-        gettimeofday(&now, NULL);
-        timersub(&now, &then, &diff);
-        if ((1000 * diff.tv_sec  + (float)diff.tv_usec / 1000) > total_wait)
-            break;
-        for (i = 0; i< nSwitches; i++)
-            switchSetPollfd(&switches[i], &pollfds[i]);
-
-        poll(pollfds, nSwitches, 1000);      // block until something is ready or 100ms passes
-
-        for (i = 0; i < nSwitches; i++) {
-            ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
-        }
+      gettimeofday(&now, NULL);
+      timersub(&now, &then, &diff);
+      if ((1000 * diff.tv_sec  + (float)diff.tv_usec / 1000) > total_wait) {
+        break;
+      }
+      for (i = 0; i < nSwitches; i++) {
+        switchSetPollfd(&switches[i], &pollfds[i]);
+      }
+      poll(pollfds, nSwitches, 1000);      // block until something is ready or 100ms passes
+      for (i = 0; i < nSwitches; i++) {
+        ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
+      }
     }
     tNow = now.tv_sec;
     tmNow = localtime(&tNow);
-    //TODO: store this in a file
-    printf("%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
+
+    written += snprintf(message, size, "%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec: ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
+    tmp = message; //  start checkpoint
+    message += written;
     usleep(100000); // sleep for 100 ms, to let packets queue
-    for (i = 0 ; i < nSwitches; i++) {
-        count = switchGetCount(&switches[i]);
-        printf("%d  ", count);
-        sum += count;
+
+    for (i = 0; i < nSwitches; i++) {
+      count = switchGetCount(&switches[i]);
+      written = snprintf(message, size, "%d  ", count);
+      message += written;
+      sum += count;
     }
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;  // is now per ms
-    printf("total = %lf per ms \n", sum);
+    snprintf(message, size, "total = %lf per ms \n", sum);
+    message = tmp;
+    printf("final msg: %s\n", message);
+    enqueueMessage(message, rp);
     free(pollfds);
     return sum;
 }
@@ -418,7 +428,7 @@ char * controllerBenchmarking() {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
-        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay);
+        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay, rp);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;

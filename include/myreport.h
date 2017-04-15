@@ -18,7 +18,7 @@ static struct report {
  };
 
 void displayMessages(struct report * myreport);
-void enqueueMessages(char* item, struct report *myreport);
-void dequeueMessages(struct report *myreport);
+void enqueueMessage(char* item, struct report *myreport);
+void dequeueMessage(struct report *myreport);
 
 #endif
