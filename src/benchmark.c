@@ -415,7 +415,7 @@ char * controllerBenchmarking() {
 
     //Initializing report
     reports->sock = sock;
-    reports->hostname = "test " + i;
+    reports->hostname = "192.168.1." + i;
     reports->list = NULL;
 
     fflush(stderr);

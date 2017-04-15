@@ -105,16 +105,40 @@ void * serverSide(unsigned int s) {
           reports->sock = clientFd;
           printf("socket: %d, rp->sock: %d\n", clientFd, reports->sock);
           memcpy(reports->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
+          printf("reports->hostname: %s\n", reports->hostname);
 
           //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
           //      secuencial
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, reports);
+          //threadErr = pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, reports);
+          int bytes = 0;
+          int index = 0;
+          int nMessages = 0;
+          char * buffer2;
+          //char *buffer2 = (char *)malloc(150);
+          buffer2 = NULL;
+          buffer2 = readSocketLimiter(serverFd, 5, &bytes);
+          if (bytes > 0) {
+            reports++;
+          }
 
-          if(threadErr){
+          nMessages = atoi(buffer2);
+          printf("read list length %s\n", buffer2);
+
+          while (index < nMessages) {
+            bytes = 0;
+            buffer2 = readSocketLimiter(serverFd, 150, &bytes);
+            //TODO: Set read length
+            printf("message %d: %s\n",index, buffer2);
+            index++;
+          }
+          /*if(threadErr){
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating REPORT_MESSAGE thread");
             exit(1);
           } else {
+          }
+          */
+          if (bytes > 0) {
             reports++;
           }
 

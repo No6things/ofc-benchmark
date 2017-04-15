@@ -28,8 +28,10 @@ void enqueueMessage(char* item,  report *myreport)
   temp->buffer = item;
   if (myreport->list != NULL) {
     temp->next = myreport->list;
+    myreport->length = myreport->length + 1;
     //printf("last item: %s | ", (myreport->list)->buffer); //it may be needed to use & instead
   } else {
+    myreport->length = 1;
     temp->next = NULL;
   }
   myreport->list = temp;

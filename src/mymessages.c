@@ -15,6 +15,41 @@
 
 status clientsStatuses;
 
+//TODO: There is space for improvement implementing conservative buffer
+//        that would mean to double BUFFER_SIZE if sz is by change >= than actual
+//        BUFFER_SIZE
+char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
+{
+  int sz = 0, rt = 0, count = 0, sz_received = 1;
+  char *array = (char *)malloc(BUFFER_SIZE);
+  memset(array, 0, BUFFER_SIZE);
+  printf("[del]");
+  while(array[sz] != LIMITER && sz < BUFFER_SIZE)
+  {
+    rt = read(fd, array + sz, sz_received);
+    printf("%c", array[sz]);
+    if(rt < 1)
+    {
+      if (rt == 0) {
+        printf("count of bytes read = 0 \n");
+      }
+      if (errno != EAGAIN) {
+        perror("readSocketLimiter");
+        exit(1);
+      }
+    }
+    sz += rt;
+    count += sz;
+  }
+  printf("[del]\n");
+  array[sz] = '\0';
+
+  *bytesRead = count;
+  printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
+  return array;
+}
+
+
 char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 {
   int i = 0, sz = 0, rt = 0, count = 0;
@@ -29,7 +64,7 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
       if(rt < 1)
       {
         if (rt == 0) {
-          printf("count while reading = 0\n");
+          printf("ccount of bytes read = 0\n");
         }
         if (errno != EAGAIN) {
           perror("readSocket");
@@ -95,11 +130,13 @@ void *connectReqMessage (void *context) {
 
 
 void *reportMessage (void *context) {
-   int n;
-   char buffer[256];
-   bzero(buffer,256);
-   report *reportParams;
-   reportParams = (report *)context;
+    /*
+    int bytes = 0;
+    char * buffer2;
+    buffer2 = NULL;
+    buffer2 = readSocket(serverFd, 1, 1, &bytes);
+
+    reportParams = (report *)context;
 
    //pthread_mutex_lock(&reportParams);
      n = read(reportParams->sock,buffer,255);
@@ -112,9 +149,9 @@ void *reportMessage (void *context) {
      printf("Report received: %s\n",buffer);
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
-  // pthread_mutex_unlock(&reportParams);
+    // pthread_mutex_unlock(&reportParams);
    //TODO: considerar almacenar la informacion en un archivo o varios archivos
    //TODO: Enviar mensaje REPORT_ACK_MESSAGE
-
+   */
    pthread_exit(NULL);
 }

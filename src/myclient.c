@@ -71,11 +71,27 @@ int clientSide(const char *nodeMasterHostname) {
        printf("received START_MESSAGE\n");
        controllerBenchmarking();
        displayMessages(reports);
-       /*
-       TODO: Deberia modificar esta funcion para mostrar todos los reportes O
-             crear un ciclo para mostrar todos los reportes
-       TODO: Enviar mensaje REPORT_MESSAGE
-       */
+
+       snprintf(buffer, strlen(REPORT_MESSAGE) + 1, REPORT_MESSAGE);
+       writeSocket(serverFd, buffer, 2 , 1);
+       printf("sent REPORT_MESSAGE\n");
+
+       struct message *temp;
+       char * listLength;
+       int index = 0;
+       temp = reports->list;
+       listLength = (char *)malloc(6 + 1); //5 digits + delimeter + null
+       snprintf(listLength, 6, "%d%c", reports->length, LIMITER);
+       writeSocket(serverFd, listLength, strlen(listLength) + 1 , strlen(listLength));
+       printf("sent list length\n");
+
+       while (temp != NULL)
+       {
+         printf("%d\n", index);
+         bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
+         temp = temp->next;
+         index++;
+       }
      } else {
        printf("received: '%s'\n",buffer2);
        perror("Uknown message for distributed mode");
