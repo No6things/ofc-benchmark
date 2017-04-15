@@ -13,9 +13,6 @@
 #include "../include/mymessages.h"
 #include "../include/myserver.h"
 
-static struct report *rp;
-
-
 void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;
    socklen_t serverFd, clientFd;
@@ -24,7 +21,6 @@ void * serverSide(unsigned int s) {
    int n, bytesRead, portno, BUFFER_SIZE = 100;
 
    // Initializing variables
-   rp = reports;
    clientsStatuses.quantity = s - 1;
    clientsStatuses.connected = 0;
    nThreads = clientsStatuses.quantity * SERVER_MESSAGES;
@@ -106,20 +102,20 @@ void * serverSide(unsigned int s) {
 
           clientsStatuses.reported++;
 
-          rp->sock = clientFd;
-          printf("socket: %d, rp->sock: %d\n", clientFd, rp->sock);
-          memcpy(rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
+          reports->sock = clientFd;
+          printf("socket: %d, rp->sock: %d\n", clientFd, reports->sock);
+          memcpy(reports->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
 
           //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
           //      secuencial
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, rp);
+          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, reports);
 
           if(threadErr){
             pthread_join(nodesThreads[iThreads], NULL);
             perror("ERROR creating REPORT_MESSAGE thread");
             exit(1);
           } else {
-            rp++;
+            reports++;
           }
 
       } else {

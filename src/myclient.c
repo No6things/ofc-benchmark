@@ -8,6 +8,7 @@
 
 #include <string.h>
 
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 #include "../include/benchmark.h"
 #include "../include/myclient.h"
@@ -69,8 +70,10 @@ int clientSide(const char *nodeMasterHostname) {
        end = 1;
        printf("received START_MESSAGE\n");
        controllerBenchmarking();
+       displayMessages(reports);
        /*
-       TODO: Recibir arreglo de reportes de controllerBenchmarking()
+       TODO: Deberia modificar esta funcion para mostrar todos los reportes O
+             crear un ciclo para mostrar todos los reportes
        TODO: Enviar mensaje REPORT_MESSAGE
        */
      } else {

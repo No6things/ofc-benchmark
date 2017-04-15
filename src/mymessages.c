@@ -98,8 +98,8 @@ void *reportMessage (void *context) {
    int n;
    char buffer[256];
    bzero(buffer,256);
-   struct report *reportParams;
-   reportParams = &context;
+   report *reportParams;
+   reportParams = (report *)context;
 
    //pthread_mutex_lock(&reportParams);
      n = read(reportParams->sock,buffer,255);

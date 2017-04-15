@@ -6,31 +6,38 @@
 
 #include "../include/myreport.h"
 
-void displayMessages(struct report *myreport)
+report *reports;
+
+void displayMessages(report *myreport)
 {
   struct message *temp;
+  int index = 0;
   temp = myreport->list;
-  printf(" \n");
+  printf("--- Entire report --- \n");
   while (temp != NULL)
   {
-    printf("%s\t", temp->buffer);
+    printf("message %d : %s\n", index, temp->buffer);
     temp = temp->next;
+    index++;
   }
 }
 
-void enqueueMessage(char* item, struct report *myreport)
+void enqueueMessage(char* item,  report *myreport)
 {
-  printf("about to enque %s\n", item);
-  struct message *temp = (struct message *)malloc(sizeof(struct message));
+  struct message *temp = (message *)malloc(sizeof(struct message));
   temp->buffer = item;
-  temp->next = myreport->list;
-  printf("last item - %s |", (myreport->list)->buffer); //it may be needed to use & instead
+  if (myreport->list != NULL) {
+    temp->next = myreport->list;
+    //printf("last item: %s | ", (myreport->list)->buffer); //it may be needed to use & instead
+  } else {
+    temp->next = NULL;
+  }
   myreport->list = temp;
-  printf("new last item - %s\n", (myreport->list)->buffer);
-  printf("end of queue\n");
+  //printf("new last item:  %s\n", (myreport->list)->buffer);
+
 }
 
-void dequeueMessage(struct report *myreport)
+void dequeueMessage(report *myreport)
 {
   if (myreport->list == NULL) {
     printf("\n\nqueue is empty \n");
