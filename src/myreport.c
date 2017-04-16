@@ -24,19 +24,19 @@ void displayMessages(report *myreport)
 
 void enqueueMessage(char* item,  report *myreport)
 {
-  struct message *temp = (message *)malloc(sizeof(struct message));
-  temp->buffer = item;
+  struct message *temp = (struct message *)malloc(sizeof(*temp));
+  temp->buffer = (char *)malloc(151 + 1);
+  printf("%s%c\n", item, LIMITER);
+  snprintf(temp->buffer, 151, "%s%c", item, LIMITER);
   if (myreport->list != NULL) {
     temp->next = myreport->list;
     myreport->length = myreport->length + 1;
-    //printf("last item: %s | ", (myreport->list)->buffer); //it may be needed to use & instead
   } else {
     myreport->length = 1;
     temp->next = NULL;
   }
   myreport->list = temp;
-  //printf("new last item:  %s\n", (myreport->list)->buffer);
-
+  free(item);
 }
 
 void dequeueMessage(report *myreport)

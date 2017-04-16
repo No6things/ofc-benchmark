@@ -10,8 +10,6 @@
 #define CLIENT_MESSAGES 1
 #define START_MESSAGE  "2"
 
-#define LIMITER ';'
-
 static pthread_mutex_t lock = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t sendStart = PTHREAD_MUTEX_INITIALIZER;
 

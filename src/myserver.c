@@ -18,12 +18,10 @@ void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;
    socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
-   struct hostent *remoteClient;
    reports = (report *)malloc(sizeof(report));
 
    int n;
    socklen_t clilen;
-
 
    // Initializing variables
    clilen = sizeof(cli_addr);
