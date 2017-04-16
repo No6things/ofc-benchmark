@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <string.h>
 
@@ -17,6 +18,9 @@ void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;
    socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
+   struct hostent *remoteClient;
+   reports = (report *)malloc(sizeof(report));
+
    int n;
    socklen_t clilen;
 
@@ -64,8 +68,9 @@ void * serverSide(unsigned int s) {
          perror("ERROR accepting slave");
          exit(1);
       }
+
       pthread_mutex_lock(&lock);
-        memcpy(reports->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
+        reports->hostname = inet_ntoa(cli_addr.sin_addr);
       pthread_mutex_unlock(&lock);
 
       printf("Client connected with socket %d and hostname: %s\n", clientFd, reports->hostname);
@@ -90,7 +95,6 @@ void * serverSide(unsigned int s) {
 
 
 void *clientManagement(void *context) {
-  struct sockaddr_in cli_addr;
   char *buffer, *buffer2;
   int clientFd = 0, bytesRead = 0, nLines = 0, index = 0, messageReceived = 0;
   unsigned int threadErr;
