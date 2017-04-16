@@ -16,12 +16,18 @@
 void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;
    socklen_t serverFd, clientFd;
-   struct sockaddr_in serv_addr;
+   struct sockaddr_in serv_addr, cli_addr;
    int n;
+   socklen_t clilen;
+
 
    // Initializing variables
+   clilen = sizeof(cli_addr);
+
    clientsStatuses.quantity = s - 1;
    clientsStatuses.connected = 0;
+   clientsStatuses.reported = 0;
+
    iThreads = 0;
    nThreads = clientsStatuses.quantity;
    pthread_t nodesThreads [nThreads];
@@ -52,15 +58,17 @@ void * serverSide(unsigned int s) {
       perror("ERROR listening socket");
       exit(1);
    }
-
    while (1) {
       // Accept request connections
-      if ((clientFd = accept(serverFd, (struct sockaddr *)NULL, NULL)) < 0) {
+      if ((clientFd = accept(serverFd, (struct sockaddr *)&cli_addr, &clilen)) < 0) {
          perror("ERROR accepting slave");
          exit(1);
       }
+      pthread_mutex_lock(&lock);
+        memcpy(reports->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
+      pthread_mutex_unlock(&lock);
 
-      printf("Client connected with socket %d.\n", clientFd);
+      printf("Client connected with socket %d and hostname: %s\n", clientFd, reports->hostname);
       threadErr = pthread_create(&nodesThreads[iThreads], NULL, &clientManagement, &clientFd);
 
       if (threadErr) {
@@ -121,9 +129,9 @@ void *clientManagement(void *context) {
 
         pthread_mutex_lock(&lock);
           clientsStatuses.reported++;
+          printf("Reported: %d/%d\n", clientsStatuses.reported, clientsStatuses.quantity);
           reports->sock = clientFd;
           printf("reports->sock: %d\n", reports->sock);
-          memcpy(reports->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
           printf("reports->hostname: %s\n", reports->hostname);
         pthread_mutex_unlock(&lock);
 
