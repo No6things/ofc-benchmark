@@ -135,8 +135,6 @@ void *clientManagement(void *context) {
           clientsStatuses.reported++;
           printf("Reported: %d/%d\n", clientsStatuses.reported, clientsStatuses.quantity);
           reports->sock = clientFd;
-          printf("reports->sock: %d\n", reports->sock);
-          printf("reports->hostname: %s\n", reports->hostname);
         pthread_mutex_unlock(&lock);
 
         //threadErr = pthread_create(&messageThreads[iThreads], NULL, &reportMessage, reports);

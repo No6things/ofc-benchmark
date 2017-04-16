@@ -41,8 +41,8 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
     sz += rt;
     count += sz;
   }
-  printf("[del]\n");
-  array[sz] = '\0';
+  printf("[del]\n\n");
+  array[sz -1] = '\0';
 
   *bytesRead = count;
   printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
