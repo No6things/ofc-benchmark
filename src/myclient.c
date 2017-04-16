@@ -92,6 +92,7 @@ int clientSide(const char *nodeMasterHostname) {
          temp = temp->next;
          index++;
        }
+       printf("End of transmission\n");
      } else {
        printf("received: '%s'\n",buffer2);
        perror("Uknown message for distributed mode");
@@ -99,6 +100,10 @@ int clientSide(const char *nodeMasterHostname) {
      }
      if (end) break;
   }
-
+  //TODO: Replace this way to ensure data sending, at least remove this for and
+  //      remove end = 1 breaking sentence
+  for (;;){
+  }
+  shutdown(serverFd, SHUT_WR);
   return 0;
 }

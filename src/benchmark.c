@@ -487,8 +487,7 @@ int main(int argc, char * argv[]) {
       //TODO: Manejar los reportes para generar graficos
     } else {
       printf("Im one of the slaves node\n");
-      clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
-      //TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
+      clientSide(params->nodeMasterHostname);
     }
   } else {
     printf("Im alone\n");
