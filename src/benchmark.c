@@ -39,11 +39,11 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     int total_wait = mstestlen + delay;
     time_t tNow;
     struct tm *tmNow;
-    pollfds = (struct pollfd*)malloc(nSwitches * sizeof(*pollfds));
+    pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
     gettimeofday(&then, NULL);
     int size = 150;
-    char* message = (char *)malloc(size);
+    char* message = malloc(size);
     int written = 0;
     char* tmp;
     while (1) {
@@ -383,15 +383,17 @@ char * controllerBenchmarking() {
   struct inputValues *params = &benchmarkArgs;
   char *finalMessage;
   unsigned int i, j;
+
   myreport = (report *)malloc(sizeof(myreport));
-  switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(switches));
+  switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
+
   assert(switches);
 
   double *results;
   double  min = DBL_MAX;
   double  max = 0.0;
   double  v;
-  results = (double *)malloc(params->loopsPerTest * sizeof(results));
+  results = malloc(params->loopsPerTest * sizeof(double));
 
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
