@@ -6,6 +6,7 @@
 
 #include "../include/myreport.h"
 
+report *myreport;
 report *reports;
 
 void displayMessages(report *myreport)
@@ -37,6 +38,20 @@ void enqueueMessage(char* item,  report *myreport)
   myreport->list = temp;
   free(item);
 }
+
+/*void enqueueReport(report* item,  result *myresult)
+{
+  struct report *temp = item;
+  printf("socket %d\n", temp->sock);
+  if (myresult->list != NULL) {
+    temp->next = myresult->list;
+    myresult->length = myresult->length + 1;
+  } else {
+    myresult->length = 1;
+    temp->next = NULL;
+  }
+  myresult->list = temp;
+}*/
 
 void dequeueMessage(report *myreport)
 {

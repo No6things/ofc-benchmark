@@ -9,16 +9,15 @@ typedef struct message {
 } message;
 
 
-typedef struct{
+typedef struct report{
   int sock;
   int length;
   char *hostname;
   struct message *list;
  } report;
 
+ extern report *myreport;
  extern report *reports;
- //TODO: hacer este puntero, una cola como message
-
 
  /*
  TODO: Deberia modificar esta funcion para mostrar todos los reportes O

@@ -14,7 +14,7 @@
 #include "../include/mymessages.h"
 
 status clientsStatuses;
-
+int val = 0;
 //TODO: There is space for improvement implementing conservative buffer
 //        that would mean to double BUFFER_SIZE if sz is by change >= than actual
 //        BUFFER_SIZE
@@ -23,10 +23,13 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
   int sz = 0, rt = 0, count = 0, sz_received = 1;
   char *array = (char *)malloc(BUFFER_SIZE);
   printf("[del]");
-  while((array[sz - 1] != LIMITER) && (sz < BUFFER_SIZE))
-  {
+  do {
     rt = read(fd, array + sz, sz_received);
-    printf("%c", array[sz]);
+    if (val < 2){
+      printf("%s\n",array);
+    } else {
+      printf("%c", array[sz]);
+    }
 
     if(rt < 1)
     {
@@ -40,9 +43,12 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
     }
     sz += rt;
     count += sz;
-  }
+  }while((array[sz - 1] != LIMITER) && (sz < BUFFER_SIZE));
   array[sz - 1] = '\0';
   printf("[del]%d\n", sz);
+  if (val < 2){
+    val++;
+  }
   *bytesRead = count;
   printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
   return array;

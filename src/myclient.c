@@ -69,7 +69,7 @@ int clientSide(const char *nodeMasterHostname) {
        end = 1;
        printf("received START_MESSAGE\n");
        controllerBenchmarking();
-       displayMessages(reports);
+       displayMessages(myreport);
 
        snprintf(buffer, strlen(REPORT_MESSAGE) + 1, REPORT_MESSAGE);
        writeSocket(serverFd, buffer, 2 , 1);
@@ -78,11 +78,11 @@ int clientSide(const char *nodeMasterHostname) {
        struct message *temp;
        char * listLength;
        int index = 0;
-       temp = reports->list;
+       temp = myreport->list;
        listLength = (char *)malloc(6 + 1); //5 digits + delimeter + null
-       snprintf(listLength, 6, "%d%c", reports->length, LIMITER);
+       snprintf(listLength, 6, "%d%c", myreport->length, LIMITER);
        writeSocket(serverFd, listLength, strlen(listLength) + 1 , strlen(listLength));
-       printf("sent list length %d\n", reports->length);
+       printf("sent list length %d\n", myreport->length);
 
        while (temp != NULL)
        {

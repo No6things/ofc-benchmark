@@ -79,7 +79,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     sum /= passed;  // is now per ms
     snprintf(message, size, "total = %lf per ms", sum);
     message = tmp;
-    enqueueMessage(message, reports);
+    enqueueMessage(message, myreport);
     free(pollfds);
     return sum;
 }
@@ -90,25 +90,25 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   size_t size;
 
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "Latency result: %d Switches %d Tests "
+    size = snprintf(NULL, 0, "latency result: %d Switches %d Tests "
         "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response",
             i+1,
             countedTests,
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "Latency result: %d Switches %d Tests "
+    snprintf(buffer, size + 1, "latency result: %d Switches %d Tests "
         "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response",
             i+1,
             countedTests,
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
   } else {
-    size = snprintf(NULL, 0, "Throughput result: %d Switches %d Tests "
+    size = snprintf(NULL, 0, "throughput result: %d Switches %d Tests "
         "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s",
             i+1,
             countedTests,
             min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "Throughput result: %d Switches %d Tests "
+    snprintf(buffer, size + 1, "throughput result: %d Switches %d Tests "
         "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s",
             i+1,
             countedTests,
@@ -383,7 +383,7 @@ char * controllerBenchmarking() {
   struct inputValues *params = &benchmarkArgs;
   char *finalMessage;
   unsigned int i, j;
-  reports = (report *)malloc(sizeof(reports));
+  myreport = (report *)malloc(sizeof(myreport));
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(switches));
   assert(switches);
 
@@ -414,8 +414,8 @@ char * controllerBenchmarking() {
     }
 
     //Initializing report
-    reports->sock = sock;
-    reports->list = NULL;
+    myreport->sock = sock;
+    myreport->list = NULL;
 
     fflush(stderr);
     switchInit(&switches[i], params->dpidOffset + i, sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
@@ -432,7 +432,7 @@ char * controllerBenchmarking() {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
-        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay, reports);
+        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay, myreport);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
@@ -459,14 +459,14 @@ char * controllerBenchmarking() {
     finalMessage = (char*)malloc(150 * sizeof(char));
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
 
-    enqueueMessage(finalMessage, reports);
+    enqueueMessage(finalMessage, myreport);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint
-    reports++;
+    myreport++;
     */
   }
-  //Return array of reports
+  //Return array of myreport
   return (char *)" ";
 }
 

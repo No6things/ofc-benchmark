@@ -15,13 +15,10 @@
 #include "../include/myserver.h"
 
 void * serverSide(unsigned int s) {
-   unsigned int  iThreads, nThreads, threadErr;
-   socklen_t serverFd, clientFd;
-   struct sockaddr_in serv_addr, cli_addr;
-   reports = (report *)malloc(sizeof(*reports));
-
    int n;
-   socklen_t clilen;
+   unsigned int index, nThreads, threadErr, param;
+   socklen_t serverFd, clientFd, clilen;
+   struct sockaddr_in serv_addr, cli_addr;
 
    // Initializing variables
    clilen = sizeof(cli_addr);
@@ -30,7 +27,9 @@ void * serverSide(unsigned int s) {
    clientsStatuses.connected = 0;
    clientsStatuses.reported = 0;
 
-   iThreads = 0;
+   reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(report));
+
+   index = 0;
    nThreads = clientsStatuses.quantity;
    pthread_t nodesThreads [nThreads];
 
@@ -67,19 +66,18 @@ void * serverSide(unsigned int s) {
          exit(1);
       }
 
-      pthread_mutex_lock(&lock);
-        reports->hostname = inet_ntoa(cli_addr.sin_addr);
-      pthread_mutex_unlock(&lock);
+      reports[index].sock = clientFd;
+      reports[index].hostname = inet_ntoa(cli_addr.sin_addr);
 
-      printf("Client connected with socket %d and hostname: %s\n", clientFd, reports->hostname);
-      threadErr = pthread_create(&nodesThreads[iThreads], NULL, &clientManagement, &clientFd);
-
+      printf("Client connected with socket %d and hostname: %s\n", reports[index].sock, reports[index].hostname);
+      param = index;
+      threadErr = pthread_create(&nodesThreads[index], NULL, &clientManagement, &param);
       if (threadErr) {
-        pthread_join(nodesThreads[iThreads], NULL);
+        pthread_join(nodesThreads[index], NULL);
         perror("Creating clientManagement thread");
         exit(1);
       }
-      iThreads++;
+      index++;
 
       if (clientsStatuses.reported == clientsStatuses.quantity) break;
    }
@@ -94,12 +92,14 @@ void * serverSide(unsigned int s) {
 
 void *clientManagement(void *context) {
   char *buffer;
-  int clientFd = 0, bytesRead = 0, nLines = 0, index = 0, messageReceived = 0;
-  unsigned int threadErr;
-  pthread_t messageThread;
+  int clientFd = 0, bytesRead = 0, nLines = 0, index = 0, messageReceived = 0, id = 0;
+  report *myreport = (struct report*)malloc(sizeof(myreport));
 
-  clientFd = *((int*)context);
+  //Initializing variables
+  id = *((int *)context);
+  clientFd = reports[id].sock;
   buffer = NULL;
+
   while (1) {
     buffer = readSocket(clientFd, 2, 1, &bytesRead);
 
@@ -133,28 +133,22 @@ void *clientManagement(void *context) {
         pthread_mutex_lock(&lock);
           clientsStatuses.reported++;
           printf("Reported: %d/%d\n", clientsStatuses.reported, clientsStatuses.quantity);
-          reports->sock = clientFd;
         pthread_mutex_unlock(&lock);
 
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
-        printf("Read list length %s\n", buffer);
-        buffer = (char *)malloc(150 + 1);
+        printf("Read list length %d\n", nLines);
 
         while (index < nLines) {
           bytesRead = 0;
           buffer = readSocketLimiter(clientFd, 150, &bytesRead);
           printf("%s\n", buffer);
-          //enqueueMessage(buffer, reports);
+          enqueueMessage(buffer, myreport);
           index++;
         }
-
-        if (bytesRead > 0) {
-          pthread_mutex_lock(&lock);
-            printf("Offsetting report\n");
-            reports++;
-          pthread_mutex_unlock(&lock);
+        if (bytesRead > 0) {;
           messageReceived++;
+          reports[id].list = myreport->list;
         }
     } else {
         perror("ERROR unknown message from node");
