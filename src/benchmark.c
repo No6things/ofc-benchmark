@@ -90,25 +90,25 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   size_t size;
 
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "-Latency result: %d Switches %d Tests "
+    size = snprintf(NULL, 0, "Latency result: %d Switches %d Tests "
         "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response",
             i+1,
             countedTests,
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "-Latency result: %d Switches %d Tests "
+    snprintf(buffer, size + 1, "Latency result: %d Switches %d Tests "
         "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response",
             i+1,
             countedTests,
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
   } else {
-    size = snprintf(NULL, 0, "-Throughput result: %d Switches %d Tests "
+    size = snprintf(NULL, 0, "Throughput result: %d Switches %d Tests "
         "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s",
             i+1,
             countedTests,
             min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "-Throughput result: %d Switches %d Tests "
+    snprintf(buffer, size + 1, "Throughput result: %d Switches %d Tests "
         "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s",
             i+1,
             countedTests,
