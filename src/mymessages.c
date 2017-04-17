@@ -99,7 +99,7 @@ int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit)
 }
 
 void *connectReqMessage (void *context) {
-  int clientFd = *((int*)context);
+  /*int clientFd = *((int*)context);
   int bytesWritten;
   char * buffer;
   buffer = (char *)malloc(strlen(START_MESSAGE) + 1);
@@ -118,7 +118,7 @@ void *connectReqMessage (void *context) {
   if (bytesWritten < 0) {
     perror("connectReqMessage");
     exit(0);
-  }
+  }*/
   pthread_exit(NULL);
 }
 
@@ -144,8 +144,7 @@ void *reportMessage (void *context) {
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
      // pthread_mutex_unlock(&reportParams);
-     //TODO: considerar almacenar la informacion en un archivo o varios archivos
-     //TODO: Enviar mensaje REPORT_ACK_MESSAGE
+     //TODO: Enviar mensaje REPORT_ACK_MESSAGE or CLOSE
    */
    pthread_exit(NULL);
 }

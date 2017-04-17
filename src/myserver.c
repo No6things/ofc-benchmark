@@ -108,13 +108,6 @@ void *clientManagement(void *context) {
 
     if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
         printf("CONNECT_REQUEST_MESSAGE\n");
-        threadErr = pthread_create(&messageThread, NULL, &connectReqMessage, &clientFd);
-
-        if (threadErr) {
-          pthread_join(messageThread, NULL);
-          perror("ERROR creating CONNECT_REQUEST_MESSAGE  thread");
-          exit(1);
-        }
 
         pthread_mutex_lock(&lock);
           clientsStatuses.connected++;
@@ -123,8 +116,19 @@ void *clientManagement(void *context) {
             printf("Broadcasting 'send START_MESSAGE' order\n");
             pthread_cond_broadcast(&sendStart);
           }
+          while(clientsStatuses.connected < clientsStatuses.quantity){
+            //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
+            printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
+            pthread_cond_wait(&sendStart, &lock);
+          }
         pthread_mutex_unlock(&lock);
 
+        snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
+        bytesRead = writeSocket(clientFd, buffer, 2, 1);
+        if (bytesRead < 0) {
+          perror("connectReqMessage");
+          exit(0);
+        }
         messageReceived++;
     } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
         printf("REPORT_MESSAGE\n");
@@ -135,14 +139,11 @@ void *clientManagement(void *context) {
           reports->sock = clientFd;
         pthread_mutex_unlock(&lock);
 
-        //threadErr = pthread_create(&messageThreads[iThreads], NULL, &reportMessage, reports);
-
         buffer2 = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer2);
         printf("Read list length %s\n", buffer2);
 
-        buffer2 = NULL;
-        //char *buffer2 = (char *)malloc(150);
+        buffer2 = (char *) realloc(buffer, 150);
 
         while (index < nLines) {
           bytesRead = 0;
@@ -155,14 +156,13 @@ void *clientManagement(void *context) {
             printf("Offsetting report\n");
             reports++;
           pthread_mutex_unlock(&lock);
+          messageReceived++;
         }
-        messageReceived++;
     } else {
         perror("ERROR unknown message from node");
     }
     if (messageReceived == SERVER_MESSAGES) break;
   }
 
-  pthread_join(messageThread, NULL);
   pthread_exit(NULL);
 }
