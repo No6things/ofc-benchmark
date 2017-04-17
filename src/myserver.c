@@ -93,17 +93,15 @@ void * serverSide(unsigned int s) {
 
 
 void *clientManagement(void *context) {
-  char *buffer, *buffer2;
+  char *buffer;
   int clientFd = 0, bytesRead = 0, nLines = 0, index = 0, messageReceived = 0;
   unsigned int threadErr;
   pthread_t messageThread;
 
   clientFd = *((int*)context);
+  buffer = (char *)malloc(150 + 1);
 
   while (1) {
-    buffer = NULL;
-    buffer2 = NULL;
-
     buffer = readSocket(clientFd, 2, 1, &bytesRead);
 
     if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
@@ -139,15 +137,14 @@ void *clientManagement(void *context) {
           reports->sock = clientFd;
         pthread_mutex_unlock(&lock);
 
-        buffer2 = readSocketLimiter(clientFd, 5, &bytesRead);
-        nLines = atoi(buffer2);
-        printf("Read list length %s\n", buffer2);
-
-        buffer2 = (char *) realloc(buffer, 150);
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        nLines = atoi(buffer);
+        printf("Read list length %s\n", buffer);
 
         while (index < nLines) {
           bytesRead = 0;
-          buffer2 = readSocketLimiter(clientFd, 150, &bytesRead);
+          buffer= readSocketLimiter(clientFd, 150, &bytesRead);
+          //enqueueMessage(buffer, reports);
           index++;
         }
 
