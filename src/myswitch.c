@@ -8,8 +8,6 @@
 #include "../include/openflow.h"
 #include "../include/openflow131.h"
 
-
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -176,7 +174,7 @@ void ofp13SwitchLearnDstmac(struct fakeswitch *fs){
     pkt_in->match.type = htons(1); // OFPMT_OXM
     pkt_in->match.length = htons(0x0A); // (sizeof (oxm_match)  + omx_fields)
 
-		oxm_ptr = (void *)(pkt_in->match.oxm_fields);
+		oxm_ptr = (struct ofp_oxm_header *)(pkt_in->match.oxm_fields);
   	oxm_ptr->length = 2;
     oxm_ptr->oxm_class = OFPXMC_OPENFLOW_BASIC;
     OFP_OXM_SHDR_FIELD(oxm_ptr,0x15);  //OFPXMT_OFB_ARP_OP = 21, ARP
@@ -220,7 +218,7 @@ int switchGetCount(struct fakeswitch *fs){
     while( (count = msgbufRead(fs->inbuf,fs->sock)) > 0) {
         while(count > 0) {
             // need to read msg by msg to ensure framing isn't broken
-            ofph = msgbufPeek(fs->inbuf);
+            ofph = (struct ofp_header*)msgbufPeek(fs->inbuf);
             msglen = ntohs(ofph->length);
             if(count < msglen)
                 break;     // msg not all there yet;
@@ -398,7 +396,7 @@ static int ofp13MakePacketIn(int switch_id, int xid, int buffer_id, char * buf, 
     pi->match.type = htons(1); // OFPMT_OXM
     pi->match.length = htons(0x0c); // (sizeof (oxm_match) + omx_fields)
 
-    oxm_ptr = (void *)(pi->match.oxm_fields);
+    oxm_ptr = (struct ofp_oxm_header *)(pi->match.oxm_fields);
     oxm_ptr->length = 4;
     oxm_ptr->oxm_class = OFPXMC_OPENFLOW_BASIC;
     OFP_OXM_SHDR_FIELD(oxm_ptr,0); //OFPXMT_OFB_IN_PORT
@@ -516,11 +514,11 @@ static int ofp13MakeMultipartReply(int mp_type, int switch_id, int xid, char * b
 						tf_reply->config= htonl(OFPTC_DEPRECATED_MASK);
 						tf_reply->max_entries= htonl(0xffffffff);
 
-						tf_prop_h = (void *)(tf_reply->properties);
+						tf_prop_h = (struct ofp131_table_feature_prop_oxm *)(tf_reply->properties);
 						tf_prop_h->type= htons(OFPTFPT_MATCH);
 						tf_prop_h->length=htons(0x08); //sizeof(ofp131_table_feature_prop_oxm) + oxm->length
 
-						oxm_ptr = (void *)(tf_prop_h->oxm_ids);
+						oxm_ptr = (struct ofp_oxm_header *)(tf_prop_h->oxm_ids);
 						oxm_ptr->length = 2;
 						oxm_ptr->oxm_class = OFPXMC_OPENFLOW_BASIC;
 						OFP_OXM_SHDR_FIELD(oxm_ptr,0x15);  //OFPXMT_OFB_ARP_OP = 21, ARP
@@ -580,7 +578,7 @@ void switchHandleRead(struct fakeswitch *fs){
     }
     while((count= msgbufCountBuffered(fs->inbuf)) >= sizeof(struct ofp_header ))
     {
-        ofph = msgbufPeek(fs->inbuf);
+        ofph = (struct ofp_header*)msgbufPeek(fs->inbuf);
         if(count < ntohs(ofph->length))
             return;     // msg not all there yet
         msgbufPull(fs->inbuf, NULL, ntohs(ofph->length));
@@ -765,7 +763,7 @@ void ofp13SwitchHandleRead(struct fakeswitch *fs){
     }
     while((count= msgbufCountBuffered(fs->inbuf)) >= sizeof(struct ofp_header ))
     {
-        ofph = msgbufPeek(fs->inbuf);
+        ofph = (struct ofp_header *)msgbufPeek(fs->inbuf);
         if(count < ntohs(ofph->length))
             return;     // msg not all there yet
         msgbufPull(fs->inbuf, NULL, ntohs(ofph->length));
@@ -840,7 +838,7 @@ void ofp13SwitchHandleRead(struct fakeswitch *fs){
                 break;
             case OFPT131_MULTIPART_REQUEST:
                 mp_req = (struct ofp131_multipart_request *) ofph;//changed from ofp_multipart_req
-                mp_req_type = ntohs(mp_req->type);
+                mp_req_type = (enum ofp131_multipart_types)ntohs(mp_req->type);
                 switch (mp_req_type)
                 {
                     case OFPMP_PORT_DESC:

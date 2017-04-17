@@ -18,7 +18,7 @@ void * serverSide(unsigned int s) {
    unsigned int  iThreads, nThreads, threadErr;
    socklen_t serverFd, clientFd;
    struct sockaddr_in serv_addr, cli_addr;
-   reports = (report *)malloc(sizeof(report));
+   reports = (report *)malloc(sizeof(*reports));
 
    int n;
    socklen_t clilen;

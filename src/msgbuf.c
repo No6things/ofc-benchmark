@@ -16,10 +16,10 @@
 struct msgbuf *  msgbufNew(int bufsize)
 {
     struct msgbuf * mbuf;
-    mbuf = malloc(sizeof(*mbuf));
+    mbuf = (struct msgbuf *)malloc(sizeof(*mbuf));
     assert(mbuf);
     mbuf->len = bufsize;
-    mbuf->buf = malloc(mbuf->len);
+    mbuf->buf = (char *)malloc(mbuf->len);
     assert(mbuf->len);
     mbuf->start = mbuf->end = 0;
 
@@ -100,7 +100,7 @@ void msgbufClear(struct msgbuf * mbuf)
 void msgbufGrow(struct msgbuf * mbuf)
 {
     mbuf->len *=2 ;
-    mbuf->buf = realloc(mbuf->buf, mbuf->len);
+    mbuf->buf = (char *)realloc(mbuf->buf, mbuf->len);
     if(mbuf->buf == NULL) {
       perror("msgbufGrow failed");
       printf("Buffer len: %d\n", mbuf->len);
