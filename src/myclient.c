@@ -17,7 +17,6 @@ int clientSide(const char *nodeMasterHostname) {
    int serverFd, portno, bytes, end;
    struct sockaddr_in serv_addr;
    struct hostent *server;
-   //char *reportsBuffer; TODO: UNUSED
 
    /* Initializing*/
    char * buffer;
@@ -87,7 +86,6 @@ int clientSide(const char *nodeMasterHostname) {
 
        while (temp != NULL)
        {
-         printf("%d\n", index);
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->next;
          index++;

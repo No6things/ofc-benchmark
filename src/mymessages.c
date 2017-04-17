@@ -23,11 +23,9 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
   int sz = 0, rt = 0, count = 0, sz_received = 1;
   char *array = (char *)malloc(BUFFER_SIZE);
   memset(array, 0, BUFFER_SIZE);
-  printf("[del]");
-  while(array[sz] != LIMITER && sz < BUFFER_SIZE)
+  while((array[sz - 1] != LIMITER) && (sz < BUFFER_SIZE))
   {
     rt = read(fd, array + sz, sz_received);
-    printf("%c", array[sz]);
     if(rt < 1)
     {
       if (rt == 0) {
@@ -41,9 +39,7 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
     sz += rt;
     count += sz;
   }
-  printf("[del]\n\n");
-  array[sz -1] = '\0';
-  printf("characters: %zu, position: %d\n", strlen(array), sz-1);
+  array[sz - 1] = '\0';
 
   *bytesRead = count;
   printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
@@ -60,12 +56,11 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
   {
     while(sz_received - sz)
     {
-      printf("sz_received-sz = %d\n", sz_received-sz);
       rt = read(fd, array + i + sz, sz_received-sz);
       if(rt < 1)
       {
         if (rt == 0) {
-          printf("ccount of bytes read = 0\n");
+          printf("count of bytes read = 0\n");
         }
         if (errno != EAGAIN) {
           perror("readSocket");

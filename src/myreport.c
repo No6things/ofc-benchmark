@@ -13,7 +13,6 @@ void displayMessages(report *myreport)
   struct message *temp;
   int index = 0;
   temp = myreport->list;
-  printf("--- Entire report --- \n");
   while (temp != NULL)
   {
     printf("message %d : %s\n", index, temp->buffer);
@@ -42,12 +41,12 @@ void enqueueMessage(char* item,  report *myreport)
 void dequeueMessage(report *myreport)
 {
   if (myreport->list == NULL) {
-    printf("\n\nqueue is empty \n");
+    printf("Queue is empty \n");
   } else {
     struct message *temp;
     temp = myreport->list;
     myreport->list = temp->next;
-    printf("\n\n%s deleted", temp->buffer);
+    printf("\n%s deleted", temp->buffer);
     free(temp);
   }
 }
