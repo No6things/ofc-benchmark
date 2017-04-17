@@ -99,8 +99,7 @@ void *clientManagement(void *context) {
   pthread_t messageThread;
 
   clientFd = *((int*)context);
-  buffer = (char *)malloc(150 + 1);
-
+  buffer = NULL;
   while (1) {
     buffer = readSocket(clientFd, 2, 1, &bytesRead);
 
@@ -140,10 +139,12 @@ void *clientManagement(void *context) {
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
         printf("Read list length %s\n", buffer);
+        buffer = (char *)malloc(150 + 1);
 
         while (index < nLines) {
           bytesRead = 0;
-          buffer= readSocketLimiter(clientFd, 150, &bytesRead);
+          buffer = readSocketLimiter(clientFd, 150, &bytesRead);
+          printf("%s\n", buffer);
           //enqueueMessage(buffer, reports);
           index++;
         }
