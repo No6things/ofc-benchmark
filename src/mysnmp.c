@@ -40,7 +40,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
 
   gettimeofday(&now, &tz);
   tm = localtime(&now.tv_sec);
-  fprintf(stdout, "%.2d:%.2d:%.2d.%.6d ", tm->tm_hour, tm->tm_min, tm->tm_sec,
+  fprintf(stdout, "%.2d:%.2d:%.2d.%.6lu ", tm->tm_hour, tm->tm_min, tm->tm_sec,
           now.tv_usec);
 
   switch (status) {
@@ -59,7 +59,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
       for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
         if (vp) snprint_objid(buf, sizeof(buf), vp->name, vp->name_length);
         else strcpy(buf, "(none)");
-        fprintf(stdout, "%s: %s\n", sp->peername, buf, snmp_errstring(pdu->errstat));
+        fprintf(stdout, "%s: %s: %s\n", sp->peername, buf, snmp_errstring(pdu->errstat));
       }
     }
     return 1;
@@ -111,7 +111,7 @@ static int asynchResponse(int operation, struct snmp_session *sp, int reqid,
   return 1;
 }
 
-void asynchronousSnmp(char* controller)
+void asynchronousSnmp(const char* controller)
 {
   struct session *hs;
   struct host *hp;
@@ -124,7 +124,7 @@ void asynchronousSnmp(char* controller)
   snmp_sess_init(&sess);			/* initialize session */
   sess.version = SNMP_VERSION_2c;
   sess.peername = strdup(hp->name);
-  sess.community = strdup(hp->community);
+  sess.community = (u_char*)strdup(hp->community);
   sess.community_len = strlen(sess.community);
   sess.callback = asynchResponse;		/* default callback */
   sess.callback_magic = hs;

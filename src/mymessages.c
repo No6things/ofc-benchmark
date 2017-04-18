@@ -10,9 +10,50 @@
 #include <sys/socket.h>
 #include <string.h>
 
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 
 status clientsStatuses;
+int val = 0;
+//TODO: There is space for improvement implementing conservative buffer
+//        that would mean to double BUFFER_SIZE if sz is by change >= than actual
+//        BUFFER_SIZE
+char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
+{
+  int sz = 0, rt = 0, count = 0, sz_received = 1;
+  char *array = (char *)malloc(BUFFER_SIZE);
+  printf("[del]");
+  do {
+    rt = read(fd, array + sz, sz_received);
+    if (val < 2){
+      printf("%s\n",array);
+    } else {
+      printf("%c", array[sz]);
+    }
+
+    if(rt < 1)
+    {
+      if (rt == 0) {
+        printf("count of bytes read = 0 \n");
+      }
+      if (errno != EAGAIN) {
+        perror("readSocketLimiter");
+        exit(1);
+      }
+    }
+    sz += rt;
+    count += sz;
+  }while((array[sz - 1] != LIMITER) && (sz < BUFFER_SIZE));
+  array[sz - 1] = '\0';
+  printf("[del]%d\n", sz);
+  if (val < 2){
+    val++;
+  }
+  *bytesRead = count;
+  printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
+  return array;
+}
+
 
 char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
 {
@@ -23,12 +64,11 @@ char* readSocket(int fd, int BUFFER_SIZE, int sz_received, int* bytesRead)
   {
     while(sz_received - sz)
     {
-      printf("sz_received-sz = %d\n", sz_received-sz);
       rt = read(fd, array + i + sz, sz_received-sz);
       if(rt < 1)
       {
         if (rt == 0) {
-          printf("count while reading = 0\n");
+          printf("count of bytes read = 0\n");
         }
         if (errno != EAGAIN) {
           perror("readSocket");
@@ -67,13 +107,12 @@ int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit)
 }
 
 void *connectReqMessage (void *context) {
-  int clientFd = *((int*)context);
+  /*int clientFd = *((int*)context);
   int bytesWritten;
   char * buffer;
   buffer = (char *)malloc(strlen(START_MESSAGE) + 1);
   snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
 
-  printf("connected mymsg: %d, total: %d\n", clientsStatuses.connected, clientsStatuses.quantity);
   pthread_mutex_lock(&lock);
   while(clientsStatuses.connected < clientsStatuses.quantity){
     //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
@@ -82,25 +121,26 @@ void *connectReqMessage (void *context) {
   }
   pthread_mutex_unlock(&lock);
 
-  printf("about to write %s\n", buffer);
 
   bytesWritten = writeSocket(clientFd, buffer, 2, 1);
   if (bytesWritten < 0) {
     perror("connectReqMessage");
     exit(0);
-  }
+  }*/
   pthread_exit(NULL);
 }
 
 
 void *reportMessage (void *context) {
-   int n;
-   char buffer[256];
-   bzero(buffer,256);
-   struct report *reportParams;
-   reportParams = &context;
+    /*
+    int bytes = 0;
+    char * buffer2;
+    buffer2 = NULL;
+    buffer2 = readSocket(serverFd, 1, 1, &bytes);
 
-   //pthread_mutex_lock(&reportParams);
+    reportParams = (report *)context;
+
+    //pthread_mutex_lock(&reportParams);
      n = read(reportParams->sock,buffer,255);
 
      if (n < 0) {
@@ -111,9 +151,8 @@ void *reportMessage (void *context) {
      printf("Report received: %s\n",buffer);
      memcpy (reportParams->buffer, buffer, strlen(buffer)+1 );
      close(reportParams->sock);
-  // pthread_mutex_unlock(&reportParams);
-   //TODO: considerar almacenar la informacion en un archivo o varios archivos
-   //TODO: Enviar mensaje REPORT_ACK_MESSAGE
-
+     // pthread_mutex_unlock(&reportParams);
+     //TODO: Enviar mensaje REPORT_ACK_MESSAGE or CLOSE
+   */
    pthread_exit(NULL);
 }

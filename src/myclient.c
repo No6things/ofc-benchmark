@@ -8,61 +8,15 @@
 
 #include <string.h>
 
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 #include "../include/benchmark.h"
 #include "../include/myclient.h"
-/*
-void enqueue(char* item)
-{
-    struct node *nptr = malloc(sizeof(struct node));
-    nptr->data = item;
-    nptr->next = NULL;
-    if (rear == NULL)
-    {
-        front = nptr;
-        rear = nptr;
-    }
-    else
-    {
-        rear->next = nptr;
-        rear = rear->next;
-    }
-}
-
-void display()
-{
-    struct node *temp;
-    temp = front;
-    printf("\n");
-    while (temp != NULL)
-    {
-        printf("%s\t", temp->data);
-        temp = temp->next;
-    }
-}
-
-void dequeue()
-{
-    if (front == NULL)
-    {
-        printf("\n\nqueue is empty \n");
-    }
-    else
-    {
-        struct node *temp;
-        temp = front;
-        front = front->next;
-        printf("\n\n%d deleted", temp->data);
-        free(temp);
-    }
-}
-*/
 
 int clientSide(const char *nodeMasterHostname) {
    int serverFd, portno, bytes, end;
    struct sockaddr_in serv_addr;
    struct hostent *server;
-   //char *reportsBuffer; TODO: UNUSED
 
    /* Initializing*/
    char * buffer;
@@ -114,11 +68,29 @@ int clientSide(const char *nodeMasterHostname) {
      if (strcmp(buffer2, START_MESSAGE) == 0) {
        end = 1;
        printf("received START_MESSAGE\n");
-       /*
-       controllerBenchmarking()
-       TODO: Recibir arreglo de reportes de controllerBenchmarking()
-       TODO: Enviar mensaje REPORT_MESSAGE
-       */
+       controllerBenchmarking();
+       displayMessages(myreport);
+
+       snprintf(buffer, strlen(REPORT_MESSAGE) + 1, REPORT_MESSAGE);
+       writeSocket(serverFd, buffer, 2 , 1);
+       printf("sent REPORT_MESSAGE\n");
+
+       struct message *temp;
+       char * listLength;
+       int index = 0;
+       temp = myreport->list;
+       listLength = (char *)malloc(6 + 1); //5 digits + delimeter + null
+       snprintf(listLength, 6, "%d%c", myreport->length, LIMITER);
+       writeSocket(serverFd, listLength, strlen(listLength) + 1 , strlen(listLength));
+       printf("sent list length %d\n", myreport->length);
+
+       while (temp != NULL)
+       {
+         bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
+         temp = temp->next;
+         index++;
+       }
+       printf("End of transmission\n");
      } else {
        printf("received: '%s'\n",buffer2);
        perror("Uknown message for distributed mode");
@@ -126,6 +98,10 @@ int clientSide(const char *nodeMasterHostname) {
      }
      if (end) break;
   }
-
+  //TODO: Replace this way to ensure data sending, at least remove this for and
+  //      remove end = 1 breaking sentence
+  for (;;){
+  }
+  shutdown(serverFd, SHUT_WR);
   return 0;
 }

@@ -42,6 +42,6 @@ void
 initializeSnmp (void);
 
 void
-asynchronousSnmp(char* controller);
+asynchronousSnmp(const char* controller);
 
 #endif
