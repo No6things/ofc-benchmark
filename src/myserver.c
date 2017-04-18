@@ -12,6 +12,7 @@
 
 #include "../include/myreport.h"
 #include "../include/mymessages.h"
+#include "../include/myplot.h"
 #include "../include/myserver.h"
 
 void * serverSide(unsigned int s) {
