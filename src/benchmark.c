@@ -375,7 +375,7 @@ char * controllerBenchmarking() {
   char *finalMessage;
   unsigned int i, j;
   int threadErr;
-  pthread_t ead;
+  pthread_t snmp_thread;
 
   myreport = (report *)malloc(sizeof(myreport));
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
@@ -389,9 +389,9 @@ char * controllerBenchmarking() {
   results = malloc(params->loopsPerTest * sizeof(double));
 
   if (params->nNodes <= 1) {
-    threadErr = pthread_create(&ead, NULL, &asynchronousSnmp, NULL);
+    threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
     if (threadErr) {
-      pthread_join(ead, NULL);
+      pthread_join(snmp_thread, NULL);
       perror("Creating SNMP thread");
       exit(1);
     }
