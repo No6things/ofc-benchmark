@@ -176,7 +176,7 @@ void *asynchronousSnmp(void *context)
       if (hs->sess) snmp_close(hs->sess);
     }
     if (snmpStop == 1) break;
-    usleep(1000000);
+    usleep(500000);
   }
 
   pthread_exit(NULL);
