@@ -51,7 +51,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
       if (pdu->errstat == SNMP_ERR_NOERROR) {
         while (vp) {
           snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-          snprintf(result, 70, "%s:%s;",op->readableName, buf);
+          snprintf(result, 70, "%s:%s",op->readableName, buf);
   	       vp = vp->next_variable;
            op++;
         }
