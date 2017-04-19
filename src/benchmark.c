@@ -62,21 +62,21 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     }
     tNow = now.tv_sec;
 
-    written += snprintf(message, size, "%ld,%-3d,", now.tv_usec, nSwitches);
+    written += snprintf(message, size, "%ld:%d", now.tv_usec, nSwitches);
     tmp = message; //  start checkpoint
     message += written;
     usleep(100000); // sleep for 100 ms, to let packets queue
 
     for (i = 0; i < nSwitches; i++) {
       count = switchGetCount(&switches[i]);
-      written = snprintf(message, size, ",%d", count);
+      written = snprintf(message, size, ":%d", count);
       message += written;
       sum += count;
     }
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;  // is now per ms
-    snprintf(message, size, ",%lf", sum);
+    snprintf(message, size, ":%lf", sum);
     message = tmp;
     enqueueMessage(message, myreport);
     free(pollfds);
@@ -89,17 +89,17 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   size_t size;
   //ms/response
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "l,%.2lf,%.2lf,%.2lf,%.2lf",
+    size = snprintf(NULL, 0, "l:%.2lf,%.2lf,%.2lf,%.2lf",
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "l,%.2lf,%.2lf,%.2lf,%.2lf",
+    snprintf(buffer, size + 1, "l:%.2lf,%.2lf,%.2lf,%.2lf",
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
   //response/s
   } else {
-    size = snprintf(NULL, 0, "t,%.2lf,%.2lf,%.2lf,%.2lf",
+    size = snprintf(NULL, 0, "t:%.2lf,%.2lf,%.2lf,%.2lf",
             min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "t,%.2lf,%.2lf,%.2lf,%.2lf",
+    snprintf(buffer, size + 1, "t:%.2lf,%.2lf,%.2lf,%.2lf",
             min, max, avg, std_dev);
 
   }

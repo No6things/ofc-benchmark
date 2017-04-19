@@ -82,8 +82,6 @@ int clientSide(const char *nodeMasterHostname) {
        listLength = (char *)malloc(6 + 1); //5 digits + delimeter + null
        snprintf(listLength, 6, "%d%c", myreport->length, LIMITER);
        writeSocket(serverFd, listLength, strlen(listLength) + 1 , strlen(listLength));
-       printf("sent list length %d\n", myreport->length);
-
        while (temp != NULL)
        {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));

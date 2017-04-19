@@ -152,7 +152,7 @@ void *clientManagement(void *context) {
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
         printf("Read list length %d\n", nLines);
-
+        usleep(1000000);
         while (index < nLines) {
           bytesRead = 0;
           buffer = readSocketLimiter(clientFd, 150, &bytesRead);
