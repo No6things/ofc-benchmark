@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include "../include/mysnmp.h"
 #include "../include/myreport.h"
 #include "../include/mymessages.h"
 #include "../include/myplot.h"
@@ -32,7 +33,7 @@ void * serverSide(unsigned int s) {
 
    index = 0;
    nThreads = clientsStatuses.quantity;
-   pthread_t nodesThreads [nThreads];
+   pthread_t nodesThreads[nThreads];
 
    printf("The network will have %d node slaves\n", clientsStatuses.quantity);
 
@@ -85,18 +86,24 @@ void * serverSide(unsigned int s) {
    for (n = nThreads; n >= 0; n--)
       pthread_join(nodesThreads[n], NULL);
 
-   pthread_mutex_destroy(&lock);
-   pthread_cond_destroy(&sendStart);
-   return 0;
+    pthread_mutex_destroy(&lock);
+    pthread_cond_destroy(&sendStart);
+    return 0;
 }
 
 
 void *clientManagement(void *context) {
   char *buffer;
-  int clientFd = 0, bytesRead = 0, nLines = 0, index = 0, messageReceived = 0, id = 0;
+  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id;
   report *myreport = (struct report*)malloc(sizeof(myreport));
+  pthread_t snmp_thread;
 
   //Initializing variables
+  threadErr = 0;
+  bytesRead = 0;
+  nLines = 0;
+  index = 0;
+  messageReceived = 0;
   id = *((int *)context);
   clientFd = reports[id].sock;
   buffer = NULL;
@@ -113,6 +120,12 @@ void *clientManagement(void *context) {
           if (clientsStatuses.connected == clientsStatuses.quantity) {
             printf("Broadcasting 'send START_MESSAGE' order\n");
             pthread_cond_broadcast(&sendStart);
+            threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
+            if (threadErr) {
+              pthread_join(snmp_thread, NULL);
+              perror("Creating SNMP thread");
+              exit(1);
+            }
           }
           while(clientsStatuses.connected < clientsStatuses.quantity){
             //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
@@ -156,6 +169,7 @@ void *clientManagement(void *context) {
     }
     if (messageReceived == SERVER_MESSAGES) break;
   }
-
+  pthread_join(snmp_thread, NULL);
+  displayMessages(snmpReport);
   pthread_exit(NULL);
 }

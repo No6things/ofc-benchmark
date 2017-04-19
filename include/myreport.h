@@ -17,6 +17,7 @@ typedef struct report{
  } report;
 
  extern report *myreport;
+ extern report *snmpReport;
  extern report *reports;
 
  /*
@@ -25,5 +26,5 @@ typedef struct report{
 void displayMessages(report *myreport);
 void enqueueMessage(char* item, report *myreport);
 void dequeueMessage(report *myreport);
-
+char * parseReports();
 #endif

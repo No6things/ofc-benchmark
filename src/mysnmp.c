@@ -3,15 +3,21 @@
 #include <winsock.h>
 #endif
 
+#include "pthread.h"
+#include "../include/myreport.h"
 #include "../include/mysnmp.h"
 
 static struct oid *op;
+
 void initializeSnmp (void)
 {
   op=oids;
+  char * opts = "qv";
+  snmpReport = (struct report *)malloc(sizeof snmpReport);
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");
+  snmp_out_toggle_options(opts);
 
   /* parse the oids */
   while (op->name) {
@@ -31,46 +37,42 @@ void initializeSnmp (void)
 static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pdu)
 {
   char buf[1024];
+  char *result = (char *)malloc(150 + 1);
   struct variable_list *vp;
   int i;
   struct timeval now;
-  struct timezone tz;
-  struct tm *tm;
 
+  gettimeofday(&now, NULL);
 
-  gettimeofday(&now, &tz);
-  tm = localtime(&now.tv_sec);
-  fprintf(stdout, "%.2d:%.2d:%.2d.%.6lu ", tm->tm_hour, tm->tm_min, tm->tm_sec,
-          now.tv_usec);
-
+  snprintf(result, 20, "%ld:", now.tv_usec);
   switch (status) {
-
-  case STAT_SUCCESS:
-    vp = pdu->variables;
-    if (pdu->errstat == SNMP_ERR_NOERROR) {
-      while (vp) {
-        snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-        fprintf(stdout, "%s:%s\n",op->readableName, buf);
-	       vp = vp->next_variable;
-         op++;
+    case STAT_SUCCESS:
+      vp = pdu->variables;
+      if (pdu->errstat == SNMP_ERR_NOERROR) {
+        while (vp) {
+          snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+          snprintf(result, 70, "%s:%s",op->readableName, buf);
+  	       vp = vp->next_variable;
+           op++;
+        }
+        enqueueMessage(result, snmpReport);
       }
-    }
-    else {
-      for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
-        if (vp) snprint_objid(buf, sizeof(buf), vp->name, vp->name_length);
-        else strcpy(buf, "(none)");
-        fprintf(stdout, "%s: %s: %s\n", sp->peername, buf, snmp_errstring(pdu->errstat));
+      else {
+        for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
+          if (vp) snprint_objid(buf, sizeof(buf), vp->name, vp->name_length);
+          else strcpy(buf, "(none)");
+          fprintf(stdout, "%s: %s: %s\n", sp->peername, buf, snmp_errstring(pdu->errstat));
+        }
       }
-    }
-    return 1;
+      return 1;
 
-  case STAT_TIMEOUT:
-    fprintf(stdout, "Timeout\n");
-    return 0;
+    case STAT_TIMEOUT:
+      fprintf(stdout, "Timeout\n");
+      return 0;
 
-  case STAT_ERROR:
-    snmp_perror(sp->peername);
-    return 0;
+    case STAT_ERROR:
+      snmp_perror(sp->peername);
+      return 0;
   }
   return 0;
 }
@@ -111,63 +113,73 @@ static int asynchResponse(int operation, struct snmp_session *sp, int reqid,
   return 1;
 }
 
-void asynchronousSnmp(const char* controller)
+void *asynchronousSnmp(void *context)
 {
   struct session *hs;
   struct host *hp;
-  hosts->name=controller; //controller
-  /* startup all hosts */
-  hs = sessions;
-  hp = hosts;
   struct snmp_pdu *req;
   struct snmp_session sess;
-  snmp_sess_init(&sess);			/* initialize session */
-  sess.version = SNMP_VERSION_2c;
-  sess.peername = strdup(hp->name);
-  sess.community = (u_char*)strdup(hp->community);
-  sess.community_len = strlen(sess.community);
-  sess.callback = asynchResponse;		/* default callback */
-  sess.callback_magic = hs;
+  int fds, block;
 
-  printf("---SNMP---\n" );
+  while(1) {
+    op=oids;
+    hosts->name = snmpDestination; //controller
 
-  if (!(hs->sess = snmp_open(&sess))) {
-    snmp_perror("snmp_open");
-  }
+    /* startup all hosts */
+    hs = sessions;
+    hp = hosts;
 
-  hs->current_oid = oids;
-  req = snmp_pdu_create(SNMP_MSG_GET);	/* send the first GET */
-  snmp_add_null_var(req, hs->current_oid->Oid, hs->current_oid->oidLen);
-  if (snmp_send(hs->sess, req))
-    active_hosts++;
-  else {
-    snmp_perror("snmp_send");
-    snmp_free_pdu(req);
-  }
+    snmp_sess_init(&sess);			/* initialize session */
+    sess.version = SNMP_VERSION_2c;
+    sess.peername = strdup(hp->name);
+    sess.community = (u_char*)strdup(hp->community);
+    sess.community_len = strlen(sess.community);
+    sess.callback = asynchResponse;		/* default callback */
+    sess.callback_magic = hs;
 
-  /* loop while any active hosts */
-  while (active_hosts) {
-    int fds = 0, block = 1;
-    fd_set fdset;
-    struct timeval timeout;
-
-    FD_ZERO(&fdset);
-    snmp_select_info(&fds, &fdset, &timeout, &block);
-    fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
-    if (fds < 0) {
-        perror("select failed");
-        exit(1);
+    if (!(hs->sess = snmp_open(&sess))) {
+      snmp_perror("snmp_open");
     }
-    if (fds){
-        snmp_read(&fdset);
-    }else{
-        snmp_timeout();
+
+    hs->current_oid = oids;
+    req = snmp_pdu_create(SNMP_MSG_GET);	/* send the first GET */
+    snmp_add_null_var(req, hs->current_oid->Oid, hs->current_oid->oidLen);
+    if (snmp_send(hs->sess, req))
+      active_hosts++;
+    else {
+      snmp_perror("snmp_send");
+      snmp_free_pdu(req);
     }
+
+    /* loop while any active hosts */
+    while (active_hosts) {
+      fds = 0, block = 1;
+      fd_set fdset;
+      struct timeval timeout;
+
+      FD_ZERO(&fdset);
+      snmp_select_info(&fds, &fdset, &timeout, &block);
+      fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
+      if (fds < 0) {
+          perror("select failed");
+          exit(1);
+      }
+      if (fds){
+          snmp_read(&fdset);
+      }else{
+          snmp_timeout();
+      }
+    }
+
+    for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
+      if (hs->sess) snmp_close(hs->sess);
+    }
+    usleep(1000000);
   }
 
-  for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
-    if (hs->sess) snmp_close(hs->sess);
-  }
+  pthread_exit(NULL);
 }
+
+
 
 /***************************/
