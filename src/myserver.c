@@ -169,6 +169,7 @@ void *clientManagement(void *context) {
     }
     if (messageReceived == SERVER_MESSAGES) break;
   }
+  snmpStop = 1;
   pthread_join(snmp_thread, NULL);
   displayMessages(snmpReport);
   pthread_exit(NULL);

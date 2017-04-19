@@ -43,7 +43,7 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     assert(pollfds);
     gettimeofday(&then, NULL);
     int size = 150;
-    char* message = malloc(size);
+    char* message = (char *)malloc(size);
     int written = 0;
     char* tmp;
     while (1) {
@@ -61,23 +61,22 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
       }
     }
     tNow = now.tv_sec;
-    tmNow = localtime(&tNow);
 
-    written += snprintf(message, size, "%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec: ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
+    written += snprintf(message, size, "%ld,%-3d,", now.tv_usec, nSwitches);
     tmp = message; //  start checkpoint
     message += written;
     usleep(100000); // sleep for 100 ms, to let packets queue
 
     for (i = 0; i < nSwitches; i++) {
       count = switchGetCount(&switches[i]);
-      written = snprintf(message, size, "%d  ", count);
+      written = snprintf(message, size, ",%d", count);
       message += written;
       sum += count;
     }
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;  // is now per ms
-    snprintf(message, size, "total = %lf per ms", sum);
+    snprintf(message, size, ",%lf", sum);
     message = tmp;
     enqueueMessage(message, myreport);
     free(pollfds);
@@ -90,17 +89,17 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   size_t size;
   //ms/response
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "l;%.2lf;%.2lf;%.2lf;%.2lf;",
+    size = snprintf(NULL, 0, "l,%.2lf,%.2lf,%.2lf,%.2lf",
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "l;%.2lf;%.2lf;%.2lf;%.2lf;",
+    snprintf(buffer, size + 1, "l,%.2lf,%.2lf,%.2lf,%.2lf",
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
   //response/s
   } else {
-    size = snprintf(NULL, 0, "t;%.2lf;%.2lf;%.2lf;%.2lf;",
+    size = snprintf(NULL, 0, "t,%.2lf,%.2lf,%.2lf,%.2lf",
             min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "t;%.2lf;%.2lf;%.2lf;%.2lf;",
+    snprintf(buffer, size + 1, "t,%.2lf,%.2lf,%.2lf,%.2lf",
             min, max, avg, std_dev);
 
   }
@@ -470,6 +469,7 @@ char * controllerBenchmarking() {
     */
   }
   if (params->nNodes <= 1) {
+    snmpStop = 1;
     pthread_join(snmp_thread, NULL);
     displayMessages(snmpReport);
   }

@@ -12,6 +12,7 @@ static struct oid *op;
 void initializeSnmp (void)
 {
   op=oids;
+  snmpStop = 0;
   char * opts = "qv";
   snmpReport = (struct report *)malloc(sizeof snmpReport);
   /* Win32: init winsock */
@@ -174,6 +175,7 @@ void *asynchronousSnmp(void *context)
     for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
       if (hs->sess) snmp_close(hs->sess);
     }
+    if (snmpStop == 1) break;
     usleep(1000000);
   }
 
