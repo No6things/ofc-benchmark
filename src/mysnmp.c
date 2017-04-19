@@ -10,9 +10,12 @@ static struct oid *op;
 void initializeSnmp (void)
 {
   op=oids;
+  char * opts = "qv";
+
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");
+  snmp_out_toggle_options(opts);
 
   /* parse the oids */
   while (op->name) {
@@ -35,15 +38,10 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
   struct variable_list *vp;
   int i;
   struct timeval now;
-  struct timezone tz;
-  struct tm *tm;
 
+  gettimeofday(&now, NULL);
 
-  gettimeofday(&now, &tz);
-  tm = localtime(&now.tv_sec);
-  fprintf(stdout, "%.2d:%.2d:%.2d.%.6lu ", tm->tm_hour, tm->tm_min, tm->tm_sec,
-          now.tv_usec);
-
+  fprintf(stdout, "%ld:", now.tv_usec);
   switch (status) {
 
   case STAT_SUCCESS:
@@ -123,7 +121,6 @@ void *asynchronousSnmp(void *context)
   while(1) {
     op=oids;
     hosts->name = snmpDestination; //controller
-    printf("hosts->name %s, snmpDestination %s\n", hosts->name, snmpDestination);
 
     /* startup all hosts */
     hs = sessions;

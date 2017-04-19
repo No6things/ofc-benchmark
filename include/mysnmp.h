@@ -23,11 +23,16 @@ static struct oid {
    oid Oid[MAX_OID_LEN];
    int oidLen;
  } oids[] = {
-   //{"15 minute Load",".1.3.6.1.4.1.2021.10.1.3.3"}, //15 minute Load
-   {"Percentage of user CPU time",".1.3.6.1.4.1.2021.11.9.0"},   //Percentage of user CPU time
-   //{"Total Swap Size",".1.3.6.1.4.1.2021.4.3.0"},    //Total Swap Size
-   {"Total RAM in machine",".1.3.6.1.4.1.2021.4.5.0"},    //Total RAM in machine TODO: We could calculate percetage
-   {"Total RAM used",".1.3.6.1.4.1.2021.4.6.0"},     //Total RAM used
+   //{"CPU user",".1.3.6.1.4.1.2021.11.50"},
+   //{"CPU nice",".1.3.6.1.4.1.2021.11.51"},
+   //{"CPU system",".1.3.6.1.4.1.2021.11.52"},
+   {"CPU_TIME",".1.3.6.1.4.1.2021.11.9.0"},   //Percentage of user CPU time
+   {"BYTES_IN",".1.3.6.1.2.1.2.2.1.10.2"}, //
+   {"BYTES_OUT", ".1.3.6.1.2.1.2.2.1.16.2"},
+   {"ERRORS_IN",".1.3.6.1.2.1.2.2.1.14.2"}, //The number of inbound packets that could not be transmitted because of errors
+   {"ERRORS_OUT",".1.3.6.1.2.1.2.2.1.20.2"}, //The number of outbound packets that could not be transmitted because of errors
+   {"RAM_SIZE",".1.3.6.1.4.1.2021.4.5.0"},    //Total RAM in machine TODO: We could calculate percetage
+   {"RAM_USED",".1.3.6.1.4.1.2021.4.6.0"},     //Total RAM used
    { NULL }
 };
 #define MAX_OID 5
