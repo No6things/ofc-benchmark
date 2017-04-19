@@ -23,9 +23,9 @@ static struct oid {
    oid Oid[MAX_OID_LEN];
    int oidLen;
  } oids[] = {
-   {"15 minute Load",".1.3.6.1.4.1.2021.10.1.3.3"}, //15 minute Load TODO: Change to the last minute or remove it
+   //{"15 minute Load",".1.3.6.1.4.1.2021.10.1.3.3"}, //15 minute Load
    {"Percentage of user CPU time",".1.3.6.1.4.1.2021.11.9.0"},   //Percentage of user CPU time
-   {"Total Swap Size",".1.3.6.1.4.1.2021.4.3.0"},    //Total Swap Size TODO: We could remove this
+   //{"Total Swap Size",".1.3.6.1.4.1.2021.4.3.0"},    //Total Swap Size
    {"Total RAM in machine",".1.3.6.1.4.1.2021.4.5.0"},    //Total RAM in machine TODO: We could calculate percetage
    {"Total RAM used",".1.3.6.1.4.1.2021.4.6.0"},     //Total RAM used
    { NULL }
@@ -37,11 +37,9 @@ static struct session {
   struct oid *current_oid;		/* How far in our poll are we */
 } sessions[sizeof(hosts)/sizeof(hosts[0])];
 
+char * snmpDestination;
 
-void
-initializeSnmp (void);
-
-void
-asynchronousSnmp(const char* controller);
+void initializeSnmp (void);
+void *asynchronousSnmp(void* context);
 
 #endif

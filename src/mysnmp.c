@@ -6,6 +6,7 @@
 #include "../include/mysnmp.h"
 
 static struct oid *op;
+
 void initializeSnmp (void)
 {
   op=oids;
@@ -111,63 +112,76 @@ static int asynchResponse(int operation, struct snmp_session *sp, int reqid,
   return 1;
 }
 
-void asynchronousSnmp(const char* controller)
+void *asynchronousSnmp(void *context)
 {
   struct session *hs;
   struct host *hp;
-  hosts->name=controller; //controller
-  /* startup all hosts */
-  hs = sessions;
-  hp = hosts;
   struct snmp_pdu *req;
   struct snmp_session sess;
-  snmp_sess_init(&sess);			/* initialize session */
-  sess.version = SNMP_VERSION_2c;
-  sess.peername = strdup(hp->name);
-  sess.community = (u_char*)strdup(hp->community);
-  sess.community_len = strlen(sess.community);
-  sess.callback = asynchResponse;		/* default callback */
-  sess.callback_magic = hs;
+  int fds, block;
 
-  printf("---SNMP---\n" );
+  while(1) {
+    op=oids;
+    hosts->name = snmpDestination; //controller
+    printf("hosts->name %s, snmpDestination %s\n", hosts->name, snmpDestination);
 
-  if (!(hs->sess = snmp_open(&sess))) {
-    snmp_perror("snmp_open");
-  }
+    /* startup all hosts */
+    hs = sessions;
+    hp = hosts;
 
-  hs->current_oid = oids;
-  req = snmp_pdu_create(SNMP_MSG_GET);	/* send the first GET */
-  snmp_add_null_var(req, hs->current_oid->Oid, hs->current_oid->oidLen);
-  if (snmp_send(hs->sess, req))
-    active_hosts++;
-  else {
-    snmp_perror("snmp_send");
-    snmp_free_pdu(req);
-  }
+    snmp_sess_init(&sess);			/* initialize session */
+    sess.version = SNMP_VERSION_2c;
+    sess.peername = strdup(hp->name);
+    sess.community = (u_char*)strdup(hp->community);
+    sess.community_len = strlen(sess.community);
+    sess.callback = asynchResponse;		/* default callback */
+    sess.callback_magic = hs;
 
-  /* loop while any active hosts */
-  while (active_hosts) {
-    int fds = 0, block = 1;
-    fd_set fdset;
-    struct timeval timeout;
+    printf("---SNMP---\n" );
 
-    FD_ZERO(&fdset);
-    snmp_select_info(&fds, &fdset, &timeout, &block);
-    fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
-    if (fds < 0) {
-        perror("select failed");
-        exit(1);
+    if (!(hs->sess = snmp_open(&sess))) {
+      snmp_perror("snmp_open");
     }
-    if (fds){
-        snmp_read(&fdset);
-    }else{
-        snmp_timeout();
+
+    hs->current_oid = oids;
+    req = snmp_pdu_create(SNMP_MSG_GET);	/* send the first GET */
+    snmp_add_null_var(req, hs->current_oid->Oid, hs->current_oid->oidLen);
+    if (snmp_send(hs->sess, req))
+      active_hosts++;
+    else {
+      snmp_perror("snmp_send");
+      snmp_free_pdu(req);
     }
+
+    /* loop while any active hosts */
+    while (active_hosts) {
+      fds = 0, block = 1;
+      fd_set fdset;
+      struct timeval timeout;
+
+      FD_ZERO(&fdset);
+      snmp_select_info(&fds, &fdset, &timeout, &block);
+      fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
+      if (fds < 0) {
+          perror("select failed");
+          exit(1);
+      }
+      if (fds){
+          snmp_read(&fdset);
+      }else{
+          snmp_timeout();
+      }
+    }
+
+    for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
+      if (hs->sess) snmp_close(hs->sess);
+    }
+    usleep(1000000);
   }
 
-  for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
-    if (hs->sess) snmp_close(hs->sess);
-  }
+  pthread_exit(NULL);
 }
+
+
 
 /***************************/

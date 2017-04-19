@@ -274,6 +274,8 @@ void initializeBenchmarking(int argc, char * argv[]) {
              break;
          case 'C' :
              params->controllerHostname = strdup(optarg);
+             snmpDestination = (char *)malloc(20);
+             snprintf(snmpDestination, 20, "%s", params->controllerHostname);
              break;
          case 'd':
              params->packetDelay = atoi(optarg);
@@ -372,6 +374,8 @@ char * controllerBenchmarking() {
   struct inputValues *params = &benchmarkArgs;
   char *finalMessage;
   unsigned int i, j;
+  int threadErr;
+  pthread_t snmp_thread;
 
   myreport = (report *)malloc(sizeof(myreport));
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
@@ -384,6 +388,14 @@ char * controllerBenchmarking() {
   double  v;
   results = malloc(params->loopsPerTest * sizeof(double));
 
+  if (params->nNodes <= 1) {
+    threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
+    if (threadErr) {
+      pthread_join(snmp_thread, NULL);
+      perror("Creating SNMP thread");
+      exit(1);
+    }
+  }
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
     int sock;
@@ -454,10 +466,12 @@ char * controllerBenchmarking() {
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint
-    myreport++;
+          myreport++;
     */
   }
-  //Return array of myreport
+  if (params->nNodes <= 1) {
+    pthread_join(snmp_thread, NULL);
+  }
   return (char *)" ";
 }
 
@@ -472,9 +486,7 @@ int main(int argc, char * argv[]) {
     if (params->master) {
       printf("Im the master node\n");
       initializeSnmp();
-      asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
-      serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
-      //TODO: Manejar los reportes para generar graficos
+      serverSide(params->nNodes);
     } else {
       printf("Im one of the slaves node\n");
       clientSide(params->nodeMasterHostname);
@@ -482,7 +494,6 @@ int main(int argc, char * argv[]) {
   } else {
     printf("Im alone\n");
     initializeSnmp();
-    asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
     controllerBenchmarking();
     /*
     TODO: Recibir arreglo de reportes de controllerBenchmarking()
