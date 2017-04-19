@@ -7,6 +7,7 @@
 #include "../include/myreport.h"
 
 report *myreport;
+report *snmpReport;
 report *reports;
 
 void displayMessages(report *myreport)
@@ -14,12 +15,14 @@ void displayMessages(report *myreport)
   struct message *temp;
   int index = 0;
   temp = myreport->list;
+  printf("DISPLAY\n");
   while (temp != NULL)
   {
-    printf("message %d : %s\n", index, temp->buffer);
+    printf("%s\n", temp->buffer);
     temp = temp->next;
     index++;
   }
+  printf("TOTAL: %d messages\n", index);
 }
 
 void enqueueMessage(char* item,  report *myreport)

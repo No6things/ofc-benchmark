@@ -3,6 +3,8 @@
 #include <winsock.h>
 #endif
 
+#include "pthread.h"
+#include "../include/myreport.h"
 #include "../include/mysnmp.h"
 
 static struct oid *op;
@@ -11,7 +13,7 @@ void initializeSnmp (void)
 {
   op=oids;
   char * opts = "qv";
-
+  snmpReport = (struct report *)malloc(sizeof snmpReport);
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");
@@ -35,41 +37,42 @@ void initializeSnmp (void)
 static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pdu)
 {
   char buf[1024];
+  char *result = (char *)malloc(150 + 1);
   struct variable_list *vp;
   int i;
   struct timeval now;
 
   gettimeofday(&now, NULL);
 
-  fprintf(stdout, "%ld:", now.tv_usec);
+  snprintf(result, 20, "%ld:", now.tv_usec);
   switch (status) {
-
-  case STAT_SUCCESS:
-    vp = pdu->variables;
-    if (pdu->errstat == SNMP_ERR_NOERROR) {
-      while (vp) {
-        snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-        fprintf(stdout, "%s:%s\n",op->readableName, buf);
-	       vp = vp->next_variable;
-         op++;
+    case STAT_SUCCESS:
+      vp = pdu->variables;
+      if (pdu->errstat == SNMP_ERR_NOERROR) {
+        while (vp) {
+          snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+          snprintf(result, 70, "%s:%s;",op->readableName, buf);
+  	       vp = vp->next_variable;
+           op++;
+        }
+        enqueueMessage(result, snmpReport);
       }
-    }
-    else {
-      for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
-        if (vp) snprint_objid(buf, sizeof(buf), vp->name, vp->name_length);
-        else strcpy(buf, "(none)");
-        fprintf(stdout, "%s: %s: %s\n", sp->peername, buf, snmp_errstring(pdu->errstat));
+      else {
+        for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
+          if (vp) snprint_objid(buf, sizeof(buf), vp->name, vp->name_length);
+          else strcpy(buf, "(none)");
+          fprintf(stdout, "%s: %s: %s\n", sp->peername, buf, snmp_errstring(pdu->errstat));
+        }
       }
-    }
-    return 1;
+      return 1;
 
-  case STAT_TIMEOUT:
-    fprintf(stdout, "Timeout\n");
-    return 0;
+    case STAT_TIMEOUT:
+      fprintf(stdout, "Timeout\n");
+      return 0;
 
-  case STAT_ERROR:
-    snmp_perror(sp->peername);
-    return 0;
+    case STAT_ERROR:
+      snmp_perror(sp->peername);
+      return 0;
   }
   return 0;
 }
@@ -133,8 +136,6 @@ void *asynchronousSnmp(void *context)
     sess.community_len = strlen(sess.community);
     sess.callback = asynchResponse;		/* default callback */
     sess.callback_magic = hs;
-
-    printf("---SNMP---\n" );
 
     if (!(hs->sess = snmp_open(&sess))) {
       snmp_perror("snmp_open");

@@ -17,6 +17,7 @@ typedef struct report{
  } report;
 
  extern report *myreport;
+ extern report *snmpReport;
  extern report *reports;
 
  /*
