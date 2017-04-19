@@ -88,30 +88,19 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
 char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
-
+  //ms/response
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "latency result: %d Switches %d Tests "
-        "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response",
-            i+1,
-            countedTests,
+    size = snprintf(NULL, 0, "l;%.2lf;%.2lf;%.2lf;%.2lf;",
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "latency result: %d Switches %d Tests "
-        "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response",
-            i+1,
-            countedTests,
+    snprintf(buffer, size + 1, "l;%.2lf;%.2lf;%.2lf;%.2lf;",
             1000/min, 1000/max, 1000/avg, 1000/std_dev);
+  //response/s
   } else {
-    size = snprintf(NULL, 0, "throughput result: %d Switches %d Tests "
-        "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s",
-            i+1,
-            countedTests,
+    size = snprintf(NULL, 0, "t;%.2lf;%.2lf;%.2lf;%.2lf;",
             min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "throughput result: %d Switches %d Tests "
-        "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s",
-            i+1,
-            countedTests,
+    snprintf(buffer, size + 1, "t;%.2lf;%.2lf;%.2lf;%.2lf;",
             min, max, avg, std_dev);
 
   }

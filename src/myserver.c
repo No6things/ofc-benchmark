@@ -85,9 +85,11 @@ void * serverSide(unsigned int s) {
    for (n = nThreads; n >= 0; n--)
       pthread_join(nodesThreads[n], NULL);
 
-   pthread_mutex_destroy(&lock);
-   pthread_cond_destroy(&sendStart);
-   return 0;
+    parseReports();
+
+    pthread_mutex_destroy(&lock);
+    pthread_cond_destroy(&sendStart);
+    return 0;
 }
 
 

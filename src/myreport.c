@@ -39,20 +39,6 @@ void enqueueMessage(char* item,  report *myreport)
   free(item);
 }
 
-/*void enqueueReport(report* item,  result *myresult)
-{
-  struct report *temp = item;
-  printf("socket %d\n", temp->sock);
-  if (myresult->list != NULL) {
-    temp->next = myresult->list;
-    myresult->length = myresult->length + 1;
-  } else {
-    myresult->length = 1;
-    temp->next = NULL;
-  }
-  myresult->list = temp;
-}*/
-
 void dequeueMessage(report *myreport)
 {
   if (myreport->list == NULL) {
@@ -64,4 +50,11 @@ void dequeueMessage(report *myreport)
     printf("\n%s deleted", temp->buffer);
     free(temp);
   }
+}
+
+char * parseReports()
+{
+  char * result = (char *)malloc(151);
+  //
+  return result;
 }
