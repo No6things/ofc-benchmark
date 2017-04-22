@@ -151,10 +151,12 @@ void *clientManagement(void *context) {
 
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
+        myreport->length = nLines;
         printf("Read list length %d\n", nLines);
         while (index < nLines) {
           bytesRead = 0;
           buffer = readSocketLimiter(clientFd, 150, &bytesRead);
+          if buffer
           enqueueMessage(buffer, myreport);
           index++;
         }
