@@ -90,7 +90,7 @@ int plotLines(char *cadena){
   return 0;
 }
 
-int plotFinalResults (char *cadena, int swNum) {
+int plotFinalResults (char *cadena) {
   gnuplot_ctrl *h1;
   char names [VALUES][MAX_NAME_GENERAL];
   double xvalues [MAX_SW][VALUES];

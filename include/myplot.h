@@ -28,7 +28,7 @@ typedef struct fakeSwResults {
 } fakeSwResults;
 
 int plotLines (char *cadena);
-int plotFinalResults(char *cadena, int swNum);
+int plotFinalResults(char *cadena);
 int plotManagement();
 
 #endif

@@ -22,10 +22,10 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
 {
   int sz = 0, rt = 0, count = 0, sz_received = 1;
   char *array = (char *)malloc(BUFFER_SIZE);
-  printf("[del]");
+  //printf("[del]");
   do {
     rt = read(fd, array + sz, sz_received);
-    printf("%c", array[sz]);
+    //printf("%c", array[sz]);
 
     if(rt < 1)
     {
@@ -40,7 +40,7 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
     sz += rt;
     count += sz;
   }while((array[sz - 1] != LIMITER) && (sz < BUFFER_SIZE));
-  printf("[del]%d\n", sz);
+  //printf("[del]%d\n", sz);
   array[sz - 1] = '\0';
 
   *bytesRead = count;

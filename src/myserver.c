@@ -94,16 +94,18 @@ void * serverSide(unsigned int s) {
 
 void *clientManagement(void *context) {
   char *buffer;
-  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id;
-  report *myreport = (struct report*)malloc(sizeof(myreport));
+  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id, nSwitches;
+  report *myreport;
   pthread_t snmp_thread;
 
   //Initializing variables
   threadErr = 0;
   bytesRead = 0;
+  nSwitches = 0;
   nLines = 0;
   index = 0;
   messageReceived = 0;
+  myreport = (struct report*)malloc(sizeof(myreport));
   id = *((int *)context);
   clientFd = reports[id].sock;
   buffer = NULL;
@@ -149,14 +151,19 @@ void *clientManagement(void *context) {
           printf("Reported: %d/%d\n", clientsStatuses.reported, clientsStatuses.quantity);
         pthread_mutex_unlock(&lock);
 
+        printf("******** RESULTS *********\n");
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        nSwitches = atoi(buffer);
+        printf("nSwitches: %d\n", nSwitches);
+        buffer = NULL;
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
-        printf("Read list length %d\n", nLines);
+        printf("nLines/loops: %d\n", nLines);
 
-        while (index < nLines) {
+        while (index < nSwitches) {
           bytesRead = 0;
-          buffer = readSocketLimiter(clientFd, 150, &bytesRead);
-          printf("%s\n", buffer);
+          buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
+          printf("[GRAPH %d]\n%s\n[GRAPH %d]\n",index, buffer, index);
           enqueueMessage(buffer, myreport);
           index++;
         }
