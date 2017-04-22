@@ -86,10 +86,10 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;          // is now per ms
 
-    snprintf(message, 1, ";");
+    snprintf(message, 1, "%c", CSV_NEWLINE);
     //snprintf(message, size, "total = %lf per ms", sum); TODO: Look if this value has purpose to be shown?
     message = tmp;
-    enqueueMessage(message, myreport);
+    enqueueMessage(message, myreport, !DELIMIT);
     free(pollfds);
     return sum;
 }
@@ -100,18 +100,18 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   size_t size;
   //ms/response
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf;",
-            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf;",
-            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
   //response/s
   } else {
-    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf;",
-            min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf;",
-            min, max, avg, std_dev);
+    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min, max, avg, std_dev, CSV_NEWLINE);
+    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min, max, avg, std_dev, CSV_NEWLINE);
 
   }
   return buffer;
@@ -421,7 +421,7 @@ char * controllerBenchmarking() {
   }
 
   //NSWITCHES STORAGE
-  enqueueMessage(nSwitchesMessage, myreport);
+  enqueueMessage(nSwitchesMessage, myreport, DELIMIT);
 
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
@@ -456,7 +456,8 @@ char * controllerBenchmarking() {
         continue;
 
     //LOOPS STORAGE
-    enqueueMessage(nLoopsMessage, myreport);
+    printf("loops %s\n", nLoopsMessage);
+    enqueueMessage(nLoopsMessage, myreport, DELIMIT);
 
     //RUN
     for(j = 0; j < params->loopsPerTest; j++) {
@@ -487,12 +488,14 @@ char * controllerBenchmarking() {
     sum = sum / (double)(countedTests);
     std_dev = sqrt(sum);
 
+    printf("mode %s\n", modeMessage);
     //TYPE OF TEST STORAGE
-    enqueueMessage(modeMessage, myreport);
+    enqueueMessage(modeMessage, myreport, DELIMIT);
 
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-    enqueueMessage(finalMessage, myreport);
+    printf("finalMessage %s\n", finalMessage);
+    enqueueMessage(finalMessage, myreport, DELIMIT);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint

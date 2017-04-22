@@ -164,7 +164,7 @@ void *clientManagement(void *context) {
           bytesRead = 0;
           buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
           printf("[GRAPH %d]\n%s\n[GRAPH %d]\n",index, buffer, index);
-          enqueueMessage(buffer, myreport);
+          enqueueMessage(buffer, myreport, !DELIMIT);
           index++;
         }
         if (bytesRead > 0) {;
