@@ -14,12 +14,13 @@
 #include "../include/myclient.h"
 
 int clientSide(const char *nodeMasterHostname) {
-   int serverFd, portno, bytes, end;
+   int serverFd, portno, bytes, end, index;
    struct sockaddr_in serv_addr;
    struct hostent *server;
+   struct message *temp;
+   char * buffer;
 
    /* Initializing*/
-   char * buffer;
    buffer = (char *)malloc(strlen(CONNECT_REQUEST_MESSAGE) + 1);
    snprintf(buffer, strlen(CONNECT_REQUEST_MESSAGE) + 1, CONNECT_REQUEST_MESSAGE);
    portno = 5101;
@@ -60,13 +61,16 @@ int clientSide(const char *nodeMasterHostname) {
    end = 0;
    while (1) {
      bytes = 0;
+     index = 0;
      char * buffer2;
      buffer2 = NULL;
+
      /*Read server response*/
      buffer2 = readSocket(serverFd, 1, 1, &bytes);
 
      if (strcmp(buffer2, START_MESSAGE) == 0) {
        end = 1;
+
        printf("received START_MESSAGE\n");
        controllerBenchmarking();
        displayMessages(myreport);
@@ -75,15 +79,9 @@ int clientSide(const char *nodeMasterHostname) {
        writeSocket(serverFd, buffer, 2 , 1);
        printf("sent REPORT_MESSAGE\n");
 
-       struct message *temp;
-       char * listLength;
-       int index = 0;
        temp = myreport->list;
-       listLength = (char *)malloc(6 + 1); //5 digits + delimeter + null
-       snprintf(listLength, 6, "%d%c", myreport->length, LIMITER);
-       writeSocket(serverFd, listLength, strlen(listLength) + 1 , strlen(listLength));
-       while (temp != NULL)
-       {
+
+       while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->next;
          index++;

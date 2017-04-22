@@ -94,7 +94,7 @@ void * serverSide(unsigned int s) {
 
 void *clientManagement(void *context) {
   char *buffer;
-  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id, m;
+  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id;
   report *myreport = (struct report*)malloc(sizeof(myreport));
   pthread_t snmp_thread;
 
@@ -151,12 +151,12 @@ void *clientManagement(void *context) {
 
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
-        myreport->length = nLines;
         printf("Read list length %d\n", nLines);
+
         while (index < nLines) {
           bytesRead = 0;
           buffer = readSocketLimiter(clientFd, 150, &bytesRead);
-          if buffer
+          printf("%s\n", buffer);
           enqueueMessage(buffer, myreport);
           index++;
         }
@@ -169,7 +169,6 @@ void *clientManagement(void *context) {
     }
     if (messageReceived == SERVER_MESSAGES) break;
   }
-  snmpStop = 1;
   pthread_join(snmp_thread, NULL);
   displayMessages(snmpReport);
   pthread_exit(NULL);

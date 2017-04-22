@@ -1,7 +1,7 @@
 #ifndef MYREPORT_H
 #define MYREPORT_H
 
-#define LIMITER ';'
+#define LIMITER '*'
 
 typedef struct message {
   char *buffer;

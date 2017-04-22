@@ -10,7 +10,7 @@
 int plotLines(char *cadena){
   gnuplot_ctrl *h1;
   char numerotext[10];
-  char namebuffer[MAX_NAME];
+  char namebuffer[MAX_NAME_LINES];
 
   int i = 0;
   int m = 0;
@@ -193,7 +193,7 @@ int plotFinalResults (char *cadena, int swNum) {
 
 int plotManagement()
 {
-  report *aux = (report *)malloc(sizeof aux);
+  /*report *aux = (report *)malloc(sizeof aux);
   char *line = (char *)malloc(150);
   int nLines = 0;
   struct inputValues *params = &benchmarkArgs;
@@ -204,6 +204,6 @@ int plotManagement()
     return -1;
   } else {
 
-  }
+  }*/
   return 0;
 }
