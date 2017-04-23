@@ -398,7 +398,8 @@ char * controllerBenchmarking() {
   pthread_t snmp_thread;
 
   myreport = (report *)malloc(sizeof(myreport));
-  myreport->list = NULL;
+  myreport->queue = NULL;
+  myreport->first = NULL;
 
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
   assert(switches);

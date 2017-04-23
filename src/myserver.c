@@ -169,7 +169,7 @@ void *clientManagement(void *context) {
         }
         if (bytesRead > 0) {;
           messageReceived++;
-          reports[id].list = myreport->list;
+          reports[id].queue = myreport->queue;
         }
     } else {
         perror("ERROR unknown message from node");

@@ -8,6 +8,7 @@
 typedef struct message {
   char *buffer;
   struct message *next;
+  struct message *back;
 } message;
 
 
@@ -15,7 +16,8 @@ typedef struct report{
   int sock;
   int length;
   char *hostname;
-  struct message *list;
+  struct message *first;
+  struct message *queue;
  } report;
 
  extern report *myreport;

@@ -79,11 +79,11 @@ int clientSide(const char *nodeMasterHostname) {
        writeSocket(serverFd, buffer, 2 , 1);
        printf("sent REPORT_MESSAGE\n");
 
-       temp = myreport->list;
+       temp = myreport->first;
 
        while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
-         temp = temp->next;
+         temp = temp->back;
          index++;
        }
        printf("End of transmission\n");
