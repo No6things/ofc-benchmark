@@ -68,7 +68,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
       return 1;
 
     case STAT_TIMEOUT:
-      fprintf(stdout, "Timeout\n");
+      fprintf(stdout, "SNMP TIMEOUT\n");
       return 0;
 
     case STAT_ERROR:
