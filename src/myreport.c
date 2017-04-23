@@ -29,6 +29,7 @@ void displayMessages(report *myreport)
 void enqueueMessage(char* item,  report *myreport, int delimit)
 {
   struct message *temp = (struct message *)malloc(sizeof(temp));
+  temp->back = (struct message *)malloc(sizeof(temp->back));
 
   temp->buffer = (char *)malloc(151 + 1);
   temp->back = NULL;
