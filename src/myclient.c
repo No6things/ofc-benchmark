@@ -86,6 +86,7 @@ int clientSide(const char *nodeMasterHostname) {
          temp = temp->back;
          index++;
        }
+       //free(myreport);
        printf("End of transmission\n");
      } else {
        printf("received: '%s'\n",buffer2);

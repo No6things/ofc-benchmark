@@ -390,6 +390,7 @@ char * controllerBenchmarking() {
   unsigned int i, j, LAST;
   int threadErr;
   int countedTests;
+  int sock;
   char *finalMessage = (char*)malloc(150 * sizeof(char));
   char *nSwitchesMessage = (char *)malloc(6 + 1);
   char *nLoopsMessage = (char *)malloc(6 + 1);
@@ -398,13 +399,17 @@ char * controllerBenchmarking() {
   pthread_t snmp_thread;
 
   myreport = (report *)malloc(sizeof(myreport));
+  myreport->queue = (struct message *)malloc(sizeof(myreport->queue));
+  myreport->first = (struct message *)malloc(sizeof(myreport->first));
+
   myreport->queue = NULL;
-  myreport->first = NULL;
 
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
+
   assert(switches);
 
   double *results;
+  double sum;
   double  min = DBL_MAX;
   double  max = 0.0;
   double  avg;
@@ -428,11 +433,10 @@ char * controllerBenchmarking() {
 
   //NSWITCHES STORAGE
   enqueueMessage(nSwitchesMessage, myreport, DELIMIT);
-
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
-    int sock;
-    double sum = 0;
+    sock = 0;
+    sum = 0;
     if (params->connectDelay != 0 && i != 0 && (i % params->connectGroupSize == 0)) {
         if (params->debug) {
             fprintf(stderr, "Delaying connection by %dms...", params->connectDelay * 1000);
