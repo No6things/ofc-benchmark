@@ -29,7 +29,7 @@
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
 //BENCHMARKING || Prints interval messages
-double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp) {
+double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
     int i;
@@ -82,11 +82,16 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
       message += written;
       sum += count;
     }
+    written = snprintf(message, 2, "%c", CSV_NEWLINE);
+    message += written;
+
+    if (LAST) {
+      snprintf(message, 2, "%c", LIMITER);
+    }
+
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;          // is now per ms
-
-    snprintf(message, 1, "%c", CSV_NEWLINE);
     //snprintf(message, size, "total = %lf per ms", sum); TODO: Look if this value has purpose to be shown?
     message = tmp;
     enqueueMessage(message, myreport, !DELIMIT);
@@ -101,11 +106,11 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   //ms/response
   if (mode == MODE_LATENCY) {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
+            min == 0 ? 0 : 1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
 
     buffer = (char *)malloc(size + 1);
     snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
+            min == 0 ? 0 : 1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
   //response/s
   } else {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
@@ -382,7 +387,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
 char * controllerBenchmarking() {
   struct fakeswitch *switches;
   struct inputValues *params = &benchmarkArgs;
-  unsigned int i, j;
+  unsigned int i, j, LAST;
   int threadErr;
   int countedTests;
   char *finalMessage = (char*)malloc(150 * sizeof(char));
@@ -456,7 +461,6 @@ char * controllerBenchmarking() {
         continue;
 
     //LOOPS STORAGE
-    printf("loops %s\n", nLoopsMessage);
     enqueueMessage(nLoopsMessage, myreport, DELIMIT);
 
     //RUN
@@ -464,7 +468,8 @@ char * controllerBenchmarking() {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
-        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay, myreport);
+        LAST = (j == params->loopsPerTest - 1) ? 1 : 0;
+        v = 1000.0 * runTest(i + 1, switches, params->msTestLen, params->delay, myreport, LAST);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
@@ -488,13 +493,11 @@ char * controllerBenchmarking() {
     sum = sum / (double)(countedTests);
     std_dev = sqrt(sum);
 
-    printf("mode %s\n", modeMessage);
     //TYPE OF TEST STORAGE
     enqueueMessage(modeMessage, myreport, DELIMIT);
 
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-    printf("finalMessage %s\n", finalMessage);
     enqueueMessage(finalMessage, myreport, DELIMIT);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
