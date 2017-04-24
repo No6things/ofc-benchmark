@@ -266,7 +266,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     index++;
   }while (index < nSwitches);
 
-  plotLines(generalReport->queue);
+  plotLines(generalReport->queue->buffer);
   //TODO: Change result graph header depending of the mode
   if (mode == MODE_LATENCY) {
     //written = snprintf(header, 20, "ms,flows/sec");
