@@ -415,7 +415,7 @@ char * controllerBenchmarking() {
   double  std_dev ;
   double  v;
 
-  results = malloc(params->loopsPerTest * sizeof(double));
+  results = (double *)malloc(params->loopsPerTest * sizeof(double));
 
   snprintf(modeMessage, 6, "%d", params->mode == MODE_LATENCY ? 0 : 1);
   snprintf(nSwitchesMessage, 6, "%d", params->nSwitches);
