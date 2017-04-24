@@ -27,9 +27,9 @@ void displayMessages(report *myreport)
 
 void enqueueMessage(char* item,  report *myreport, int delimit)
 {
-  struct message *temp = (struct message *)malloc(sizeof(temp));
-  temp->back = (struct message *)malloc(sizeof(temp->back));
-  temp->next = (struct message *)malloc(sizeof(temp->next));
+  struct message *temp = (struct message *)malloc(sizeof(struct message));
+  temp->back = (struct message *)malloc(sizeof(struct message));
+  temp->next = (struct message *)malloc(sizeof(struct message));
   temp->buffer = (char *)malloc(150 + 1);
 
   temp->back = NULL;
@@ -56,10 +56,10 @@ void enqueueMessage(char* item,  report *myreport, int delimit)
 
 void dequeueMessage(report *myreport)
 {
+  struct message *temp;
   if (myreport->queue == NULL) {
     printf("Queue is empty \n");
   } else {
-    struct message *temp;
     temp = myreport->queue;
     while(temp != NULL) {
       myreport->queue = temp->next;

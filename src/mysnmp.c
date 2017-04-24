@@ -14,7 +14,7 @@ void initializeSnmp (void)
   op=oids;
   snmpStop = 0;
   char * opts = "qv";
-  snmpReport = (struct report *)malloc(sizeof snmpReport);
+  snmpReport = (struct report *)malloc(sizeof(struct report));
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");

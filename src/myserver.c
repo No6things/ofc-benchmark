@@ -29,7 +29,7 @@ void * serverSide(unsigned int s) {
    clientsStatuses.connected = 0;
    clientsStatuses.reported = 0;
 
-   reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(report));
+   reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(struct report));
 
    index = 0;
    nThreads = clientsStatuses.quantity;
@@ -105,7 +105,7 @@ void *clientManagement(void *context) {
   nLines = 0;
   index = 0;
   messageReceived = 0;
-  myreport = (struct report*)malloc(sizeof(myreport));
+  myreport = (struct report*)malloc(sizeof(struct report));
   id = *((int *)context);
   clientFd = reports[id].sock;
   buffer = NULL;

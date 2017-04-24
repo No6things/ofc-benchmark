@@ -403,9 +403,6 @@ char * controllerBenchmarking() {
   myreport->queue = NULL;
   myreport->first = NULL;
   myreport->sock = 0;
-  myreport->length = 0;
-  myreport->hostname = (char*)malloc(50 * sizeof(char));
-
 
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
   assert(switches);
