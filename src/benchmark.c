@@ -390,7 +390,6 @@ char * controllerBenchmarking() {
   unsigned int i, j, LAST;
   int threadErr;
   int countedTests;
-  int sock;
   char *finalMessage = (char*)malloc(150 * sizeof(char));
   char *nSwitchesMessage = (char *)malloc(6 + 1);
   char *nLoopsMessage = (char *)malloc(6 + 1);
@@ -398,14 +397,17 @@ char * controllerBenchmarking() {
 
   pthread_t snmp_thread;
 
-  myreport = (report *)malloc(sizeof(myreport));
+  myreport = (struct report *)malloc(sizeof(struct report));
   myreport->queue = (struct message *)malloc(sizeof(myreport->queue));
   myreport->first = (struct message *)malloc(sizeof(myreport->first));
-
   myreport->queue = NULL;
+  myreport->first = NULL;
+  myreport->sock = 0;
+  myreport->length = 0;
+  myreport->hostname = (char*)malloc(50 * sizeof(char));
+
 
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
-
   assert(switches);
 
   double *results;
@@ -418,9 +420,9 @@ char * controllerBenchmarking() {
 
   results = malloc(params->loopsPerTest * sizeof(double));
 
+  snprintf(modeMessage, 6, "%d", params->mode == MODE_LATENCY ? 0 : 1);
   snprintf(nSwitchesMessage, 6, "%d", params->nSwitches);
   snprintf(nLoopsMessage, 6, "%d", params->loopsPerTest);
-  snprintf(modeMessage, 6, "%d", params->mode);
 
   if (params->nNodes <= 1) {
     threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
@@ -433,9 +435,16 @@ char * controllerBenchmarking() {
 
   //NSWITCHES STORAGE
   enqueueMessage(nSwitchesMessage, myreport, DELIMIT);
+
+  //LOOPS STORAGE
+  enqueueMessage(nLoopsMessage, myreport, DELIMIT);
+
+  //TYPE OF TEST STORAGE
+  enqueueMessage(modeMessage, myreport, DELIMIT);
+
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
-    sock = 0;
+
     sum = 0;
     if (params->connectDelay != 0 && i != 0 && (i % params->connectGroupSize == 0)) {
         if (params->debug) {
@@ -443,19 +452,20 @@ char * controllerBenchmarking() {
         }
         usleep(params->connectDelay * 1000);
     }
-    sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
-    myreport->sock = sock;
 
-    if(sock < 0) {
-        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
+    myreport->sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
+
+    if(myreport->sock < 0) {
+        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", myreport->sock);
         exit(1);
     }
     if (params->debug) {
         fprintf(stderr,"Initializing switch %d ... ", i + 1);
     }
 
+
     fflush(stderr);
-    switchInit(&switches[i], params->dpidOffset + i, sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
+    switchInit(&switches[i], params->dpidOffset + i, myreport->sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
     if (params->debug) {
         fprintf(stderr," :: done.\n");
     }
@@ -464,9 +474,6 @@ char * controllerBenchmarking() {
         continue;
     if (!params->testRange && ((i + 1) != params->nSwitches)) // only if testing range or this is last
         continue;
-
-    //LOOPS STORAGE
-    enqueueMessage(nLoopsMessage, myreport, DELIMIT);
 
     //RUN
     for(j = 0; j < params->loopsPerTest; j++) {
@@ -497,9 +504,6 @@ char * controllerBenchmarking() {
     }
     sum = sum / (double)(countedTests);
     std_dev = sqrt(sum);
-
-    //TYPE OF TEST STORAGE
-    enqueueMessage(modeMessage, myreport, DELIMIT);
 
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);

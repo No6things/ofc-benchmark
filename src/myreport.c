@@ -15,7 +15,6 @@ void displayMessages(report *myreport)
   struct message *temp;
   int index = 0;
   temp = myreport->first;
-  printf("%s\n", temp->buffer);
   printf("DISPLAY\n");
   while (temp != NULL)
   {
@@ -30,8 +29,9 @@ void enqueueMessage(char* item,  report *myreport, int delimit)
 {
   struct message *temp = (struct message *)malloc(sizeof(temp));
   temp->back = (struct message *)malloc(sizeof(temp->back));
+  temp->next = (struct message *)malloc(sizeof(temp->next));
+  temp->buffer = (char *)malloc(150 + 1);
 
-  temp->buffer = (char *)malloc(151 + 1);
   temp->back = NULL;
 
   if (delimit) {
@@ -39,8 +39,6 @@ void enqueueMessage(char* item,  report *myreport, int delimit)
   } else {
     snprintf(temp->buffer, 151, "%s", item);
   }
-  printf("%s\n", temp->buffer);
-
   if (myreport->queue != NULL) {
     (myreport->queue)->back = temp;
     temp->next = myreport->queue;
@@ -52,6 +50,8 @@ void enqueueMessage(char* item,  report *myreport, int delimit)
   }
   myreport->queue = temp;
   free(item);
+
+  printf("%s\n", temp->buffer);
 }
 
 void dequeueMessage(report *myreport)
@@ -61,14 +61,14 @@ void dequeueMessage(report *myreport)
   } else {
     struct message *temp;
     temp = myreport->queue;
-    /*while(temp != NULL) {
+    while(temp != NULL) {
       myreport->queue = temp->next;
       temp->next = NULL;
       temp->back = NULL;
       printf("\n%s deleted", temp->buffer);
       free(temp);
       temp = myreport->queue;
-    }*/
+    }
   }
 }
 
