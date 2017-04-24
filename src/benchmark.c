@@ -49,7 +49,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     int size = 150;
     char* message = malloc(size);
     int written = 0;
-    char* tmp;
+    char* checkpoint;
     while (1) {
       gettimeofday(&now, NULL);
       timersub(&now, &then, &diff);
@@ -71,7 +71,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
 
     //TIMESTAMP
     written += snprintf(message, size, "%lu", ms);
-    tmp = message; //  start checkpoint
+    checkpoint = message; //  start checkpoint
     message += written;
     usleep(100000); // sleep for 100 ms, to let packets queue
 
@@ -93,7 +93,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;          // is now per ms
     //snprintf(message, size, "total = %lf per ms", sum); TODO: Look if this value has purpose to be shown?
-    message = tmp;
+    message = checkpoint;
     enqueueMessage(message, myreport, !DELIMIT);
     free(pollfds);
     return sum;
@@ -394,6 +394,8 @@ char * controllerBenchmarking() {
   char *nSwitchesMessage = (char *)malloc(6 + 1);
   char *nLoopsMessage = (char *)malloc(6 + 1);
   char *modeMessage = (char *)malloc(6 + 1);
+  char *rangeMessage = (char *)malloc(6 + 1);
+
 
   pthread_t snmp_thread;
 
@@ -420,6 +422,8 @@ char * controllerBenchmarking() {
   snprintf(modeMessage, 6, "%d", params->mode == MODE_LATENCY ? 0 : 1);
   snprintf(nSwitchesMessage, 6, "%d", params->nSwitches);
   snprintf(nLoopsMessage, 6, "%d", params->loopsPerTest);
+  snprintf(rangeMessage, 6, "%d", params->testRange);
+
 
   if (params->nNodes <= 1) {
     threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
@@ -437,6 +441,9 @@ char * controllerBenchmarking() {
   enqueueMessage(nLoopsMessage, myreport, DELIMIT);
 
   //TYPE OF TEST STORAGE
+  enqueueMessage(modeMessage, myreport, DELIMIT);
+
+  //TEST RANGE STORAGE
   enqueueMessage(modeMessage, myreport, DELIMIT);
 
   for(i = 0; i < params->nSwitches; i++) {

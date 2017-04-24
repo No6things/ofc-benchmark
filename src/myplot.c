@@ -1,26 +1,34 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 
 #include "../include/benchmark.h"
-#include "../include/myreport.h"
+#include "../include/mymessages.h"
+#include "../include/myswitch.h"
+#include "../include/generalReport.h"
 #include "../include/myplot.h"
 #include "../include/gnuplot_i.h"
 
-int plotLines(char *cadena){
+int plotLines(char *input){
   gnuplot_ctrl *h1;
-  char numerotext[10];
+  char numbertext[10];
   char namebuffer[MAX_NAME_LINES];
+  char *header = (char *) malloc(50 + 1);
+  char *xlabel = (char *) malloc(50 + 1);
+  char *ylabel = (char *) malloc(50 + 1);
 
   int i = 0;
   int m = 0;
   int tam = 0;
   int aux = 0;
-  double numero = 0;
+  double number = 0;
+  xlabel = strtok(input, (const char *)CSV_NEWLINE);
+  ylabel = strtok(NULL, (const char *)CSV_NEWLINE);
 
   h1 = gnuplot_init();
 
-  struct fakeSwResults *xvaluesP = (struct fakeSwResults *)malloc(sizeof xvaluesP + (sizeof numero) * MAX_LENG + (sizeof namebuffer));
+  struct fakeSwResults *xvaluesP = (struct fakeSwResults *)malloc(sizeof xvaluesP + (sizeof number) * MAX_LENG + (sizeof namebuffer));
   struct fakeSwResults *checkpoint = xvaluesP;
   struct fakeSwResults *tmp;
   struct fakeSwResults *iterator;
@@ -28,8 +36,8 @@ int plotLines(char *cadena){
   xvaluesP->next=NULL;
 
   //Configuracion de nombres en graficas.
-  gnuplot_set_ylabel(h1, "flows/sec") ;
-  gnuplot_set_xlabel(h1, "Milliseconds") ;
+  gnuplot_set_ylabel(h1, ylabel);
+  gnuplot_set_xlabel(h1, xlabel);
   //Reseteo de grafica
   gnuplot_resetplot(h1);
   //Configuracion de estilo
@@ -38,42 +46,53 @@ int plotLines(char *cadena){
   gnuplot_cmd(h1, "set terminal png");
 
   //inicializacion de nombres
+
+   /* walk through other tokens */
+  /*do {
+    header = strtok(NULL, ',');
+    tmp = (struct fakeSwResults *)malloc(sizeof(struct fakeSwResults) + (sizeof number) * MAX_LENG + (sizeof namebuffer));
+    tmp->next = NULL;
+    xvaluesP->next = tmp;
+    xvaluesP = tmp;
+    aux = aux + 1;
+    tam = 0;
+  } while( header != NULL );
+*/
   do {
-    if (cadena[aux] == ',') {
-      tmp = (struct fakeSwResults *)malloc(sizeof(struct fakeSwResults) + (sizeof numero) * MAX_LENG + (sizeof namebuffer));
+    if (input[aux] == ',') {
+      tmp = (struct fakeSwResults *)malloc(sizeof(struct fakeSwResults) + (sizeof number) * MAX_LENG + (sizeof namebuffer));
       tmp->next = NULL;
       xvaluesP->next = tmp;
       xvaluesP = tmp;
       aux = aux + 1;
-      tam = 0;
     } else {
-      xvaluesP->name[tam] = cadena[aux];
+      xvaluesP->name[tam] = input[aux];
       tam = tam + 1;
       aux = aux + 1;
     }
-  }while (cadena[aux] != ';');
+  }while (input[aux] != ';');
   aux = aux + 1;
   xvaluesP = checkpoint;
 
   //Graficacion
-  while (cadena[aux] != ';'){
-    //Texto representativo de un numero de  10 digitos
+  while (input[aux] != ';'){
+    //Texto representativo de un number de  10 digitos
     for(m = 0; m < 10; m++){
-      numerotext[m] = '\0';
+      numbertext[m] = '\0';
     }
     tam = 0;
-    //Construye numero
-    while ((cadena[aux] != ',') && ( cadena[aux] != ';')){
-      numerotext[tam] = cadena[aux];
+    //Construye number
+    while ((input[aux] != ',') && ( input[aux] != ';')){
+      numbertext[tam] = input[aux];
       aux = aux + 1;
       tam = tam + 1;
     }
-    numero = atoi(numerotext);
+    number = atoi(numbertext);
 
-    xvaluesP->x[i] = numero;
+    xvaluesP->x[i] = number;
     xvaluesP = xvaluesP->next;
 
-    if (cadena[aux] == ';') {
+    if (input[aux] == ';') {
       i = i + 1;
       xvaluesP = checkpoint;
     }
@@ -90,7 +109,7 @@ int plotLines(char *cadena){
   return 0;
 }
 
-int plotFinalResults (char *cadena) {
+int plotFinalResults (char *input) {
   gnuplot_ctrl *h1;
   char names [VALUES][MAX_NAME_GENERAL];
   double xvalues [MAX_SW][VALUES];
@@ -102,8 +121,8 @@ int plotFinalResults (char *cadena) {
   int m = 0;
   int tam = 0;
   int aux = 0;
-  double numero = 0;
-  char numerotext[20];
+  double number = 0;
+  char numbertext[20];
 
   double x[10000];
   double y[10000];
@@ -119,8 +138,8 @@ int plotFinalResults (char *cadena) {
 
   //Inicializacion de nombres
   for (i = 0; i < VALUES; i++) {
-    while((cadena[aux] != ',') && ( cadena[aux] != ';')){
-      names[i][tam] = cadena[aux];
+    while((input[aux] != ',') && ( input[aux] != ';')){
+      names[i][tam] = input[aux];
       tam = tam + 1;
       aux = aux + 1;
     }
@@ -132,23 +151,23 @@ int plotFinalResults (char *cadena) {
   i = 0;
   j = 0;
 
-  while (cadena[aux] != ';'){
-    //Texto representativo de un numero de  10 digitos
+  while (input[aux] != ';'){
+    //Texto representativo de un number de  10 digitos
     for(m = 0; m < 20; m++){
-      numerotext[m] = '\0';
+      numbertext[m] = '\0';
     }
     tam = 0;
-    while ((cadena[aux] != ',') && (cadena[aux] != ';')){
-      numerotext[tam] = cadena[aux];
+    while ((input[aux] != ',') && (input[aux] != ';')){
+      numbertext[tam] = input[aux];
       aux = aux + 1;
       tam = tam +1;
     }
 
-    numero = atoi(numerotext);
-    xvalues[i][j] = numero;
-    printf("%f <-- %s [%d,%d]\n",xvalues[i][j], numerotext,i,j);
+    number = atoi(numbertext);
+    xvalues[i][j] = number;
+    printf("%f <-- %s [%d,%d]\n",xvalues[i][j], numbertext,i,j);
     j = j + 1;
-    if (cadena[aux] == ';'){
+    if (input[aux] == ';'){
       i = i + 1;
       j = 0;
     }
@@ -191,19 +210,72 @@ int plotFinalResults (char *cadena) {
   return 0;
 }
 
-int plotManagement()
+int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange)
 {
-  /*report *aux = (report *)malloc(sizeof aux);
-  char *line = (char *)malloc(150);
-  int nLines = 0;
-  struct inputValues *params = &benchmarkArgs;
+  report *generalReport = (struct report*)malloc(sizeof(struct report));
+  report *finalReport = (struct report*)malloc(sizeof(struct report));
 
-  flow test[params->nNodes][params->nSwitches];
+  char *header = (char *)malloc( 10 * (nSwitches + 2));
+  char *aux;
+
+  char *buffer;
+  char *checkpoint;
+
+  int bytesRead = 0;
+  int index = 0;
+  int written = 0;
+
+  //flow test[params->nNodes][params->nSwitches];
 
   if (snmpReport == NULL || reports == NULL) {
-    return -1;
-  } else {
+    perror("We can't graph snmpReport or reports");
+  }
 
-  }*/
-  return 0;
+  written = snprintf(header, 20, "ms,flows/sec");
+  checkpoint = header;
+  header += written;
+
+  do {
+    written = snprintf(header, 10, ",VSwitch %d", index);
+    header += written;
+    index++;
+  }while(index < nSwitches);
+  snprintf(header, 2, "%c", CSV_NEWLINE);
+
+  header = checkpoint;
+
+  aux = (char *)malloc(strlen(header) + (150 * (nLines) + 50) + 1);
+
+  strcpy(aux, header); // copy string one into the result.
+
+  //LOOP ONLY WITH TEST_RANGE FLAG
+  index = 0;
+  do {
+    buffer = NULL;
+    buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
+    strcat(aux, buffer); // append string two to the result.
+    printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, aux, index);
+    enqueueMessage(aux, generalReport, !DELIMIT);
+
+    buffer = NULL;
+    buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
+    printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, buffer, index);
+    enqueueMessage(buffer, finalReport, !DELIMIT);
+
+    if (!testRange) break;
+    index++;
+  }while (index < nSwitches);
+
+  plotLines(generalReport->queue);
+  //TODO: Change result graph header depending of the mode
+  if (mode == MODE_LATENCY) {
+    //written = snprintf(header, 20, "ms,flows/sec");
+  } else {
+    //written = snprintf(header, 20, "ms,flows/sec");
+  }
+
+  if (bytesRead > 0) {;
+    //reports[id].queue = generalReport->queue;
+  }
+  return bytesRead;
 }

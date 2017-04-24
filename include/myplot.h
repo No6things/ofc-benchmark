@@ -29,6 +29,6 @@ typedef struct fakeSwResults {
 
 int plotLines (char *cadena);
 int plotFinalResults(char *cadena);
-int plotManagement();
+int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange);
 
 #endif

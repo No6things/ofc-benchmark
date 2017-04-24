@@ -94,8 +94,8 @@ void * serverSide(unsigned int s) {
 
 void *clientManagement(void *context) {
   char *buffer;
-  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id, nSwitches;
-  report *myreport;
+  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id, nSwitches,
+  testRange, mode;
   pthread_t snmp_thread;
 
   //Initializing variables
@@ -104,8 +104,9 @@ void *clientManagement(void *context) {
   nSwitches = 0;
   nLines = 0;
   index = 0;
+  mode = 0;
+  testRange = 0;
   messageReceived = 0;
-  myreport = (struct report*)malloc(sizeof(struct report));
   id = *((int *)context);
   clientFd = reports[id].sock;
   buffer = NULL;
@@ -152,6 +153,7 @@ void *clientManagement(void *context) {
         pthread_mutex_unlock(&lock);
 
         printf("******** RESULTS *********\n");
+        //REPORT ENVIRONMENT
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nSwitches = atoi(buffer);
         printf("nSwitches: %d\n", nSwitches);
@@ -159,18 +161,19 @@ void *clientManagement(void *context) {
         buffer = readSocketLimiter(clientFd, 5, &bytesRead);
         nLines = atoi(buffer);
         printf("nLines/loops: %d\n", nLines);
+        buffer = NULL;
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        mode = atoi(buffer);
+        printf("mode: %d\n", mode);
+        buffer = NULL;
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        testRange = atoi(buffer);
+        printf("testRange: %d\n", testRange);
 
-        while (index < nSwitches) {
-          bytesRead = 0;
-          buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
-          printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, buffer, index);
-          enqueueMessage(buffer, myreport, !DELIMIT);
-          index++;
-        }
-        if (bytesRead > 0) {;
-          messageReceived++;
-          reports[id].queue = myreport->queue;
-        }
+        //REPORT DATA
+        bytesRead = plotManagement(clientFd, id, nSwitches, nLines, mode, testRange);
+
+        if (bytesRead > 0) messageReceived++;
     } else {
         perror("ERROR unknown message from node");
     }
