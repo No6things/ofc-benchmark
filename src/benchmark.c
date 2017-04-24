@@ -86,7 +86,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     message += written;
 
     if (LAST) {
-      snprintf(message, 2, "%c%c", CSV_NEWLINE, LIMITER);
+      snprintf(message, 4, "%c%c", CSV_NEWLINE, LIMITER);
     }
 
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
