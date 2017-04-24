@@ -6,7 +6,7 @@
 #include "../include/benchmark.h"
 #include "../include/mymessages.h"
 #include "../include/myswitch.h"
-#include "../include/generalReport.h"
+#include "../include/myreport.h"
 #include "../include/myplot.h"
 #include "../include/gnuplot_i.h"
 
