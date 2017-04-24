@@ -56,7 +56,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
   	       vp = vp->next_variable;
            op++;
         }
-        enqueueMessage(result, snmpReport, DELIMIT);
+        enqueueMessage(result, snmpReport, DELIMIT, 150);
       }
       else {
         for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){

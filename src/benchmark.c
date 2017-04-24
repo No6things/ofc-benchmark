@@ -94,7 +94,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     sum /= passed;          // is now per ms
     //snprintf(message, size, "total = %lf per ms", sum); TODO: Look if this value has purpose to be shown?
     message = checkpoint;
-    enqueueMessage(message, myreport, !DELIMIT);
+    enqueueMessage(message, myreport, !DELIMIT, 150);
     free(pollfds);
     return sum;
 }
@@ -435,16 +435,16 @@ char * controllerBenchmarking() {
   }
 
   //NSWITCHES STORAGE
-  enqueueMessage(nSwitchesMessage, myreport, DELIMIT);
+  enqueueMessage(nSwitchesMessage, myreport, DELIMIT, 6);
 
   //LOOPS STORAGE
-  enqueueMessage(nLoopsMessage, myreport, DELIMIT);
+  enqueueMessage(nLoopsMessage, myreport, DELIMIT, 6);
 
   //TYPE OF TEST STORAGE
-  enqueueMessage(modeMessage, myreport, DELIMIT);
+  enqueueMessage(modeMessage, myreport, DELIMIT, 6);
 
   //TEST RANGE STORAGE
-  enqueueMessage(rangeMessage, myreport, DELIMIT);
+  enqueueMessage(rangeMessage, myreport, DELIMIT, 6);
 
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
@@ -511,7 +511,7 @@ char * controllerBenchmarking() {
 
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-    enqueueMessage(finalMessage, myreport, DELIMIT);
+    enqueueMessage(finalMessage, myreport, DELIMIT, 150);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint

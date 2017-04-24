@@ -28,7 +28,7 @@ typedef struct report{
  TODO: Deberia modificar esta funcion para mostrar todos los reportes O
        crear un ciclo para mostrar todos los reportes*/
 void displayMessages(report *myreport);
-void enqueueMessage(char* item, report *myreport, int delimit);
+void enqueueMessage(char* item, report *myreport, int delimit, int size);
 void dequeueMessage(report *myreport);
 char * parseReports();
 #endif

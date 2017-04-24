@@ -255,12 +255,12 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
     strcat(aux, buffer); // append string two to the result.
     printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, aux, index);
-    enqueueMessage(aux, generalReport, !DELIMIT);
+    enqueueMessage(aux, generalReport, !DELIMIT, 150 * nLines);
 
     buffer = NULL;
-    buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
+    buffer = readSocketLimiter(clientFd, 150, &bytesRead);
     printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, buffer, index);
-    enqueueMessage(buffer, finalReport, !DELIMIT);
+    enqueueMessage(buffer, finalReport, !DELIMIT, 150);
 
     if (!testRange) break;
     index++;

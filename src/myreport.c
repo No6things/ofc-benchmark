@@ -25,19 +25,19 @@ void displayMessages(report *myreport)
   printf("TOTAL: %d messages\n", index);
 }
 
-void enqueueMessage(char* item,  report *myreport, int delimit)
+void enqueueMessage(char* item,  report *myreport, int delimit, int size)
 {
   struct message *temp = (struct message *)malloc(sizeof(struct message));
   temp->back = (struct message *)malloc(sizeof(struct message));
   temp->next = (struct message *)malloc(sizeof(struct message));
-  temp->buffer = (char *)malloc(150 + 1);
+  temp->buffer = (char *)malloc(size + 1);
 
   temp->back = NULL;
 
   if (delimit) {
-    snprintf(temp->buffer, 151, "%s%c", item, LIMITER);
+    snprintf(temp->buffer, size + 1, "%s%c", item, LIMITER);
   } else {
-    snprintf(temp->buffer, 151, "%s", item);
+    snprintf(temp->buffer, size + 1, "%s", item);
   }
   if (myreport->queue != NULL) {
     (myreport->queue)->back = temp;
