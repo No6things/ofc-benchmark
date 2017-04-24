@@ -215,7 +215,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   report *generalReport = (struct report*)malloc(sizeof(struct report));
   report *finalReport = (struct report*)malloc(sizeof(struct report));
 
-  char *header = (char *)malloc( 10 * (nSwitches + 2));
+  char *header = (char *)malloc( 20 * (nSwitches + 2));
   char *aux;
 
   char *buffer;
@@ -236,7 +236,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   header += written;
 
   do {
-    written = snprintf(header, 10, ",VSwitch %d", index);
+    written = snprintf(header, 20, ",VSwitch %d", index);
     header += written;
     index++;
   }while(index < nSwitches);

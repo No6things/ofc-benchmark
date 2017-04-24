@@ -444,7 +444,7 @@ char * controllerBenchmarking() {
   enqueueMessage(modeMessage, myreport, DELIMIT);
 
   //TEST RANGE STORAGE
-  enqueueMessage(modeMessage, myreport, DELIMIT);
+  enqueueMessage(rangeMessage, myreport, DELIMIT);
 
   for(i = 0; i < params->nSwitches; i++) {
     //CONNECTION
