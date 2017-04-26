@@ -48,15 +48,23 @@ int plotLines(char *input){
   //inicializacion de nombres
 
    /* walk through other tokens */
-  /*do {
-    header = strtok(NULL, ',');
-    tmp = (struct fakeSwResults *)malloc(sizeof(struct fakeSwResults) + (sizeof number) * MAX_LENG + (sizeof namebuffer));
-    tmp->next = NULL;
-    xvaluesP->next = tmp;
-    xvaluesP = tmp;
-    aux = aux + 1;
-    tam = 0;
-  } while( header != NULL );
+  /*  do {
+     if (input[aux] != ',') {
+       if(gotLabelX) {
+         ylabel[i] = input[aux];
+         i++;
+       } else {
+         xlabel[aux] = input[aux];
+       }
+     } else {
+       if(!gotLabelX) gotLabelX = 1;
+       if(!gotLabelY && gotLabelX) gotLabelY = 1;
+     }
+     aux++;
+   }while (!(gotLabelX && gotLabelY));
+    aux++;
+    i = 0;
+
 */
   do {
     if (input[aux] == ',') {
