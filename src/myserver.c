@@ -83,6 +83,7 @@ void * serverSide(unsigned int s) {
 
       if (clientsStatuses.reported == clientsStatuses.quantity) break;
    }
+   snmpStop = 1;
    for (n = nThreads; n >= 0; n--)
       pthread_join(nodesThreads[n], NULL);
 
@@ -136,7 +137,6 @@ void *clientManagement(void *context) {
             pthread_cond_wait(&sendStart, &lock);
           }
         pthread_mutex_unlock(&lock);
-
         snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
         bytesRead = writeSocket(clientFd, buffer, 2, 1);
         if (bytesRead < 0) {
@@ -144,6 +144,7 @@ void *clientManagement(void *context) {
           exit(0);
         }
         messageReceived++;
+
     } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
         printf("REPORT_MESSAGE\n");
 

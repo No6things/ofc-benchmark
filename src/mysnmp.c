@@ -1,4 +1,3 @@
-
 #ifdef HAVE_WINSOCK_H
 #include <winsock.h>
 #endif
@@ -15,6 +14,8 @@ void initializeSnmp (void)
   snmpStop = 0;
   char * opts = "qv";
   snmpReport = (struct report *)malloc(sizeof(struct report));
+  snmpReport->queue = (struct message *)malloc(sizeof(struct message));
+  snmpReport->first = (struct message *)malloc(sizeof(struct message));
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");
@@ -29,7 +30,7 @@ void initializeSnmp (void)
     }
     op++;
   }
-  op= op - sizeof(oids)/sizeof(oids[0])+1;
+  op = op - sizeof(oids)/sizeof(oids[0])+1;
 }
 
 /*
@@ -46,6 +47,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
   gettimeofday(&now, NULL);
 
   snprintf(result, 20, "%ld:", now.tv_usec);
+
   switch (status) {
     case STAT_SUCCESS:
       vp = pdu->variables;
@@ -53,8 +55,9 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
         while (vp) {
           snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
           snprintf(result, 70, "%s:%s",op->readableName, buf);
-  	       vp = vp->next_variable;
-           op++;
+
+          vp = vp->next_variable;
+          op++;
         }
         enqueueMessage(result, snmpReport, DELIMIT, 150);
       }
@@ -124,7 +127,7 @@ void *asynchronousSnmp(void *context)
 
   while(1) {
     op=oids;
-    hosts->name = snmpDestination; //controller
+    hosts->name = snmpDestination;
 
     /* startup all hosts */
     hs = sessions;
