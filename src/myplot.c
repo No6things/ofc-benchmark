@@ -14,7 +14,6 @@ int plotLines(char *input){
   gnuplot_ctrl *h1;
   char numbertext[10];
   char namebuffer[MAX_NAME_LINES];
-  char *header = (char *) malloc(50 + 1);
   char *xlabel = (char *) malloc(50 + 1);
   char *ylabel = (char *) malloc(50 + 1);
 
@@ -22,9 +21,10 @@ int plotLines(char *input){
   int m = 0;
   int tam = 0;
   int aux = 0;
+  int gotLabelX = 0;
+  int gotLabelY = 0;
   double number = 0;
-  xlabel = strtok(input, (const char *)CSV_NEWLINE);
-  ylabel = strtok(NULL, (const char *)CSV_NEWLINE);
+
 
   h1 = gnuplot_init();
 
@@ -33,7 +33,28 @@ int plotLines(char *input){
   struct fakeSwResults *tmp;
   struct fakeSwResults *iterator;
 
-  xvaluesP->next=NULL;
+  xvaluesP->next = NULL;
+  //Inicializacion de Labels
+  do {
+   if (input[aux] != ',') {
+     if(gotLabelX) {
+       ylabel[i] = input[aux];
+       i++;
+     } else {
+       xlabel[aux] = input[aux];
+     }
+   } else {
+     if(!gotLabelX) {
+       gotLabelX = 1;
+     } else if (!gotLabelY) {
+       gotLabelY = 1;
+     }
+   }
+   aux++;
+  }while (!(gotLabelX && gotLabelY));
+  i = 0;
+
+  printf("xLabel '%s' | ylabel '%s'\n", xlabel, ylabel);
 
   //Configuracion de nombres en graficas.
   gnuplot_set_ylabel(h1, ylabel);
@@ -45,43 +66,27 @@ int plotLines(char *input){
   //Configuracion de salida PNG
   gnuplot_cmd(h1, "set terminal png");
 
-  //inicializacion de nombres
 
-   /* walk through other tokens */
-  /*  do {
-     if (input[aux] != ',') {
-       if(gotLabelX) {
-         ylabel[i] = input[aux];
-         i++;
-       } else {
-         xlabel[aux] = input[aux];
-       }
-     } else {
-       if(!gotLabelX) gotLabelX = 1;
-       if(!gotLabelY && gotLabelX) gotLabelY = 1;
-     }
-     aux++;
-   }while (!(gotLabelX && gotLabelY));
-    aux++;
-    i = 0;
-
-*/
+  //Inicializacion de nombres
   do {
     if (input[aux] == ',') {
       tmp = (struct fakeSwResults *)malloc(sizeof(struct fakeSwResults) + (sizeof number) * MAX_LENG + (sizeof namebuffer));
       tmp->next = NULL;
       xvaluesP->next = tmp;
+      printf("name %s\n", xvaluesP->name);
       xvaluesP = tmp;
-      aux = aux + 1;
+      tam = 0;
     } else {
       xvaluesP->name[tam] = input[aux];
-      tam = tam + 1;
-      aux = aux + 1;
+      tam++;
     }
+    aux++;
   }while (input[aux] != ';');
-  aux = aux + 1;
+  aux++;
+  printf("name %s\n", xvaluesP->name);
   xvaluesP = checkpoint;
 
+  printf("Values %c\n", input[aux]);
   //Graficacion
   while (input[aux] != ';'){
     //Texto representativo de un number de  10 digitos
@@ -106,7 +111,7 @@ int plotLines(char *input){
     }
     aux = aux + 1;
   }
-
+  printf("graphication \n");
   //Graficacion
   iterator = checkpoint->next;
   while (iterator != NULL){
@@ -233,8 +238,6 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   int index = 0;
   int written = 0;
 
-  //flow test[params->nNodes][params->nSwitches];
-
   if (snmpReport == NULL || reports == NULL) {
     perror("We can't graph snmpReport or reports");
   }
@@ -275,6 +278,8 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   }while (index < nSwitches);
 
   plotLines(generalReport->queue->buffer);
+
+
   //TODO: Change result graph header depending of the mode
   if (mode == MODE_LATENCY) {
     //written = snprintf(header, 20, "ms,flows/sec");
