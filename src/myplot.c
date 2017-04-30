@@ -64,7 +64,10 @@ int plotLines(char *input, char *name){
   //Configuracion de estilo
   gnuplot_setstyle(h1,"lines");
   //Configuracion de salida PNG
-  gnuplot_cmd(h1, "set terminal png");
+  gnuplot_cmd(h1, "set grid ytics lc rgb \"#bbbbbb\" lw 1 lt 0");
+  gnuplot_cmd(h1, "set grid xtics lc rgb \"#bbbbbb\" lw 1 lt 0");
+  gnuplot_cmd(h1, "set key rmargin");
+  gnuplot_cmd(h1, "set terminal pngcairo size 1024, 768");
 
 
   //Inicializacion de nombres
@@ -149,7 +152,7 @@ int plotFinalResults (char *input) {
   gnuplot_set_xlabel(h1, "Milliseconds") ;
 
   //Configuracion de salida PNG
-  gnuplot_cmd(h1, "set terminal png");
+  gnuplot_cmd(h1, "set terminal png medium size 1024,768");
 
   //Inicializacion de nombres
   for (i = 0; i < VALUES; i++) {
@@ -178,7 +181,7 @@ int plotFinalResults (char *input) {
       tam = tam +1;
     }
 
-    number = atoi(numbertext);
+    number = atof(numbertext);
     xvalues[i][j] = number;
     printf("%f <-- %s [%d,%d]\n",xvalues[i][j], numbertext,i,j);
     j = j + 1;
@@ -231,9 +234,10 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   report *finalReport = (struct report*)malloc(sizeof(struct report));
 
   char *header = (char *)malloc( 20 * (nSwitches + 2));
-  char *aux;
+  char *graphName = (char *)malloc(50);
+  char *nodeGraph;
+  char *resultGraph;
 
-  char *buffer;
   char *checkpoint;
 
   int bytesRead = 0;
@@ -242,7 +246,9 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
 
   if (snmpReport == NULL || reports == NULL) {
     perror("We can't graph snmpReport or reports");
+    exit(1);
   }
+
 
   written = snprintf(header, 20, "ms,flows/sec,time");
   checkpoint = header;
@@ -254,32 +260,31 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     index++;
   }while(index < nSwitches);
   snprintf(header, 2, "%c", CSV_NEWLINE);
-
   header = checkpoint;
 
-  aux = (char *)malloc(strlen(header) + (150 * (nLines) + 50) + 1);
-
-  strcpy(aux, header); // copy string one into the result.
+  nodeGraph = (char *)malloc(strlen(header) + (150 * (nLines) + 50) + 1);
+  strcpy(nodeGraph, header); // copy string one into the result.
 
   //LOOP ONLY WITH TEST_RANGE FLAG
   index = 0;
   do {
-    buffer = NULL;
-    buffer = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
-    strcat(aux, buffer); // append string two to the result.
-    printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, aux, index);
-    enqueueMessage(aux, generalReport, !DELIMIT, 150 * nLines);
+    resultGraph = NULL;
+    resultGraph = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
+    strcat(nodeGraph, resultGraph); // append string two to the result.
+    printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, nodeGraph, index);
+    enqueueMessage(nodeGraph, generalReport, !DELIMIT, 150 * nLines);
 
-    buffer = NULL;
-    buffer = readSocketLimiter(clientFd, 150, &bytesRead);
-    printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, buffer, index);
-    enqueueMessage(buffer, finalReport, !DELIMIT, 150);
+    resultGraph = NULL;
+    resultGraph = readSocketLimiter(clientFd, 150, &bytesRead);
+    printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, resultGraph, index);
+    enqueueMessage(resultGraph, finalReport, !DELIMIT, 150);
 
     if (!testRange) break;
     index++;
   }while (index < nSwitches);
 
-  plotLines(generalReport->queue->buffer, "test");
+  snprintf(graphName, 50, "%s.Values.png", reports[id].hostname);
+  plotLines(generalReport->queue->buffer, graphName);
 
 
   //TODO: Change result graph header depending of the mode

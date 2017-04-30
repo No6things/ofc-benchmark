@@ -37,7 +37,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     double passed;
     int count;
     int total_wait = mstestlen + delay;
-    long long unsigned int ms;
+    long long unsigned double ms;
 
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
@@ -66,8 +66,8 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     gettimeofday(&now, NULL);
     timersub(&now, &tStart, &diff);
 
-    ms = diff.tv_usec / 1000 + diff.tv_sec * 10e3;
-    written += snprintf(message, size, "%llu", ms);
+    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3);
+    written += snprintf(message, size, "%.02llf", ms);
     checkpoint = message; //  start checkpoint
     message += written;
 
