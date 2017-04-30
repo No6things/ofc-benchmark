@@ -97,8 +97,8 @@ int plotLines(char *input){
     //Construye number
     while ((input[aux] != ',') && ( input[aux] != ';')){
       numbertext[tam] = input[aux];
-      aux = aux + 1;
-      tam = tam + 1;
+      aux++;
+      tam++;
     }
     number = atoi(numbertext);
 
@@ -106,10 +106,10 @@ int plotLines(char *input){
     xvaluesP = xvaluesP->next;
 
     if (input[aux] == ';') {
-      i = i + 1;
+      i++;
       xvaluesP = checkpoint;
     }
-    aux = aux + 1;
+    aux++;
   }
   printf("graphication \n");
   //Graficacion
@@ -242,12 +242,12 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     perror("We can't graph snmpReport or reports");
   }
 
-  written = snprintf(header, 20, "ms,flows/sec");
+  written = snprintf(header, 20, "ms,flows/sec,time");
   checkpoint = header;
   header += written;
 
   do {
-    written = snprintf(header, 20, ",VSwitch %d", index);
+    written = snprintf(header, 20, ",Virtual Switch %d", index);
     header += written;
     index++;
   }while(index < nSwitches);
