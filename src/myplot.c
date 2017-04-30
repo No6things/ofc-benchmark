@@ -243,6 +243,13 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   int index = 0;
   int written = 0;
 
+  for (index = 0; index < MAX_QUEUE; index++) {
+    generalReport->queues[index].last = (struct message *)malloc(sizeof(struct message));
+    generalReport->queues[index].first = (struct message *)malloc(sizeof(struct message));
+    finalReport->queues[index].last = (struct message *)malloc(sizeof(struct message));
+    finalReport->queues[index].first = (struct message *)malloc(sizeof(struct message));
+  }
+
   if (snmpReport == NULL || reports == NULL) {
     perror("We can't graph snmpReport or reports");
     exit(1);
@@ -252,7 +259,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   written = snprintf(header, 20, "ms,flows/sec,time");
   checkpoint = header;
   header += written;
-
+  index = 0;
   do {
     written = snprintf(header, 20, ",Virtual Switch %d", index);
     header += written;
@@ -277,6 +284,11 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     resultGraph = readSocketLimiter(clientFd, 150, &bytesRead);
     printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, resultGraph, index);
     enqueueMessage(resultGraph, finalReport, 0, !DELIMIT, 150);
+
+    resultGraph = NULL;
+    resultGraph = readSocketLimiter(clientFd, 150, &bytesRead);
+    printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, resultGraph, index);
+    enqueueMessage(resultGraph, generalReport, 1, !DELIMIT, 150);
 
     if (!testRange) break;
     index++;

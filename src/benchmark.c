@@ -32,21 +32,24 @@
 double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST, struct timeval tStart) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
-    int i;
+    int i, count;
+    int size = 150;
+    int written = 0;
+    int total_wait = mstestlen + delay;
     double sum = 0;
     double passed;
-    int count;
-    int total_wait = mstestlen + delay;
     long double ms;
+
+    char* values = (char *)malloc(size);
+    char* result = (char *)malloc(size);
+    char* checkpoint;
 
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
     gettimeofday(&then, NULL);
 
-    int size = 150;
-    char* message = malloc(size);
-    int written = 0;
-    char* checkpoint;
+
+
     while (1) {
       gettimeofday(&now, NULL);
       timersub(&now, &then, &diff);
@@ -66,31 +69,39 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     gettimeofday(&now, NULL);
     timersub(&now, &tStart, &diff);
 
-    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3);
-    written += snprintf(message, size, "%.02Lf", ms);
-    checkpoint = message; //  start checkpoint
-    message += written;
+    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 1000;
+    written += snprintf(values, size, "%.02Lf", ms);
+    snprintf(result, size, "%.02Lf", ms);
+
+    checkpoint = values; //  start checkpoint
+    result += written;
+    values += written;
 
     for (i = 0; i < nSwitches; i++) {
       count = switchGetCount(&switches[i]);
       //SWITCHES VALUES
-      written = snprintf(message, size, ",%d", count);
-      message += written;
+      written = snprintf(values, size, ",%d", count);
+      values += written;
       sum += count;
     }
-    written = snprintf(message, 2, "%c", CSV_NEWLINE);
-    message += written;
-
-    if (LAST) {
-      snprintf(message, 4, "%c%c", CSV_NEWLINE, LIMITER);
-    }
+    written = snprintf(values, 2, "%c", CSV_NEWLINE);
+    values += written;
 
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;          // is now per ms
-    //snprintf(message, size, "total = %lf per ms", sum); TODO: Look if this value has purpose to be shown?
-    message = checkpoint;
-    enqueueMessage(message, myreport, 0, !DELIMIT, 150);
+
+    snprintf(result, size, "%lf%c", sum, CSV_NEWLINE);
+
+    if (LAST) {
+      snprintf(values, 4, "%c%c", CSV_NEWLINE, LIMITER);
+      snprintf(result, 4, "%c%c", CSV_NEWLINE, LIMITER);
+    }
+
+    values = checkpoint;
+    enqueueMessage(values, myreport, 0, !DELIMIT, 150);
+    enqueueMessage(result, myreport, 1, !DELIMIT, 150);
+
     free(pollfds);
     return sum;
 }

@@ -4,7 +4,7 @@
 #define DELIMIT 1
 #define LIMITER '*'
 #define CSV_NEWLINE ';'
-#define MAX_QUEUE 2
+#define MAX_QUEUE 3
 
 typedef struct message {
   char *buffer;
@@ -28,10 +28,6 @@ typedef struct report{
  extern report *snmpReport;
  extern report *reports;
 
- /*
- TODO: Deberia modificar esta funcion para mostrar todos los reportes O
-       crear un ciclo para mostrar todos los reportes*/
 void displayMessages(report *myreport, int id);
 void enqueueMessage(char* item, report *myreport, int id,int delimit, int size);
-char * parseReports();
 #endif

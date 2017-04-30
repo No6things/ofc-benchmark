@@ -14,7 +14,7 @@
 #include "../include/myclient.h"
 
 int clientSide(const char *nodeMasterHostname) {
-   int serverFd, portno, bytes, end, index;
+   int serverFd, portno, bytes, end;
    struct sockaddr_in serv_addr;
    struct hostent *server;
    struct message *temp;
@@ -58,7 +58,6 @@ int clientSide(const char *nodeMasterHostname) {
 
    while (1) {
      bytes = 0;
-     index = 0;
 
      buffer = readSocket(serverFd, 1, 1, &bytes);
 
@@ -77,7 +76,12 @@ int clientSide(const char *nodeMasterHostname) {
        while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->back;
-         index++;
+       }
+
+       temp = myreport->queues[1].first;
+       while (temp != NULL) {
+         bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
+         temp = temp->back;
        }
        //free(myreport);
        printf("End of transmission\n");
