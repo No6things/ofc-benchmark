@@ -25,7 +25,6 @@ int plotLines(char *input, char *name){
   int gotLabelY = 0;
   double number = 0;
 
-
   h1 = gnuplot_init();
 
   struct fakeSwResults *xvaluesP = (struct fakeSwResults *)malloc(sizeof xvaluesP + (sizeof number) * MAX_LENG + (sizeof namebuffer));
@@ -272,19 +271,19 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     resultGraph = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
     strcat(nodeGraph, resultGraph); // append string two to the result.
     printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, nodeGraph, index);
-    enqueueMessage(nodeGraph, generalReport, !DELIMIT, 150 * nLines);
+    enqueueMessage(nodeGraph, generalReport, 0, !DELIMIT, 150 * nLines);
 
     resultGraph = NULL;
     resultGraph = readSocketLimiter(clientFd, 150, &bytesRead);
     printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, resultGraph, index);
-    enqueueMessage(resultGraph, finalReport, !DELIMIT, 150);
+    enqueueMessage(resultGraph, finalReport, 0, !DELIMIT, 150);
 
     if (!testRange) break;
     index++;
   }while (index < nSwitches);
 
   snprintf(graphName, 50, "%s.Values.png", reports[id].hostname);
-  plotLines(generalReport->queue->buffer, graphName);
+  plotLines(generalReport->queues[0].first->buffer, graphName);
 
 
   //TODO: Change result graph header depending of the mode
@@ -295,7 +294,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   }
 
   if (bytesRead > 0) {;
-    //reports[id].queue = generalReport->queue;
+    //reports[id].queue = generalReport->last;
   }
   return bytesRead;
 }

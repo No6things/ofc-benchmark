@@ -67,13 +67,13 @@ int clientSide(const char *nodeMasterHostname) {
 
        printf("received START_MESSAGE\n");
        controllerBenchmarking();
-       displayMessages(myreport);
+       displayMessages(myreport, 0);
 
        snprintf(buffer, strlen(REPORT_MESSAGE) + 1, REPORT_MESSAGE);
        writeSocket(serverFd, buffer, 2 , 1);
        printf("sent REPORT_MESSAGE\n");
 
-       temp = myreport->first;
+       temp = myreport->queues[0].first;
        while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->back;

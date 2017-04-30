@@ -14,8 +14,8 @@ void initializeSnmp (void)
   snmpStop = 0;
   char * opts = "qv";
   snmpReport = (struct report *)malloc(sizeof(struct report));
-  snmpReport->queue = (struct message *)malloc(sizeof(struct message));
-  snmpReport->first = (struct message *)malloc(sizeof(struct message));
+  snmpReport->queues[0].last = (struct message *)malloc(sizeof(struct message));
+  snmpReport->queues[0].first = (struct message *)malloc(sizeof(struct message));
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");
@@ -59,7 +59,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
           vp = vp->next_variable;
           op++;
         }
-        enqueueMessage(result, snmpReport, DELIMIT, 150);
+        enqueueMessage(result, snmpReport, 0, DELIMIT, 150);
       }
       else {
         for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
