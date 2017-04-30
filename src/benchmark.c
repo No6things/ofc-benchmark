@@ -29,7 +29,7 @@
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
 //BENCHMARKING || Prints interval messages
-double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST) {
+double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST, struct timeval tStart) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
     int i;
@@ -37,10 +37,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     double passed;
     int count;
     int total_wait = mstestlen + delay;
-    time_t tNow;
-    struct tm *tmNow;
-    struct timespec spec;
-    long unsigned int ms;
+    long long unsigned int ms;
 
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
@@ -64,16 +61,15 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
         ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
       }
     }
-    tNow = now.tv_sec;
-    tmNow = localtime(&tNow);
-    clock_gettime(CLOCK_REALTIME, &spec);
-    ms = round(spec.tv_nsec / 1.0e6);
+    usleep(100000); // sleep for 100 ms, to let packets queue
 
-    //TIMESTAMP
-    written += snprintf(message, size, "%lu", ms);
+    gettimeofday(&now, NULL);
+    timersub(&now, &tStart, &diff);
+
+    ms = diff.tv_usec / 1000 + diff.tv_sec * 10e3;
+    written += snprintf(message, size, "%llu", ms);
     checkpoint = message; //  start checkpoint
     message += written;
-    usleep(100000); // sleep for 100 ms, to let packets queue
 
     for (i = 0; i < nSwitches; i++) {
       count = switchGetCount(&switches[i]);
@@ -395,7 +391,7 @@ char * controllerBenchmarking() {
   char *nLoopsMessage = (char *)malloc(6 + 1);
   char *modeMessage = (char *)malloc(6 + 1);
   char *rangeMessage = (char *)malloc(6 + 1);
-
+  struct timeval tStart;
 
   pthread_t snmp_thread;
 
@@ -447,7 +443,7 @@ char * controllerBenchmarking() {
   enqueueMessage(rangeMessage, myreport, DELIMIT, 6);
 
   for(i = 0; i < params->nSwitches; i++) {
-    //CONNECTION
+  //CONNECTION
 
     sum = 0;
     if (params->connectDelay != 0 && i != 0 && (i % params->connectGroupSize == 0)) {
@@ -480,12 +476,13 @@ char * controllerBenchmarking() {
         continue;
 
     //RUN
+    gettimeofday(&tStart, NULL);
     for(j = 0; j < params->loopsPerTest; j++) {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
         LAST = (j == params->loopsPerTest - 1) ? 1 : 0;
-        v = 1000.0 * runTest(i + 1, switches, params->msTestLen, params->delay, myreport, LAST);
+        v = 1000.0 * runTest(i + 1, switches, params->msTestLen, params->delay, myreport, LAST, tStart);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
