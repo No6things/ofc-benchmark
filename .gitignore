@@ -2,3 +2,6 @@ include/*.gch
 src/*/.o
 src/obj/
 src/ofcB
+reports/**/*/*.png
+tmp/
+**/*/gnuplot_tmpdatafile_*

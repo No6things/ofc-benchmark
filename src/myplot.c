@@ -10,7 +10,7 @@
 #include "../include/myplot.h"
 #include "../include/gnuplot_i.h"
 
-int plotLines(char *input){
+int plotLines(char *input, char *name){
   gnuplot_ctrl *h1;
   char numbertext[10];
   char namebuffer[MAX_NAME_LINES];
@@ -114,8 +114,10 @@ int plotLines(char *input){
   printf("graphication \n");
   //Graficacion
   iterator = checkpoint->next;
+  char * command = (char*)malloc(150);
+  snprintf(command, 150, "set output \"../reports/charts/%s.png\"", name);
   while (iterator != NULL){
-    gnuplot_cmd(h1, "set output \"nodos.png\"");
+    gnuplot_cmd(h1, command);
     gnuplot_plot_xy(h1, checkpoint->x, iterator->x, i, iterator->name);
     iterator = iterator->next;
   }
@@ -277,7 +279,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     index++;
   }while (index < nSwitches);
 
-  plotLines(generalReport->queue->buffer);
+  plotLines(generalReport->queue->buffer, "test");
 
 
   //TODO: Change result graph header depending of the mode
