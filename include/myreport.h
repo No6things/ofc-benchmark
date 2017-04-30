@@ -25,7 +25,6 @@ typedef struct report{
  } report;
 
  extern report *myreport;
- extern report *snmpReport;
  extern report *reports;
 
 void displayMessages(report *myreport, int id);

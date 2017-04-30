@@ -257,6 +257,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   struct inputValues *params = &benchmarkArgs;
   const struct option * longOpts = argsToLong(options);
   char *  shortOpts =         argsToShort(options);
+  unsigned int i;
 
   params->controllerHostname =argsGetDefaultStr(options,"controller");
   params->nodeMasterHostname =argsGetDefaultStr(options,"node-master");
@@ -372,6 +373,16 @@ void initializeBenchmarking(int argc, char * argv[]) {
          default:
           argsManual(options, PROG_TITLE, 1);
      }
+
+     myreport = (struct report *)malloc(sizeof(struct report));
+     for (i = 0; i < MAX_QUEUE; i++) {
+       myreport->queues[i].last = (struct message *)malloc(sizeof(struct message));
+       myreport->queues[i].first = (struct message *)malloc(sizeof(struct message));
+       myreport->queues[i].last = NULL;
+       myreport->queues[i].first = NULL;
+     }
+     myreport->sock = 0;
+
   }
 
   //START APPLICATION MESSAGE
@@ -406,15 +417,6 @@ char * controllerBenchmarking() {
 
   pthread_t snmp_thread;
 
-  myreport = (struct report *)malloc(sizeof(struct report));
-  for (i = 0; i < MAX_QUEUE; i++) {
-    myreport->queues[i].last = (struct message *)malloc(sizeof(struct message));
-    myreport->queues[i].first = (struct message *)malloc(sizeof(struct message));
-    myreport->queues[i].last = NULL;
-    myreport->queues[i].first = NULL;
-  }
-  myreport->sock = 0;
-
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
   assert(switches);
 
@@ -432,7 +434,6 @@ char * controllerBenchmarking() {
   snprintf(nSwitchesMessage, 6, "%d", params->nSwitches);
   snprintf(nLoopsMessage, 6, "%d", params->loopsPerTest);
   snprintf(rangeMessage, 6, "%d", params->testRange);
-
 
   if (params->nNodes <= 1) {
     threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
@@ -531,7 +532,7 @@ char * controllerBenchmarking() {
   if (params->nNodes <= 1) {
     //TODO: manage graphication
     pthread_join(snmp_thread, NULL);
-    displayMessages(snmpReport, 0);
+    displayMessages(myreport, 2);
   }
   return (char *)" ";
 }

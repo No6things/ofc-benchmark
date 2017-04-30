@@ -250,7 +250,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     finalReport->queues[index].first = (struct message *)malloc(sizeof(struct message));
   }
 
-  if (snmpReport == NULL || reports == NULL) {
+  if (myreport == NULL || reports == NULL) {
     perror("We can't graph snmpReport or reports");
     exit(1);
   }
