@@ -116,11 +116,11 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   //ms/response
   if (mode == MODE_LATENCY) {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min == 0 ? 0 : 1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
 
     buffer = (char *)malloc(size + 1);
     snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min == 0 ? 0 : 1000/min, 1000/max, 1000/avg, 1000/std_dev, CSV_NEWLINE);
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
   //response/s
   } else {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
