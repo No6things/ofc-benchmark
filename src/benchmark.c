@@ -84,13 +84,14 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
       values += written;
       sum += count;
     }
+
     written = snprintf(values, 2, "%c", CSV_NEWLINE);
     values += written;
 
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;          // is now per ms
-
+    printf("sum %.02lf\n", sum);
     snprintf(result, size, ",%.02lf%c", sum, CSV_NEWLINE);
 
     if (LAST) {

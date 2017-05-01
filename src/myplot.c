@@ -250,7 +250,7 @@ char * buildHeader(int type, int n, int mode) {
 
     case AVGS:
       header = (char *)malloc(30 * (n + 2));
-      written = snprintf(header, 40, "timestamp (sec),flows/sec,time");
+      written = snprintf(header, 40, "timestamp (ms),flows/sec,time");
       checkpoint = header;
       header += written;
       do {
@@ -299,12 +299,16 @@ char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode)
     strcat(body, buffer);
   }
 
+  printf("body %s\n", body);
+
   if (addHeader) {
     header = buildHeader(type, flows, mode);
+    printf("header %s\n", header);
     graph = (char *)malloc(strlen(header) + bodySize);
     strcpy(graph, header);
     strcat(graph, body);
   } else {
+    printf("no header\n");
     graph = (char *)malloc(bodySize);
     strcpy(graph, body);
   }
