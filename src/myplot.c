@@ -261,11 +261,11 @@ char * buildHeader(int type, int n, int mode) {
       break;
 
     case RESULTS:
-      header = (char *)malloc(40);
+      header = (char *)malloc(50);
       if (mode == MODE_LATENCY) {
-        written = snprintf(header, 40, "nodes,ms/response,node,MAX,MIN,AVG,STD DEV");
+        written = snprintf(header, 50, "nodes,ms/response,node,MAX,MIN,AVG,STD DEV");
       } else {
-        written = snprintf(header, 40, "nodes,response/sec,node,MAX,MIN,AVG,STD DEV");
+        written = snprintf(header, 50, "nodes,response/sec,node,MAX,MIN,AVG,STD DEV");
       }
       checkpoint = header;
       header += written;
@@ -285,7 +285,7 @@ char * buildHeader(int type, int n, int mode) {
 char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode){
   char *header = NULL;
   char *buffer = NULL;
-  char *body = NULL;
+  char *body = (char *)malloc(150 * rows);
   char *graph;
 
   int bodySize = 0;
@@ -294,7 +294,7 @@ char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode)
   buffer = readSocketLimiter(clientFd, 150 * rows, &bodySize);
 
   if (type == RESULTS) {
-    snprintf(body, bodySize + 20, "%s,%s", reports[id].hostname, buffer);
+    bodySize = snprintf(body, bodySize + 20, "%s,%s", reports[id].hostname, buffer);
   } else {
     strcat(body, buffer);
   }
@@ -303,8 +303,8 @@ char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode)
 
   if (addHeader) {
     header = buildHeader(type, flows, mode);
-    printf("header %s\n", header);
-    graph = (char *)malloc(strlen(header) + bodySize);
+    printf("header %s, its size %zu, body size %d\n", header, strlen(header), bodySize);
+    graph = (char *)malloc(strlen(header) + bodySize + 1);
     strcpy(graph, header);
     strcat(graph, body);
   } else {
@@ -349,15 +349,12 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   index = 0;
   do {
     graph = buildGraph(clientFd, id, VALUES, nSwitches, nLines, mode);
-    printf("[VALUE_GRAPH %d]\n%s\n[/VALUE_GRAPH %d]\n",index, graph, index);
     enqueueMessage(graph, generalReport, VALUES, !DELIMIT, 150 * nLines);
 
     graph = buildGraph(clientFd, id, AVGS, clientsStatuses.quantity, nLines, mode);
-    printf("[AVGS_GRAPH %d]\n%s\n[AVGS_GRAPH %d]\n",index, graph, index);
     enqueueMessage(graph, myreport, AVGS, !DELIMIT, 150 * nLines);
 
     graph = buildGraph(clientFd, id, RESULTS, 4, clientsStatuses.quantity, mode);
-    printf("[FINAL_RESULT_GRAPH %d]\n%s\n[/FINAL_RESULT_GRAPH %d]\n",index, graph, index);
     enqueueMessage(graph, myreport, RESULTS, !DELIMIT, 150);
 
     if (!testRange) break;
