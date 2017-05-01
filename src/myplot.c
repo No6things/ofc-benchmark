@@ -324,7 +324,6 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   int index;
 
   report *generalReport = (struct report*)malloc(sizeof(struct report));
-  report *finalReport = (struct report*)malloc(sizeof(struct report));
 
   char *graphName = (char *)malloc(50);
   char *graph;
@@ -332,8 +331,6 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   for (index = 0; index < MAX_QUEUE; index++) {
     generalReport->queues[index].last = (struct message *)malloc(sizeof(struct message));
     generalReport->queues[index].first = (struct message *)malloc(sizeof(struct message));
-    finalReport->queues[index].last = (struct message *)malloc(sizeof(struct message));
-    finalReport->queues[index].first = (struct message *)malloc(sizeof(struct message));
   }
 
   if (myreport == NULL || reports == NULL) {
@@ -348,10 +345,14 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     enqueueMessage(graph, generalReport, VALUES, !DELIMIT, 150 * nLines);
 
     graph = buildGraph(clientFd, id, AVGS, clientsStatuses.quantity, nLines, mode);
-    enqueueMessage(graph, myreport, AVGS, !DELIMIT, 150 * nLines);
+    pthread_mutex_lock(&lock);
+      enqueueMessage(graph, myreport, AVGS, !DELIMIT, 150 * nLines);
+    pthread_mutex_unlock(&lock);
 
     graph = buildGraph(clientFd, id, RESULTS, 4, clientsStatuses.quantity, mode);
-    enqueueMessage(graph, myreport, RESULTS, !DELIMIT, 150);
+    pthread_mutex_lock(&lock);
+      enqueueMessage(graph, myreport, RESULTS, !DELIMIT, 150);
+    pthread_mutex_unlock(&ulock);
 
     if (!testRange) break;
     index++;
