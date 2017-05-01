@@ -97,7 +97,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     if (LAST) {
       result += written;
       snprintf(values, 4, "%c%c", CSV_NEWLINE, LIMITER);
-      snprintf(result, 4, "%c%c", CSV_NEWLINE, LIMITER);
+      snprintf(result, 2, "%c", LIMITER);
     }
 
     values = checkpoint;

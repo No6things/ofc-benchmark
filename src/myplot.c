@@ -299,16 +299,12 @@ char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode)
     strcat(body, buffer);
   }
 
-  printf("body %s\n", body);
-
   if (addHeader) {
     header = buildHeader(type, flows, mode);
-    printf("header %s, its size %zu, body size %d\n", header, strlen(header), bodySize);
     graph = (char *)malloc(strlen(header) + bodySize + 1);
     strcpy(graph, header);
     strcat(graph, body);
   } else {
-    printf("no header\n");
     graph = (char *)malloc(bodySize);
     strcpy(graph, body);
   }
