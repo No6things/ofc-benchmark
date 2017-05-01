@@ -25,6 +25,7 @@ int plotLines(char *input, char *name){
   int gotLabelY = 0;
   double number = 0;
 
+  printf("PLOTTING:\n%s\nNAME:%s\n", input, name);
   h1 = gnuplot_init();
 
   struct fakeSwResults *xvaluesP = (struct fakeSwResults *)malloc(sizeof xvaluesP + (sizeof number) * MAX_LENG + (sizeof namebuffer));
@@ -315,7 +316,6 @@ char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode)
   }
 
   printf("[GRAPH %d]%s[GRAPH %d]\n", type, graph, type);
-
   return graph;
 }
 
@@ -331,6 +331,8 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   for (index = 0; index < MAX_QUEUE; index++) {
     generalReport->queues[index].last = (struct message *)malloc(sizeof(struct message));
     generalReport->queues[index].first = (struct message *)malloc(sizeof(struct message));
+    generalReport->queues[index].last = NULL;
+    generalReport->queues[index].first = NULL;
   }
 
   if (myreport == NULL || reports == NULL) {
@@ -342,23 +344,24 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   index = 0;
   do {
     graph = buildGraph(clientFd, id, VALUES, nSwitches, nLines, mode);
-    enqueueMessage(graph, generalReport, VALUES, !DELIMIT, 150 * nLines);
+    enqueueMessage(graph, generalReport, VALUES, !DELIMIT, strlen(graph));
 
     graph = buildGraph(clientFd, id, AVGS, clientsStatuses.quantity, nLines, mode);
     pthread_mutex_lock(&lock);
-      enqueueMessage(graph, myreport, AVGS, !DELIMIT, 150 * nLines);
+      enqueueMessage(graph, myreport, AVGS, !DELIMIT, strlen(graph));
     pthread_mutex_unlock(&lock);
 
     graph = buildGraph(clientFd, id, RESULTS, 4, clientsStatuses.quantity, mode);
     pthread_mutex_lock(&lock);
-      enqueueMessage(graph, myreport, RESULTS, !DELIMIT, 150);
+      enqueueMessage(graph, myreport, RESULTS, !DELIMIT, strlen(graph));
     pthread_mutex_unlock(&lock);
 
     if (!testRange) break;
     index++;
   }while (index < nSwitches);
 
-  snprintf(graphName, 50, "%s.values.png", reports[id].hostname);
+  snprintf(graphName, 50, "%s.values", reports[id].hostname);
+  printf("generalReport %s\n", generalReport->queues[VALUES].first->buffer);
   plotLines(generalReport->queues[VALUES].first->buffer, graphName);
 
   return -1;
