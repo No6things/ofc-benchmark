@@ -352,7 +352,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     graph = buildGraph(clientFd, id, RESULTS, 4, clientsStatuses.quantity, mode);
     pthread_mutex_lock(&lock);
       enqueueMessage(graph, myreport, RESULTS, !DELIMIT, 150);
-    pthread_mutex_unlock(&ulock);
+    pthread_mutex_unlock(&lock);
 
     if (!testRange) break;
     index++;
