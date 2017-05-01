@@ -30,6 +30,13 @@ void * serverSide(unsigned int s) {
    clientsStatuses.reported = 0;
 
    reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(struct report));
+   for (index = 0; index < MAX_QUEUE; index++) {
+     reports[index].queues[RESULTS].last = (struct message *)malloc(sizeof(struct message));
+     reports[index].queues[RESULTS].first = (struct message *)malloc(sizeof(struct message));
+     reports[index].queues[RESULTS].last = NULL;
+     reports[index].queues[RESULTS].first = NULL;
+   }
+
 
    index = 0;
    nThreads = clientsStatuses.quantity;
@@ -181,6 +188,6 @@ void *clientManagement(void *context) {
     if (messageReceived == SERVER_MESSAGES) break;
   }
   pthread_join(snmp_thread, NULL);
-  displayMessages(myreport, 2);
+  displayMessages(myreport, SNMP);
   pthread_exit(NULL);
 }

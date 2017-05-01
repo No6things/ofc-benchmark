@@ -5,7 +5,7 @@
 #define NPOINTS    150
 #define NPOINTS_GENERAL 100
 #define MAX_NAME_GENERAL 3
-#define VALUES 4
+#define MAX_VALUES 4
 #define MAX_SW 1000
 #define MAX_LENG 1000
 #define MAX_NAME_LINES 20

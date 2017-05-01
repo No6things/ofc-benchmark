@@ -43,12 +43,11 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     char* values = (char *)malloc(size);
     char* result = (char *)malloc(size);
     char* checkpoint;
+    char* checkpoint2;
 
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
     gettimeofday(&then, NULL);
-
-
 
     while (1) {
       gettimeofday(&now, NULL);
@@ -74,8 +73,9 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     snprintf(result, size, "%.02Lf", ms);
 
     checkpoint = values; //  start checkpoint
-    result += written;
+    checkpoint2 = result; //  start checkpoint
     values += written;
+    result += written;
 
     for (i = 0; i < nSwitches; i++) {
       count = switchGetCount(&switches[i]);
@@ -91,7 +91,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     passed -= delay;        // don't count the time we intentionally delayed
     sum /= passed;          // is now per ms
 
-    snprintf(result, size, "%lf%c", sum, CSV_NEWLINE);
+    snprintf(result, size, ",%.02lf%c", sum, CSV_NEWLINE);
 
     if (LAST) {
       snprintf(values, 4, "%c%c", CSV_NEWLINE, LIMITER);
@@ -99,8 +99,9 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     }
 
     values = checkpoint;
-    enqueueMessage(values, myreport, 0, !DELIMIT, 150);
-    enqueueMessage(result, myreport, 1, !DELIMIT, 150);
+    result = checkpoint2;
+    enqueueMessage(values, myreport, VALUES, !DELIMIT, 150);
+    enqueueMessage(result, myreport, AVGS, !DELIMIT, 150);
 
     free(pollfds);
     return sum;
@@ -445,16 +446,16 @@ char * controllerBenchmarking() {
   }
 
   //NSWITCHES STORAGE
-  enqueueMessage(nSwitchesMessage, myreport, 0,DELIMIT, 6);
+  enqueueMessage(nSwitchesMessage, myreport, VALUES, DELIMIT, 6);
 
   //LOOPS STORAGE
-  enqueueMessage(nLoopsMessage, myreport, 0, DELIMIT, 6);
+  enqueueMessage(nLoopsMessage, myreport, VALUES, DELIMIT, 6);
 
   //TYPE OF TEST STORAGE
-  enqueueMessage(modeMessage, myreport, 0, DELIMIT, 6);
+  enqueueMessage(modeMessage, myreport, VALUES, DELIMIT, 6);
 
   //TEST RANGE STORAGE
-  enqueueMessage(rangeMessage, myreport, 0, DELIMIT, 6);
+  enqueueMessage(rangeMessage, myreport, VALUES, DELIMIT, 6);
 
   for(i = 0; i < params->nSwitches; i++) {
   //CONNECTION
@@ -522,7 +523,7 @@ char * controllerBenchmarking() {
 
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-    enqueueMessage(finalMessage, myreport, 0, DELIMIT, 150);
+    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 150);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint
@@ -532,7 +533,7 @@ char * controllerBenchmarking() {
   if (params->nNodes <= 1) {
     //TODO: manage graphication
     pthread_join(snmp_thread, NULL);
-    displayMessages(myreport, 2);
+    displayMessages(myreport, SNMP);
   }
   return (char *)" ";
 }

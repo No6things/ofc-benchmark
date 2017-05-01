@@ -4,7 +4,11 @@
 #define DELIMIT 1
 #define LIMITER '*'
 #define CSV_NEWLINE ';'
-#define MAX_QUEUE 3
+#define MAX_QUEUE 4
+#define VALUES 0
+#define AVGS 1
+#define RESULTS 2
+#define SNMP 3
 
 typedef struct message {
   char *buffer;

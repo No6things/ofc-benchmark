@@ -128,8 +128,8 @@ int plotLines(char *input, char *name){
 
 int plotFinalResults (char *input) {
   gnuplot_ctrl *h1;
-  char names [VALUES][MAX_NAME_GENERAL];
-  double xvalues [MAX_SW][VALUES];
+  char names [MAX_VALUES][MAX_NAME_GENERAL];
+  double xvalues [MAX_SW][MAX_VALUES];
 
   int i = 0;
   int j = 0;
@@ -154,7 +154,7 @@ int plotFinalResults (char *input) {
   gnuplot_cmd(h1, "set terminal png medium size 1024,768");
 
   //Inicializacion de nombres
-  for (i = 0; i < VALUES; i++) {
+  for (i = 0; i < MAX_VALUES; i++) {
     while((input[aux] != ',') && ( input[aux] != ';')){
       names[i][tam] = input[aux];
       tam = tam + 1;
@@ -227,21 +227,107 @@ int plotFinalResults (char *input) {
   return 0;
 }
 
+char * buildHeader(int type, int n, int mode) {
+  char* header;
+  char* checkpoint;
+
+  int written;
+  int index = 0;
+
+  switch (type) {
+
+    case VALUES:
+      header = (char *)malloc(30 * (n + 2));
+      written = snprintf(header, 40, "timestamp (sec),flows/sec,time");
+      checkpoint = header;
+      header += written;
+      do {
+        written = snprintf(header, 20, ",Virtual Switch %d", index);
+        header += written;
+        index++;
+      }while(index < n);
+      break;
+
+    case AVGS:
+      header = (char *)malloc(30 * (n + 2));
+      written = snprintf(header, 40, "timestamp (sec),flows/sec,time");
+      checkpoint = header;
+      header += written;
+      do {
+        written = snprintf(header, 20, ",%s", reports[index].hostname);
+        header += written;
+        index++;
+      }while(index < n);
+      break;
+
+    case RESULTS:
+      header = (char *)malloc(40);
+      if (mode == MODE_LATENCY) {
+        written = snprintf(header, 40, "nodes,ms/response,node,MAX,MIN,AVG,STD DEV");
+      } else {
+        written = snprintf(header, 40, "nodes,response/sec,node,MAX,MIN,AVG,STD DEV");
+      }
+      checkpoint = header;
+      header += written;
+      break;
+
+    case SNMP:
+      //TODO: DEFINE OIDS HEADERS
+      break;
+  }
+
+  snprintf(header, 2, "%c", CSV_NEWLINE);
+  header = checkpoint;
+
+  return header;
+}
+
+char * buildGraph(int clientFd, int id, int type, int flows, int rows, int mode){
+  char *header = NULL;
+  char *buffer = NULL;
+  char *body = NULL;
+  char *graph;
+
+  int bodySize = 0;
+  int addHeader = type == VALUES || type == SNMP || myreport->queues[type].first == NULL;
+
+  buffer = readSocketLimiter(clientFd, 150 * rows, &bodySize);
+
+  if (type == RESULTS) {
+    snprintf(body, bodySize + 20, "%s,%s", reports[id].hostname, buffer);
+  } else {
+    strcat(body, buffer);
+  }
+
+  if (addHeader) {
+    header = buildHeader(type, flows, mode);
+    graph = (char *)malloc(strlen(header) + bodySize);
+    strcpy(graph, header);
+    strcat(graph, body);
+  } else {
+    graph = (char *)malloc(bodySize);
+    strcpy(graph, body);
+  }
+
+  if(bodySize == 0) {
+    perror("buildGraph()");
+    exit(1);
+  }
+
+  printf("[GRAPH %d]%s[GRAPH %d]\n", type, graph, type);
+
+  return graph;
+}
+
 int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange)
 {
+  int index;
+
   report *generalReport = (struct report*)malloc(sizeof(struct report));
   report *finalReport = (struct report*)malloc(sizeof(struct report));
 
-  char *header = (char *)malloc( 20 * (nSwitches + 2));
   char *graphName = (char *)malloc(50);
-  char *nodeGraph;
-  char *resultGraph;
-
-  char *checkpoint;
-
-  int bytesRead = 0;
-  int index = 0;
-  int written = 0;
+  char *graph;
 
   for (index = 0; index < MAX_QUEUE; index++) {
     generalReport->queues[index].last = (struct message *)malloc(sizeof(struct message));
@@ -255,58 +341,27 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
     exit(1);
   }
 
-
-  written = snprintf(header, 20, "ms,flows/sec,time");
-  checkpoint = header;
-  header += written;
-  index = 0;
-  do {
-    written = snprintf(header, 20, ",Virtual Switch %d", index);
-    header += written;
-    index++;
-  }while(index < nSwitches);
-  snprintf(header, 2, "%c", CSV_NEWLINE);
-  header = checkpoint;
-
-  nodeGraph = (char *)malloc(strlen(header) + (150 * (nLines) + 50) + 1);
-  strcpy(nodeGraph, header); // copy string one into the result.
-
   //LOOP ONLY WITH TEST_RANGE FLAG
   index = 0;
   do {
-    resultGraph = NULL;
-    resultGraph = readSocketLimiter(clientFd, 150 * nLines, &bytesRead);
-    strcat(nodeGraph, resultGraph); // append string two to the result.
-    printf("[GRAPH %d]\n%s\n[/GRAPH %d]\n",index, nodeGraph, index);
-    enqueueMessage(nodeGraph, generalReport, 0, !DELIMIT, 150 * nLines);
+    graph = buildGraph(clientFd, id, VALUES, nSwitches, nLines, mode);
+    printf("[VALUE_GRAPH %d]\n%s\n[/VALUE_GRAPH %d]\n",index, graph, index);
+    enqueueMessage(graph, generalReport, VALUES, !DELIMIT, 150 * nLines);
 
-    resultGraph = NULL;
-    resultGraph = readSocketLimiter(clientFd, 150, &bytesRead);
-    printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, resultGraph, index);
-    enqueueMessage(resultGraph, finalReport, 0, !DELIMIT, 150);
+    graph = buildGraph(clientFd, id, AVGS, clientsStatuses.quantity, nLines, mode);
+    printf("[AVGS_GRAPH %d]\n%s\n[AVGS_GRAPH %d]\n",index, graph, index);
+    enqueueMessage(graph, myreport, AVGS, !DELIMIT, 150 * nLines);
 
-    resultGraph = NULL;
-    resultGraph = readSocketLimiter(clientFd, 150, &bytesRead);
-    printf("[RESULT_GRAPH %d]\n%s\n[/RESULT_GRAPH %d]\n",index, resultGraph, index);
-    enqueueMessage(resultGraph, generalReport, 1, !DELIMIT, 150);
+    graph = buildGraph(clientFd, id, RESULTS, 4, clientsStatuses.quantity, mode);
+    printf("[FINAL_RESULT_GRAPH %d]\n%s\n[/FINAL_RESULT_GRAPH %d]\n",index, graph, index);
+    enqueueMessage(graph, myreport, RESULTS, !DELIMIT, 150);
 
     if (!testRange) break;
     index++;
   }while (index < nSwitches);
 
-  snprintf(graphName, 50, "%s.Values.png", reports[id].hostname);
-  plotLines(generalReport->queues[0].first->buffer, graphName);
+  snprintf(graphName, 50, "%s.values.png", reports[id].hostname);
+  plotLines(generalReport->queues[VALUES].first->buffer, graphName);
 
-
-  //TODO: Change result graph header depending of the mode
-  if (mode == MODE_LATENCY) {
-    //written = snprintf(header, 20, "ms,flows/sec");
-  } else {
-    //written = snprintf(header, 20, "ms,flows/sec");
-  }
-
-  if (bytesRead > 0) {;
-    //reports[id].queue = generalReport->last;
-  }
-  return bytesRead;
+  return -1;
 }
