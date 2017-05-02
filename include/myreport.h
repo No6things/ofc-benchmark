@@ -17,13 +17,13 @@ typedef struct message {
 } message;
 
 typedef struct queue {
+  int length;
   struct message *first;
   struct message *last;
 } queue;
 
 typedef struct report{
   int sock;
-  int length;
   char *hostname;
   struct queue queues[MAX_QUEUE];
  } report;

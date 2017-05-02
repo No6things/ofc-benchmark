@@ -90,15 +90,42 @@ void * serverSide(unsigned int s) {
 
   } while (index < clientsStatuses.quantity);
 
-  printf("already threw all threads\n");
   for (n = nThreads - 1; n >= 0; n--) {
     pthread_join(nodesThreads[n], NULL);
   }
   printf("threads done\n");
 
+  // PLOTTING AVGS
   char * graphName = (char *)malloc(10);
-  snprintf(graphName, 4 + 1, "avgs");
+  snprintf(graphName, 5 + 1, "avgs");
   plotLines(myreport->queues[AVGS], AVGS, graphName);
+
+  // PLOTTING RESULTS
+  struct message *data = myreport->queues[RESULTS].first->back;
+  struct message *iterator = data->back;
+  data->buffer = realloc(data->buffer, myreport->queues[RESULTS].length * 150 + 2);
+
+  if(data->buffer == NULL){
+    perror("realloc() while expanding results buffer");
+    exit(1);
+  }
+  //CONCATENING NODES RESULTS
+  while(iterator != NULL){
+    strncat(data->buffer, iterator->buffer, 150);
+    printf("partial result %s\n", data->buffer);
+    free(iterator);
+    iterator = iterator->back;
+  }
+  char *newline = (char *)malloc(2);
+  snprintf(newline, 2, "%c", CSV_NEWLINE);
+  strncat(data->buffer, newline, 2);
+
+  printf("RESULTS %s\n", data->buffer);
+
+  snprintf(graphName, 8 + 1, "results");
+  plotLines(myreport->queues[RESULTS], RESULTS, graphName);
+  // PLOTTING SNMP
+
 
   pthread_mutex_destroy(&lock);
   pthread_cond_destroy(&sendStart);

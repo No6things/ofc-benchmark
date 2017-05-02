@@ -57,9 +57,93 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
     iterator = iterator->next;
   }
   printf("end\n");
-  //TODO: close h1
-
   return -1;
+}
+
+
+char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id){
+  char *nameYaxis = (char *)calloc(sizeof(char), 50 + 1);;
+  double xvalues [MAX_VALUES];
+  char * command = (char *)malloc(150 + 1);
+  int i = 0;
+  int j = 0;
+  int z = 0;
+  int w = 0;
+  int m = 0;
+  int offset = 0;
+  double number = 0;
+  char numberText[20];
+
+  double x[10000];
+  double y[10000];
+
+  snprintf(command, 150, "set output \"../reports/charts/%s.png\"", name);
+
+  //XTIC
+  while (input[offset] != ','){
+    nameYaxis[i] = input[offset];
+    offset++;
+    i++;
+  }
+  offset++;
+
+  //DATA GATHERING
+  while (input[offset] != ';'){
+
+    //CALLOC
+    for(m = 0; m < 20; m++){
+      numberText[m] = '\0';
+    }
+
+    i = 0;
+    while ((input[offset] != ',') && (input[offset] != ';')){
+      numberText[i] = input[offset];
+      offset++;
+      i++;
+    }
+    number = atof(numberText);
+    xvalues[j] = number;
+    printf("%f  [%d]\n",xvalues[j], j);
+    j++; //next value/column
+
+    if (input[offset] == ';'){
+      j = 0;
+    }
+    offset++;
+  }
+
+  //IMPULSE FILLING
+  for (j = 0; j < NPOINTS_GENERAL; j++) {
+    y[j + (z * NPOINTS_GENERAL)] = (id + 1) + (j - 50) * 0.005;
+  }
+
+  gnuplot_setstyle(h1, "impulses");
+  for (w = 0; w < 2; w++) {
+    for (j = 0; j < NPOINTS_GENERAL; j++) {
+      x[j + (z * NPOINTS_GENERAL)] = xvalues[w];
+    }
+    gnuplot_cmd(h1, command);
+    flows = flows->next;
+    gnuplot_plot_xy(h1, y, x, 1 * NPOINTS_GENERAL, flows->name);
+  }
+
+  y[z] = id + 1;
+  x[z] = xvalues[2];
+
+  flows = flows->next;
+  gnuplot_setstyle(h1, "points");
+  gnuplot_cmd(h1, command);
+  gnuplot_plot_xy(h1, y, x, 1, flows->name);
+
+  y[z] = id + 1;
+  x[z] = xvalues[3];
+
+  flows = flows->next;
+  //gnuplot_setstyle(h1, "lines");
+  gnuplot_cmd(h1, command);
+  gnuplot_plot_xy(h1, y, x, 1, flows->name);
+
+  return nameYaxis;
 }
 
 
@@ -67,12 +151,17 @@ int plotLines(struct queue input, int type, char *name){
   gnuplot_ctrl *h1;
 
   int i = 0;
+  int written = 0;
   int offset = 0;
   int gotLabelX = 0;
   int gotLabelY = 0;
 
-  char *xlabel = (char *)calloc(sizeof(char),50 + 1);
-  char *ylabel = (char *)calloc(sizeof(char),50 + 1);
+  char *hook;
+  char *buffer;
+  char *xtics = (char *)malloc(150 * input.length + 1);
+  char *xrange = (char *)malloc(150 + 1);
+  char *xlabel = (char *)calloc(sizeof(char), 50 + 1);
+  char *ylabel = (char *)calloc(sizeof(char), 50 + 1);
 
   struct message *iterator;
   struct flow *flows = (struct flow *)malloc(sizeof(struct flow));
@@ -126,21 +215,26 @@ int plotLines(struct queue input, int type, char *name){
   gnuplot_set_xlabel(h1, xlabel);
   //Reseteo de grafica
   gnuplot_resetplot(h1);
-  //Configuracion de estilo
-  gnuplot_setstyle(h1,"lines");
+
   //Configuracion de salida PNG
-  gnuplot_cmd(h1, "set grid ytics lc rgb \"#bbbbbb\" lw 1 lt 0");
-  gnuplot_cmd(h1, "set grid xtics lc rgb \"#bbbbbb\" lw 1 lt 0");
-  gnuplot_cmd(h1, "set key rmargin");
-  gnuplot_cmd(h1, "set terminal pngcairo size 1024, 768");
+    gnuplot_cmd(h1, "set grid xtics lc rgb \"#bbbbbb\" lw 1 lt 0");
+    gnuplot_cmd(h1, "set grid ytics lc rgb \"#bbbbbb\" lw 1 lt 0");
+    gnuplot_cmd(h1, "set key rmargin");
+    gnuplot_cmd(h1, "set terminal pngcairo size 1024, 768");
 
   i = 0;
   iterator = input.first->back;
   switch (type) {
     case VALUES:
+      //Configuracion de estilo
+      gnuplot_setstyle(h1,"lines");
       parseLines(h1, iterator->buffer, flows, name);
+      gnuplot_close(h1);
       break;
+
     case AVGS:
+      //Configuracion de estilo
+      gnuplot_setstyle(h1,"lines");
       tmp = (struct flow *)malloc(sizeof(struct flow));
       *tmp = *flows;
       *checkpoint = *flows;
@@ -152,114 +246,50 @@ int plotLines(struct queue input, int type, char *name){
         (checkpoint->next)->next = NULL;
         parseLines(h1, iterator->buffer, checkpoint, name);
         iterator = iterator->back;
+      }
+      gnuplot_close(h1);
+      break;
+
+    case RESULTS:
+      hook = xtics;
+      written = snprintf(xrange, 20, "set xrange [0:%d]", input.length);
+      if (written == 0) {
+        perror("set xrange");
+        exit(1);
+      }
+      gnuplot_cmd(h1, xrange);
+
+      written = snprintf(xtics, 20, "set xtics (");
+      if (written == 0) {
+        perror("set xtics");
+        exit(1);
+      }
+      xtics += written;
+      i = 1;
+      while (iterator != NULL)
+      {
+        buffer = parseResults(h1, iterator->buffer, flows, name , i - 1);
+        written = snprintf(xtics, 150,"\"%s\" %d",buffer, i);
+        xtics += written;
+        iterator = iterator->back;
+        if(iterator != NULL) {
+          written = snprintf(xtics, 2, ",");
+        } else {
+          written = snprintf(xtics, 2, ")");
+        }
+        xtics += written;
         i++;
       }
+      xtics = hook;
+      printf("xtics %s\n", xtics);
+      gnuplot_cmd(h1, xtics);
+      gnuplot_close(h1);
+
       break;
     case SNMP:
       break;
   }
   //TODO close h1
-  return 0;
-}
-
-int plotFinalResults (char *input) {
-  gnuplot_ctrl *h1;
-  char names [MAX_VALUES][MAX_NAME_GENERAL];
-  double xvalues [MAX_SW][MAX_VALUES];
-
-  int i = 0;
-  int j = 0;
-  int z = 0;
-  int w = 0;
-  int m = 0;
-  int tam = 0;
-  int aux = 0;
-  double number = 0;
-  char numbertext[20];
-
-  double x[10000];
-  double y[10000];
-
-  h1 = gnuplot_init();
-
-  //Configuracion de nombres en graficas.
-  gnuplot_set_ylabel(h1, "flows/sec") ;
-  gnuplot_set_xlabel(h1, "Milliseconds") ;
-
-  //Configuracion de salida PNG
-  gnuplot_cmd(h1, "set terminal png medium size 1024,768");
-
-  //Inicializacion de nombres
-  for (i = 0; i < MAX_VALUES; i++) {
-    while((input[aux] != ',') && ( input[aux] != ';')){
-      names[i][tam] = input[aux];
-      tam = tam + 1;
-      aux = aux + 1;
-    }
-    printf("%s\n", names[i]);
-    aux = aux + 1;
-    tam = 0;
-  }
-
-  i = 0;
-  j = 0;
-
-  while (input[aux] != ';'){
-    //Texto representativo de un number de  10 digitos
-    for(m = 0; m < 20; m++){
-      numbertext[m] = '\0';
-    }
-    tam = 0;
-    while ((input[aux] != ',') && (input[aux] != ';')){
-      numbertext[tam] = input[aux];
-      aux = aux + 1;
-      tam = tam +1;
-    }
-
-    number = atof(numbertext);
-    xvalues[i][j] = number;
-    printf("%f <-- %s [%d,%d]\n",xvalues[i][j], numbertext,i,j);
-    j = j + 1;
-    if (input[aux] == ';'){
-      i = i + 1;
-      j = 0;
-    }
-    aux = aux + 1;
-  }
-
-  for (z = 0; z < i; z++) {
-    for (j = 0; j < NPOINTS_GENERAL; j++) {
-      y[j + (z * NPOINTS_GENERAL)] = (z + 1) + (j - 50) * 0.005;
-    }
-  }
-
-  gnuplot_setstyle(h1, "impulses");
-  for (w = 0; w < 2; w++) {
-    for (z = 0; z < i; z++) {
-      for (j = 0; j < NPOINTS_GENERAL; j++) {
-        x[j + (z * NPOINTS_GENERAL)] = xvalues[z][w];
-      }
-    }
-    gnuplot_cmd(h1, "set output \"resumen.png\"");
-    gnuplot_plot_xy(h1, y, x, i * NPOINTS_GENERAL, "");
-  }
-
-  for (z = 0; z < i; z++) {
-    y[z] = z + 1;
-    x[z] = xvalues[z][2];
-  }
-  gnuplot_setstyle(h1, "points");
-  gnuplot_cmd(h1, "set output \"resumen.png\"");
-  gnuplot_plot_xy(h1, y, x, i, "");
-
-  for (z = 0; z < i; z++) {
-    y[z] = z + 1;
-    x[z] = xvalues[z][3];
-  }
-  gnuplot_setstyle(h1, "lines");
-  gnuplot_cmd(h1, "set output \"resumen.png\"");
-  gnuplot_plot_xy(h1, y, x, i, "");
-
   return 0;
 }
 

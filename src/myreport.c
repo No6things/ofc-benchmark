@@ -42,10 +42,10 @@ void enqueueMessage(char* item,  report *myreport, int id, int delimit, int size
   if (myreport->queues[id].last != NULL) {
     (myreport->queues[id].last)->back = temp;
     temp->next = myreport->queues[id].last;
-    myreport->length = myreport->length + 1;
+    myreport->queues[id].length = myreport->queues[id].length + 1;
   } else {
     temp->next = NULL;
-    myreport->length = 1;
+    myreport->queues[id].length = 1;
     myreport->queues[id].first = temp;
   }
   myreport->queues[id].last = temp;
