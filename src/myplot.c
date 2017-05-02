@@ -114,7 +114,7 @@ char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int i
 
   //IMPULSE FILLING
   for (j = 0; j < NPOINTS_GENERAL; j++) {
-    y[j + (z * NPOINTS_GENERAL)] = (id + 1) + (j - 50) * 0.005;
+    y[j + (z * NPOINTS_GENERAL)] = (id + 1) + (j - 50) * 0.0005;
   }
 
   gnuplot_setstyle(h1, "impulses");
