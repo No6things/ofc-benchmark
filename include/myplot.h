@@ -11,23 +11,12 @@
 #define MAX_NAME_LINES 20
 
 typedef struct flow {
-  int *values;
-  int *times;
-  int *resultPerTime;
-  int N;
-  int max;
-  int min;
-  int avg;
-  int stdev;
-}flow;
-
-typedef struct fakeSwResults {
   char name[MAX_NAME_LINES];
   double x[MAX_LENG];
-  struct fakeSwResults *next;
-} fakeSwResults;
+  struct flow *next;
+} flow;
 
-int plotLines (char *input, char *name);
+int plotLines(struct queue input, int type, char *name);
 int plotFinalResults(char *input);
 int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange);
 

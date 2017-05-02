@@ -91,7 +91,7 @@ void * serverSide(unsigned int s) {
       if (clientsStatuses.reported == clientsStatuses.quantity) break;
    }
    snmpStop = 1;
-   for (n = nThreads; n >= 0; n--)
+   for (n = nThreads - 1; n >= 0; n--)
       pthread_join(nodesThreads[n], NULL);
 
     pthread_mutex_destroy(&lock);
