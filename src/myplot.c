@@ -51,9 +51,7 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
 
   snprintf(command, 150, "set output \"../reports/charts/%s.png\"", name);
   //TODO: move this to plotLines
-  printf("checkpoint %s\n", checkpoint->name);
   while (iterator != NULL) {
-    printf("iteration %s\n", iterator->name);
     gnuplot_cmd(h1, command);
     gnuplot_plot_xy(h1, checkpoint->x, iterator->x, i, iterator->name);
     iterator = iterator->next;
@@ -152,7 +150,6 @@ int plotLines(struct queue input, int type, char *name){
         tmp = tmp->next;
         *(checkpoint->next) = *(tmp);
         (checkpoint->next)->next = NULL;
-        printf("data %s tmp %s\n", iterator->buffer, checkpoint->name);
         parseLines(h1, iterator->buffer, checkpoint, name);
         iterator = iterator->back;
         i++;
@@ -387,9 +384,7 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
 
   snprintf(graphName, 50 + 1, "%s.values", reports[id].hostname);
   plotLines(generalReport->queues[VALUES], VALUES, graphName);
+  printf("plotLines ended\n");
 
-  snprintf(graphName, 4 + 1, "avgs");
-  plotLines(myreport->queues[AVGS], AVGS, graphName);
-
-  return -1;
+  return 1;
 }

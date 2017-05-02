@@ -3,6 +3,7 @@
 #endif
 
 #include "pthread.h"
+#include "../include/mymessages.h"
 #include "../include/myreport.h"
 #include "../include/mysnmp.h"
 
@@ -175,7 +176,12 @@ void *asynchronousSnmp(void *context)
     for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
       if (hs->sess) snmp_close(hs->sess);
     }
-    if (snmpStop == 1) break;
+
+    pthread_mutex_lock(&lock);
+      if (snmpStop == 1) {
+        break;
+      }
+    pthread_mutex_unlock(&lock);
     usleep(2000000);
   }
 

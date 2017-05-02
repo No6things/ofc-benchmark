@@ -17,86 +17,92 @@
 #include "../include/myserver.h"
 
 void * serverSide(unsigned int s) {
-   int n;
-   unsigned int index, nThreads, threadErr, param;
-   socklen_t serverFd, clientFd, clilen;
-   struct sockaddr_in serv_addr, cli_addr;
+  int n;
+  unsigned int index, nThreads, threadErr, param;
+  socklen_t serverFd, clientFd, clilen;
+  struct sockaddr_in serv_addr, cli_addr;
 
-   // Initializing variables
-   clilen = sizeof(cli_addr);
+  // Initializing variables
+  clilen = sizeof(cli_addr);
 
-   clientsStatuses.quantity = s - 1;
-   clientsStatuses.connected = 0;
-   clientsStatuses.reported = 0;
+  clientsStatuses.quantity = s - 1;
+  clientsStatuses.connected = 0;
+  clientsStatuses.reported = 0;
 
-   reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(struct report));
-   for (index = 0; index < MAX_QUEUE; index++) {
-     reports[index].queues[RESULTS].last = (struct message *)malloc(sizeof(struct message));
-     reports[index].queues[RESULTS].first = (struct message *)malloc(sizeof(struct message));
-     reports[index].queues[RESULTS].last = NULL;
-     reports[index].queues[RESULTS].first = NULL;
-   }
+  reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(struct report));
+  for (index = 0; index < MAX_QUEUE; index++) {
+   reports[index].queues[RESULTS].last = (struct message *)malloc(sizeof(struct message));
+   reports[index].queues[RESULTS].first = (struct message *)malloc(sizeof(struct message));
+   reports[index].queues[RESULTS].last = NULL;
+   reports[index].queues[RESULTS].first = NULL;
+  }
 
 
-   index = 0;
-   nThreads = clientsStatuses.quantity;
-   pthread_t nodesThreads[nThreads];
+  index = 0;
+  nThreads = clientsStatuses.quantity;
+  pthread_t nodesThreads[nThreads];
 
-   printf("The network will have %d node slaves\n", clientsStatuses.quantity);
+  printf("The network will have %d node slaves\n", clientsStatuses.quantity);
 
-   // Opening Socket
-   if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      perror("ERROR opening socket");
+  // Opening Socket
+  if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("ERROR opening socket");
+    exit(1);
+  }
+
+  // Initializing server Internet structures
+  memset((char *) &serv_addr, 0, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = INADDR_ANY;
+  printf("SERVER_PORT %d\n",SERVER_PORT);
+  serv_addr.sin_port = htons(SERVER_PORT);
+
+  //Binding server socket
+  if (bind(serverFd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+    perror("ERROR binding socket");
+    exit(1);
+  }
+
+  //Listening for clientsStatuses
+  if (listen(serverFd, 5) < 0) {
+    perror("ERROR listening socket");
+    exit(1);
+  }
+  do {
+    // Accept request connections
+    if ((clientFd = accept(serverFd, (struct sockaddr *)&cli_addr, &clilen)) < 0) {
+       perror("ERROR accepting slave");
+       exit(1);
+    }
+
+    reports[index].sock = clientFd;
+    reports[index].hostname = inet_ntoa(cli_addr.sin_addr);
+
+    printf("Client connected with socket %d and hostname: %s\n", reports[index].sock, reports[index].hostname);
+    param = index;
+    threadErr = pthread_create(&nodesThreads[index], NULL, &clientManagement, &param);
+    if (threadErr) {
+      pthread_join(nodesThreads[index], NULL);
+      perror("Creating clientManagement thread");
       exit(1);
-   }
+    }
+    index++;
 
-   // Initializing server Internet structures
-   memset((char *) &serv_addr, 0, sizeof(serv_addr));
-   serv_addr.sin_family = AF_INET;
-   serv_addr.sin_addr.s_addr = INADDR_ANY;
-   printf("SERVER_PORT %d\n",SERVER_PORT);
-   serv_addr.sin_port = htons(SERVER_PORT);
+  } while (index < clientsStatuses.quantity);
 
-   //Binding server socket
-   if (bind(serverFd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-      perror("ERROR binding socket");
-      exit(1);
-   }
+  printf("already threw all threads\n");
+  for (n = nThreads - 1; n >= 0; n--) {
+    pthread_join(nodesThreads[n], NULL);
+  }
+  printf("threads done\n");
 
-   //Listening for clientsStatuses
-   if (listen(serverFd, 5) < 0) {
-      perror("ERROR listening socket");
-      exit(1);
-   }
-   while (1) {
-      // Accept request connections
-      if ((clientFd = accept(serverFd, (struct sockaddr *)&cli_addr, &clilen)) < 0) {
-         perror("ERROR accepting slave");
-         exit(1);
-      }
+  char * graphName = (char *)malloc(10);
+  snprintf(graphName, 4 + 1, "avgs");
+  plotLines(myreport->queues[AVGS], AVGS, graphName);
 
-      reports[index].sock = clientFd;
-      reports[index].hostname = inet_ntoa(cli_addr.sin_addr);
-
-      printf("Client connected with socket %d and hostname: %s\n", reports[index].sock, reports[index].hostname);
-      param = index;
-      threadErr = pthread_create(&nodesThreads[index], NULL, &clientManagement, &param);
-      if (threadErr) {
-        pthread_join(nodesThreads[index], NULL);
-        perror("Creating clientManagement thread");
-        exit(1);
-      }
-      index++;
-
-      if (clientsStatuses.reported == clientsStatuses.quantity) break;
-   }
-   snmpStop = 1;
-   for (n = nThreads - 1; n >= 0; n--)
-      pthread_join(nodesThreads[n], NULL);
-
-    pthread_mutex_destroy(&lock);
-    pthread_cond_destroy(&sendStart);
-    return 0;
+  pthread_mutex_destroy(&lock);
+  pthread_cond_destroy(&sendStart);
+  return 0;
 }
 
 
@@ -131,17 +137,19 @@ void *clientManagement(void *context) {
           if (clientsStatuses.connected == clientsStatuses.quantity) {
             printf("Broadcasting 'send START_MESSAGE' order\n");
             pthread_cond_broadcast(&sendStart);
+          }
+          while(clientsStatuses.connected < clientsStatuses.quantity){
+            //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
+            printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
+            pthread_cond_wait(&sendStart, &lock);
+          }
+          if (id == clientsStatuses.quantity - 1) {
             threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
             if (threadErr) {
               pthread_join(snmp_thread, NULL);
               perror("Creating SNMP thread");
               exit(1);
             }
-          }
-          while(clientsStatuses.connected < clientsStatuses.quantity){
-            //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
-            printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
-            pthread_cond_wait(&sendStart, &lock);
           }
         pthread_mutex_unlock(&lock);
         snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
@@ -187,7 +195,13 @@ void *clientManagement(void *context) {
     }
     if (messageReceived == SERVER_MESSAGES) break;
   }
-  pthread_join(snmp_thread, NULL);
+  pthread_mutex_lock(&lock);
+    snmpStop = 1;
+  pthread_mutex_unlock(&lock);
+
+  if (id == clientsStatuses.quantity - 1) {
+    pthread_join(snmp_thread, NULL);
+  }
   displayMessages(myreport, SNMP);
   pthread_exit(NULL);
 }
