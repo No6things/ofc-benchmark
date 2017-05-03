@@ -9,7 +9,7 @@
 #define AVGS 1
 #define RESULTS 2
 #define SNMP 3
-#define TIME 5
+#define TIME 4
 
 typedef struct message {
   char *buffer;

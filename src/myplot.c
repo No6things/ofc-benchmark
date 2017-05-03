@@ -2,26 +2,29 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #include "../include/benchmark.h"
 #include "../include/mymessages.h"
 #include "../include/myswitch.h"
 #include "../include/myreport.h"
+#include "../include/mysnmp.h"
 #include "../include/myplot.h"
 #include "../include/gnuplot_i.h"
 
 int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
-  char * command = (char*)malloc(150);
+  char * command = (char*)calloc(150, sizeof(char));
   char numberText[10];
 
   flow *checkpoint = flows;
-  flow *iterator;
+  flow *resultsIterator;
 
   int i = 0;
   int j = 0;
   int offset = 0;
   double number = 0;
   printf("parsing \n");
+  assert(name != NULL);
 
   while (input[offset] != ';'){
     //Texto representativo de un number de  10 digitos
@@ -47,14 +50,13 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   }
 
   printf("graphication \n");
-  iterator = checkpoint->next;
-
+  resultsIterator = checkpoint->next;
   snprintf(command, 150, "set output \"../reports/charts/%s.png\"", name);
-  //TODO: move this to plotLines
-  while (iterator != NULL) {
+  //TODO: move this to plotGraph
+  while (resultsIterator != NULL) {
     gnuplot_cmd(h1, command);
-    gnuplot_plot_xy(h1, checkpoint->x, iterator->x, i, iterator->name);
-    iterator = iterator->next;
+    gnuplot_plot_xy(h1, checkpoint->x, resultsIterator->x, i, resultsIterator->name);
+    resultsIterator = resultsIterator->next;
   }
   printf("end\n");
   free(command);
@@ -63,7 +65,7 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
 
 
 char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id){
-  char *nameYaxis = (char *)calloc(sizeof(char), 50 + 1);
+  char *nameYaxis = (char *)calloc(50 + 1, sizeof(char));
   double xvalues [MAX_VALUES];
   char * command = (char *)malloc(150 + 1);
   int i = 0;
@@ -148,8 +150,7 @@ char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int i
   return nameYaxis;
 }
 
-//TODO: rensame as plot
-int plotLines(struct queue input, int type, char *name){
+int plotGraph(struct queue input, int type, char *name){
   gnuplot_ctrl *h1;
 
   int i = 0;
@@ -162,10 +163,10 @@ int plotLines(struct queue input, int type, char *name){
   char *buffer;
   char *xtics = (char *)malloc(150 * input.length + 1);
   char *xrange = (char *)malloc(150 + 1);
-  char *xlabel = (char *)calloc(sizeof(char), 50 + 1);
-  char *ylabel = (char *)calloc(sizeof(char), 50 + 1);
+  char *xlabel = (char *)calloc(50 + 1, sizeof(char));
+  char *ylabel = (char *)calloc(50 + 1, sizeof(char));
 
-  struct message *iterator;
+  struct message *resultsIterator;
   struct flow *flows = (struct flow *)malloc(sizeof(struct flow));
   struct flow *checkpoint = flows;
   struct flow *tmp;
@@ -177,9 +178,11 @@ int plotLines(struct queue input, int type, char *name){
   do {
    if (input.first->buffer[offset] != ',') {
      if(gotLabelX) {
+       ylabel[i] = '\0';
        ylabel[i] = input.first->buffer[offset];
        i++;
      } else {
+       xlabel[offset] = '\0';
        xlabel[offset] = input.first->buffer[offset];
      }
    } else {
@@ -191,7 +194,7 @@ int plotLines(struct queue input, int type, char *name){
    }
    offset++;
   }while (!(gotLabelX && gotLabelY));
-  printf("\nxLabel '%s' | ylabel '%s'\n", xlabel, ylabel);
+  //printf("\nxLabel '%s' | ylabel '%s'\n", xlabel, ylabel);
 
   i = 0;
   do {
@@ -199,17 +202,18 @@ int plotLines(struct queue input, int type, char *name){
       tmp = (struct flow *)malloc(sizeof(struct flow));
       tmp->next = NULL;
       flows->next = tmp;
-      printf("flowName '%s'\n", flows->name);
+      //printf("flowName '%s'\n", flows->name);
       flows = tmp;
       i = 0;
     } else {
+      flows->name[i] = '\0';
       flows->name[i] = input.first->buffer[offset];
       i++;
     }
     offset++;
   }while (input.first->buffer[offset] != ';');
   offset++;
-  printf("flowName '%s'\n", flows->name);
+  //printf("flowName '%s'\n", flows->name);
   flows = checkpoint;
 
   //Configuracion de nombres en graficas.
@@ -219,17 +223,17 @@ int plotLines(struct queue input, int type, char *name){
   gnuplot_resetplot(h1);
 
   //Configuracion de salida PNG
-    gnuplot_cmd(h1, "set grid xtics lc rgb \"#bbbbbb\" lw 1 lt 0");
-    gnuplot_cmd(h1, "set grid ytics lc rgb \"#bbbbbb\" lw 1 lt 0");
-    gnuplot_cmd(h1, "set key rmargin");
-    gnuplot_cmd(h1, "set terminal pngcairo size 1024, 768");
+  gnuplot_cmd(h1, "set grid xtics lc rgb \"#bbbbbb\" lw 1 lt 0");
+  gnuplot_cmd(h1, "set grid ytics lc rgb \"#bbbbbb\" lw 1 lt 0");
+  gnuplot_cmd(h1, "set key rmargin");
+  gnuplot_cmd(h1, "set terminal pngcairo size 1024, 768");
 
   i = 0;
-  iterator = input.first->back;
+  resultsIterator = input.first->back;
   if (type == VALUES || type == SNMP) {
 
     gnuplot_setstyle(h1,"lines");
-    parseLines(h1, iterator->buffer, flows, name);
+    parseLines(h1, resultsIterator->buffer, flows, name);
     gnuplot_close(h1);
 
   } else if (type == AVGS) {
@@ -239,13 +243,13 @@ int plotLines(struct queue input, int type, char *name){
     *tmp = *flows;
     *checkpoint = *flows;
 
-    while (iterator != NULL)
+    while (resultsIterator != NULL)
     {
       tmp = tmp->next;
       *(checkpoint->next) = *(tmp);
       (checkpoint->next)->next = NULL;
-      parseLines(h1, iterator->buffer, checkpoint, name);
-      iterator = iterator->back;
+      parseLines(h1, resultsIterator->buffer, checkpoint, name);
+      resultsIterator = resultsIterator->back;
     }
     gnuplot_close(h1);
 
@@ -266,13 +270,13 @@ int plotLines(struct queue input, int type, char *name){
     }
     xtics += written;
     i = 1;
-    while (iterator != NULL)
+    while (resultsIterator != NULL)
     {
-      buffer = parseResults(h1, iterator->buffer, flows, name , i - 1);
+      buffer = parseResults(h1, resultsIterator->buffer, flows, name , i - 1);
       written = snprintf(xtics, 150,"\"%s\" %d",buffer, i);
       xtics += written;
-      iterator = iterator->back;
-      if(iterator != NULL) {
+      resultsIterator = resultsIterator->back;
+      if(resultsIterator != NULL) {
         written = snprintf(xtics, 2, ",");
       } else {
         written = snprintf(xtics, 2, ")");
@@ -286,7 +290,6 @@ int plotLines(struct queue input, int type, char *name){
     gnuplot_close(h1);
 
   }
-  free(name);
   free(xtics);
   free(xrange);
   free(xlabel);
@@ -343,8 +346,8 @@ char * buildHeader(int type, int n, int mode, int subMode) {
       break;
 
     case SNMP:
-      header = (char *)malloc(40 + 1);
-      written = snprintf(header, 40 + 1, "timestamp (sec),%s,time,%s", snmpLabelX, snmpFlows);
+      header = (char *)malloc(50 + 1);
+      written = snprintf(header, 50 + 1, "timestamp (sec),%s,time,%s", snmpLabelX, snmpFlows);
       checkpoint = header;
       header += written;
       break;
@@ -355,7 +358,7 @@ char * buildHeader(int type, int n, int mode, int subMode) {
 
   return header;
 }
-//TODO: buildGraphDistributed
+
 //TODO: insertSNMP behaviour
 void buildGraph(report *myreport, int clientFd, int id, int type, int flows, int rows, int mode) {
   char *header = NULL;
@@ -388,9 +391,137 @@ void buildGraph(report *myreport, int clientFd, int id, int type, int flows, int
   enqueueMessage(body, myreport, type, !DELIMIT, strlen(body));
 }
 
+int plotDistributed(){
+  int x = 0;
+  int written = 0;
+  int first = 1;
+  char *graphName = (char *)calloc(10 + 1, sizeof(char));
+  char *newline = (char *)malloc(4 + 1);
+  char *snmpHeader;
+  mysnmp->queues[TIME].length = mysnmp->queues[TIME].length ? mysnmp->queues[TIME].length : 1;
+  char *snmpBody = (char *)calloc(1 + 150 * mysnmp->queues[TIME].length, sizeof(char));
+  char *checkpoint = snmpBody;
+  struct report *tmp = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
+  struct message *resultsMessage = myreport->queues[RESULTS].first->back;
+  struct message *resultsIterator = resultsMessage->back;
+  struct message *timeIterator =  mysnmp->queues[TIME].first;
+  struct message *firstIterator = mysnmp->queues[MEMORY].first;
+  struct message *secondIterator = mysnmp->queues[CPU].first;
+
+  //PLOTTING AVGS
+  //GRAPH NAME
+  printf("naming avg graph\n");
+  snprintf(graphName, 4 + 1, "avgs");
+  printf("starting avg graph\n");
+  plotGraph(myreport->queues[AVGS], AVGS, graphName);
+
+  // PLOTTING RESULTS
+  printf("resizing results graph\n");
+  myreport->queues[RESULTS].length = myreport->queues[RESULTS].length ? myreport->queues[RESULTS].length : 1;
+  resultsMessage->buffer  = (char *)realloc(resultsMessage->buffer, myreport->queues[RESULTS].length * 150 + 2);
+  if(newline  == NULL){
+    free(newline);
+    perror("realloc() while expanding results buffer");
+    exit(1);
+  }
+
+  //CONCATENING NODES RESULTS
+  while(resultsIterator != NULL){
+    strncat(resultsMessage->buffer, resultsIterator->buffer, 150);
+    printf("result %s\n", resultsMessage->buffer);
+    free(resultsIterator->buffer);
+    free(resultsIterator);
+    resultsIterator = resultsIterator->back;
+  }
+  snprintf(newline, 2, "%c", CSV_NEWLINE);
+  strncat(resultsMessage->buffer, newline, 2);
+
+  //GRAPH NAME
+  printf("naming results graph\n");
+  snprintf(graphName, 8 + 1, "results");
+  plotGraph(myreport->queues[RESULTS], RESULTS, graphName);
+
+  // PLOTTING SNMP
+  printf("starting snmp graph 1\n");
+  tmp->queues[SNMP].last = NULL;
+  tmp->queues[SNMP].first = NULL;
+
+  snmpHeader = buildHeader(SNMP, -1, -1, 0);
+  printf("1st snmp header\n%s\n", snmpHeader);
+  enqueueMessage(snmpHeader, tmp, SNMP, !DELIMIT, 50);
+  mysnmp->queues[TIME].length = mysnmp->queues[TIME].length ? mysnmp->queues[TIME].length : 1;
+
+  printf("build string\n");
+  for (x = 0; x < mysnmp->queues[TIME].length; x++) {
+    written = snprintf(snmpBody, 150,"%s,%s,%s;", timeIterator->buffer, firstIterator->buffer, secondIterator->buffer);
+    if (first) {
+      checkpoint = snmpBody;
+      first = 0;
+    }
+    printf("-%d- %s\n",x, snmpBody);
+    snmpBody += written;
+    timeIterator = timeIterator->back;
+    firstIterator = firstIterator->back;
+    secondIterator = secondIterator->back;
+  }
+  snprintf(snmpBody, 2, "%c", CSV_NEWLINE);
+  snmpBody = checkpoint;
+  printf("\n1st snmp body\n%s\n", snmpBody);
+  enqueueMessage(snmpBody, tmp, SNMP, !DELIMIT, 150 * mysnmp->queues[TIME].length);
+
+  snprintf(graphName, 9 + 1, "memAndcpu");
+  plotGraph(tmp->queues[SNMP], SNMP, graphName);
+  free(tmp->queues[SNMP].last);
+  free(tmp->queues[SNMP].first);
+  free(tmp);
+  free(snmpBody);
+
+  // PLOTTING SNMP
+  printf("starting snmp graph 2\n");
+  x = 0;
+  written = 0;
+  first = 1;
+  timeIterator =  mysnmp->queues[TIME].first;
+  firstIterator = mysnmp->queues[IN].first;
+  secondIterator = mysnmp->queues[OUT].first;
+  snmpBody = (char *)calloc(1 + 150 * mysnmp->queues[TIME].length, sizeof(char));
+
+  tmp = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
+  tmp->queues[SNMP].last = NULL;
+  tmp->queues[SNMP].first = NULL;
+
+  snmpHeader = buildHeader(SNMP, -1, -1, 1);
+  printf("2nd snmp header\n%s\n", snmpHeader);
+  enqueueMessage(snmpHeader, tmp, SNMP, !DELIMIT, 50);
+
+  for (x = 0; x < mysnmp->queues[TIME].length; x++) {
+    written = snprintf(snmpBody, 150,"%s,%s,%s;", timeIterator->buffer, firstIterator->buffer, secondIterator->buffer);
+    if (first) {
+      checkpoint = snmpBody;
+      first = 0;
+    }
+    printf("-%d- %s\n",x, snmpBody);
+    snmpBody += written;
+    timeIterator = timeIterator->back;
+    firstIterator = firstIterator->back;
+    secondIterator = secondIterator->back;
+  }
+  snprintf(snmpBody, 2, "%c", CSV_NEWLINE);
+  snmpBody = checkpoint;
+  printf("2nd snmp body\n%s\n", snmpBody);
+  enqueueMessage(snmpBody, tmp, SNMP, !DELIMIT, 150 * mysnmp->queues[TIME].length);
+
+  snprintf(graphName, 8 + 1, "inAndOut");
+  plotGraph(tmp->queues[SNMP], SNMP, graphName);
+
+  free(tmp->queues[SNMP].last);
+  free(tmp->queues[SNMP].first);
+  free(tmp);
+  return 0;
+}
+
 //TODO: Implement NON DISTRIBUTED management
-//TODO: rename as plotDistributed
-int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange) {
+int plotNode(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange) {
   int index;
   report *generalReport = (struct report*)malloc(sizeof(struct report));
   char *graphName = (char *)malloc(50 + 1);
@@ -425,13 +556,14 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
   }while (index < nSwitches);
 
   snprintf(graphName, 50 + 1, "%s.values", reports[id].hostname);
-  plotLines(generalReport->queues[VALUES], VALUES, graphName);
+  plotGraph(generalReport->queues[VALUES], VALUES, graphName);
   for (index = 0; index < MAX_QUEUE; index++) {
     free(generalReport->queues[index].last);
     free(generalReport->queues[index].first);
   }
+  free(graphName);
   free(generalReport);
-  printf("plotLines ended\n");
+  printf("plotGraph ended\n");
 
   return 1;
 }

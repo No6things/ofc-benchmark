@@ -15,10 +15,8 @@ void initializeSnmp (void)
   op=oids;
   snmpStop = 0;
   ramSize = 0;
-  mysnmp = (struct report *)malloc(sizeof(struct report));
+  mysnmp = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
   for (i = 0; i < MAX_QUEUE; i++) {
-    mysnmp->queues[i].last = (struct message *)malloc(sizeof(struct message));
-    mysnmp->queues[i].first = (struct message *)malloc(sizeof(struct message));
     mysnmp->queues[i].last = NULL;
     mysnmp->queues[i].first = NULL;
   }
@@ -52,11 +50,9 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
   char buf[1024];
   char *result = (char *)malloc(50 + 1);
   char *timestamp = (char *)malloc(20 + 1);
-  char *checkpoint;
   char *token;
   int ID = -1;
   int i;
-  int written = 0;
   int number;
   int percentage;
   long double ms;
@@ -68,16 +64,9 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
         while (vp) {
           snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
           token = strtok(buf, s);
-
           if (!strcmp(op->readableName, "RAM_SIZE")) {
             ramSize = atoi(token);
           } else  {
-            gettimeofday(&now, NULL);
-            timersub(&now, &tStart, &diff);
-
-            ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
-            snprintf(timestamp, 20, "%.03Lf, ", ms);
-
             if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
               snprintf(result, 50, "%s", token);
               ID = (!strcmp(op->readableName, "BYTES_IN")) ? IN : OUT;
@@ -85,6 +74,15 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
               number = atoi(token);
               percentage = 100 - number;
               ID = CPU;
+
+              //ADDED ONCE SHARED BETWEEN OIDS
+              gettimeofday(&now, NULL);
+              timersub(&now, &tStart, &diff);
+
+              ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
+              snprintf(timestamp, 20, "%.03Lf", ms);
+              enqueueMessage(timestamp, mysnmp, TIME, !DELIMIT, 20);
+
               snprintf(result, 50, "%d", percentage);
             } else if (!strcmp(op->readableName, "RAM_USED")) {
               number = atoi(token);
@@ -92,7 +90,6 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
               snprintf(result, 50, "%d", percentage);
               ID = MEMORY;
             }
-            enqueueMessage(timestamp, mysnmp, TIME, !DELIMIT, 20);
             enqueueMessage(result, mysnmp, ID, !DELIMIT, 50);
           }
           vp = vp->next_variable;
@@ -164,7 +161,6 @@ void *asynchronousSnmp(void *context)
   int fds, block;
   gettimeofday(&tStart, NULL);
   while(1) {
-    usleep(2000000);
 
     op=oids;
     hosts->name = snmpDestination;
@@ -219,6 +215,7 @@ void *asynchronousSnmp(void *context)
     for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
       if (hs->sess) snmp_close(hs->sess);
     }
+    usleep(2000000);
 
     pthread_mutex_lock(&lock);
       if (snmpStop == 1) {
@@ -226,7 +223,7 @@ void *asynchronousSnmp(void *context)
       }
     pthread_mutex_unlock(&lock);
   }
-
+printf("CPU length %d, MEMORY length %d, TIME length %d\n", mysnmp->queues[CPU].length, mysnmp->queues[MEMORY].length, mysnmp->queues[TIME].length);
   pthread_exit(NULL);
 }
 

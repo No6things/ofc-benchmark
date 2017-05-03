@@ -18,7 +18,7 @@
 
 void * serverSide(unsigned int s) {
   int n;
-  unsigned int index, nThreads, threadErr, param;
+  unsigned int index, jndex, nThreads, threadErr, param;
   socklen_t serverFd, clientFd, clilen;
   struct sockaddr_in serv_addr, cli_addr;
 
@@ -29,12 +29,12 @@ void * serverSide(unsigned int s) {
   clientsStatuses.connected = 0;
   clientsStatuses.reported = 0;
 
-  reports = (struct report *)malloc(clientsStatuses.quantity * sizeof(struct report));
-  for (index = 0; index < MAX_QUEUE; index++) {
-   reports[index].queues[RESULTS].last = (struct message *)malloc(sizeof(struct message));
-   reports[index].queues[RESULTS].first = (struct message *)malloc(sizeof(struct message));
-   reports[index].queues[RESULTS].last = NULL;
-   reports[index].queues[RESULTS].first = NULL;
+  reports = (struct report *)malloc(clientsStatuses.quantity * (sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2));
+  for (index = 0; index < clientsStatuses.quantity; index++) {
+      for (jndex = 0; jndex < MAX_QUEUE; jndex++) {
+         reports[index].queues[jndex].last = NULL;
+         reports[index].queues[jndex].first = NULL;
+      }
   }
 
   index = 0;
@@ -94,6 +94,8 @@ void * serverSide(unsigned int s) {
   }
   printf("threads done\n");
 
+  plotDistributed();
+
   pthread_mutex_destroy(&lock);
   pthread_cond_destroy(&sendStart);
   return 0;
@@ -102,8 +104,8 @@ void * serverSide(unsigned int s) {
 
 void *clientManagement(void *context) {
   char *buffer;
-  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, id, nSwitches,
-  testRange, mode;
+  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, nSwitches, testRange, mode;
+  unsigned id;
   pthread_t snmp_thread;
 
   //Initializing variables
@@ -115,9 +117,10 @@ void *clientManagement(void *context) {
   mode = 0;
   testRange = 0;
   messageReceived = 0;
-  id = *((int *)context);
+  id = *((unsigned int *)context);
   clientFd = reports[id].sock;
   buffer = NULL;
+
 
   while (1) {
     buffer = readSocket(clientFd, 2, 1, &bytesRead);
@@ -181,7 +184,7 @@ void *clientManagement(void *context) {
         printf("testRange: %d\n", testRange);
 
         //REPORT DATA
-        bytesRead = plotManagement(clientFd, id, nSwitches, nLines, mode, testRange);
+        bytesRead = plotNode(clientFd, id, nSwitches, nLines, mode, testRange);
 
         if (bytesRead > 0) messageReceived++;
     } else {

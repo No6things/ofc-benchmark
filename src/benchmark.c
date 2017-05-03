@@ -376,10 +376,8 @@ void initializeBenchmarking(int argc, char * argv[]) {
           argsManual(options, PROG_TITLE, 1);
      }
 
-     myreport = (struct report *)malloc(sizeof(struct report));
+     myreport = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
      for (i = 0; i < MAX_QUEUE; i++) {
-       myreport->queues[i].last = (struct message *)malloc(sizeof(struct message));
-       myreport->queues[i].first = (struct message *)malloc(sizeof(struct message));
        myreport->queues[i].last = NULL;
        myreport->queues[i].first = NULL;
      }
