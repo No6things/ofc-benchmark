@@ -52,5 +52,5 @@ void enqueueMessage(char* item,  report *myreport, int id, int delimit, int size
   myreport->queues[id].last = temp;
   free(item);
 
-  //printf("\n[ENQUEUED]%s[ENQUEUED]\n", myreport->queues[id].last->buffer);
+  printf("[Q]%s[Q]\n", myreport->queues[id].last->buffer);
 }
