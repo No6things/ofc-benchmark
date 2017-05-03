@@ -57,12 +57,13 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
     iterator = iterator->next;
   }
   printf("end\n");
+  free(command);
   return -1;
 }
 
 
 char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id){
-  char *nameYaxis = (char *)calloc(sizeof(char), 50 + 1);;
+  char *nameYaxis = (char *)calloc(sizeof(char), 50 + 1);
   double xvalues [MAX_VALUES];
   char * command = (char *)malloc(150 + 1);
   int i = 0;
@@ -143,10 +144,11 @@ char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int i
   gnuplot_cmd(h1, command);
   gnuplot_plot_xy(h1, y, x, 1, flows->name);
 
+  free(command);
   return nameYaxis;
 }
 
-
+//TODO: rensame as plot
 int plotLines(struct queue input, int type, char *name){
   gnuplot_ctrl *h1;
 
@@ -224,79 +226,82 @@ int plotLines(struct queue input, int type, char *name){
 
   i = 0;
   iterator = input.first->back;
-  switch (type) {
-    case VALUES:
-      //Configuracion de estilo
-      gnuplot_setstyle(h1,"lines");
-      parseLines(h1, iterator->buffer, flows, name);
-      gnuplot_close(h1);
-      break;
+  if (type == VALUES || type == SNMP) {
 
-    case AVGS:
-      //Configuracion de estilo
-      gnuplot_setstyle(h1,"lines");
-      tmp = (struct flow *)malloc(sizeof(struct flow));
-      *tmp = *flows;
-      *checkpoint = *flows;
+    gnuplot_setstyle(h1,"lines");
+    parseLines(h1, iterator->buffer, flows, name);
+    gnuplot_close(h1);
 
-      while (iterator != NULL)
-      {
-        tmp = tmp->next;
-        *(checkpoint->next) = *(tmp);
-        (checkpoint->next)->next = NULL;
-        parseLines(h1, iterator->buffer, checkpoint, name);
-        iterator = iterator->back;
-      }
-      gnuplot_close(h1);
-      break;
+  } else if (type == AVGS) {
 
-    case RESULTS:
-      hook = xtics;
-      written = snprintf(xrange, 20, "set xrange [0:%d]", input.length);
-      if (written == 0) {
-        perror("set xrange");
-        exit(1);
-      }
-      gnuplot_cmd(h1, xrange);
+    gnuplot_setstyle(h1,"lines");
+    tmp = (struct flow *)malloc(sizeof(struct flow));
+    *tmp = *flows;
+    *checkpoint = *flows;
 
-      written = snprintf(xtics, 20, "set xtics (");
-      if (written == 0) {
-        perror("set xtics");
-        exit(1);
+    while (iterator != NULL)
+    {
+      tmp = tmp->next;
+      *(checkpoint->next) = *(tmp);
+      (checkpoint->next)->next = NULL;
+      parseLines(h1, iterator->buffer, checkpoint, name);
+      iterator = iterator->back;
+    }
+    gnuplot_close(h1);
+
+  } else if (type == RESULTS) {
+
+    hook = xtics;
+    written = snprintf(xrange, 20, "set xrange [0:%d]", input.length);
+    if (written == 0) {
+      perror("set xrange");
+      exit(1);
+    }
+    gnuplot_cmd(h1, xrange);
+
+    written = snprintf(xtics, 20, "set xtics (");
+    if (written == 0) {
+      perror("set xtics");
+      exit(1);
+    }
+    xtics += written;
+    i = 1;
+    while (iterator != NULL)
+    {
+      buffer = parseResults(h1, iterator->buffer, flows, name , i - 1);
+      written = snprintf(xtics, 150,"\"%s\" %d",buffer, i);
+      xtics += written;
+      iterator = iterator->back;
+      if(iterator != NULL) {
+        written = snprintf(xtics, 2, ",");
+      } else {
+        written = snprintf(xtics, 2, ")");
       }
       xtics += written;
-      i = 1;
-      while (iterator != NULL)
-      {
-        buffer = parseResults(h1, iterator->buffer, flows, name , i - 1);
-        written = snprintf(xtics, 150,"\"%s\" %d",buffer, i);
-        xtics += written;
-        iterator = iterator->back;
-        if(iterator != NULL) {
-          written = snprintf(xtics, 2, ",");
-        } else {
-          written = snprintf(xtics, 2, ")");
-        }
-        xtics += written;
-        i++;
-      }
-      xtics = hook;
-      printf("xtics %s\n", xtics);
-      gnuplot_cmd(h1, xtics);
-      gnuplot_close(h1);
+      i++;
+    }
+    xtics = hook;
+    printf("xtics %s\n", xtics);
+    gnuplot_cmd(h1, xtics); //TODO: move before set xy
+    gnuplot_close(h1);
 
-      break;
-    case SNMP:
-      break;
   }
-  //TODO close h1
+  free(name);
+  free(xtics);
+  free(xrange);
+  free(xlabel);
+  free(ylabel);
+  free(tmp);
+  free(flows);
+  printf("ended graph\n");
   return 0;
 }
 
-char * buildHeader(int type, int n, int mode) {
+char * buildHeader(int type, int n, int mode, int subMode) {
   char* header;
   char* checkpoint;
-
+  const char* snmpLabelX = (subMode == 0) ? "%" : "KB";
+  const char* snmpFlows = (subMode == 0) ? "Memory,CPU" : "Received,Emmitted";
   int written;
   int index = 0;
 
@@ -338,7 +343,10 @@ char * buildHeader(int type, int n, int mode) {
       break;
 
     case SNMP:
-      //TODO: DEFINE OIDS HEADERS
+      header = (char *)malloc(40 + 1);
+      written = snprintf(header, 40 + 1, "timestamp (sec),%s,time,%s", snmpLabelX, snmpFlows);
+      checkpoint = header;
+      header += written;
       break;
   }
 
@@ -347,7 +355,8 @@ char * buildHeader(int type, int n, int mode) {
 
   return header;
 }
-
+//TODO: buildGraphDistributed
+//TODO: insertSNMP behaviour
 void buildGraph(report *myreport, int clientFd, int id, int type, int flows, int rows, int mode) {
   char *header = NULL;
   char *buffer = NULL;
@@ -362,10 +371,11 @@ void buildGraph(report *myreport, int clientFd, int id, int type, int flows, int
     bodySize = snprintf(body, strlen(buffer) + 20 + 1, "%s,%s", reports[id].hostname, buffer);
   } else {
     strncpy(body, buffer, strlen(buffer) + 1);
+    free(buffer);
   }
 
   if (addHeader) {
-    header = buildHeader(type, flows, mode);
+    header = buildHeader(type, flows, mode, 0);
     enqueueMessage(header, myreport, type, !DELIMIT, strlen(header));
   }
 
@@ -378,6 +388,8 @@ void buildGraph(report *myreport, int clientFd, int id, int type, int flows, int
   enqueueMessage(body, myreport, type, !DELIMIT, strlen(body));
 }
 
+//TODO: Implement NON DISTRIBUTED management
+//TODO: rename as plotDistributed
 int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange) {
   int index;
   report *generalReport = (struct report*)malloc(sizeof(struct report));
@@ -414,6 +426,11 @@ int plotManagement(int clientFd, int id, int nSwitches, int nLines, int mode, in
 
   snprintf(graphName, 50 + 1, "%s.values", reports[id].hostname);
   plotLines(generalReport->queues[VALUES], VALUES, graphName);
+  for (index = 0; index < MAX_QUEUE; index++) {
+    free(generalReport->queues[index].last);
+    free(generalReport->queues[index].first);
+  }
+  free(generalReport);
   printf("plotLines ended\n");
 
   return 1;

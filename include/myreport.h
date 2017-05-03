@@ -4,11 +4,12 @@
 #define DELIMIT 1
 #define LIMITER '*'
 #define CSV_NEWLINE ';'
-#define MAX_QUEUE 4
+#define MAX_QUEUE 5
 #define VALUES 0
 #define AVGS 1
 #define RESULTS 2
 #define SNMP 3
+#define TIME 5
 
 typedef struct message {
   char *buffer;
@@ -29,6 +30,7 @@ typedef struct report{
  } report;
 
  extern report *myreport;
+ extern report *mysnmp;
  extern report *reports;
 
 void displayMessages(report *myreport, int id);

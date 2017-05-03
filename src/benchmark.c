@@ -68,9 +68,9 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     gettimeofday(&now, NULL);
     timersub(&now, &tStart, &diff);
 
-    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 1000;
-    written += snprintf(values, size, "%.02Lf", ms);
-    snprintf(result, size, "%.02Lf", ms);
+    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
+    written += snprintf(values, size, "%.03Lf", ms);
+    snprintf(result, size, "%.03Lf", ms);
 
     checkpoint = values; //  start checkpoint
     checkpoint2 = result; //  start checkpoint

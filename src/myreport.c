@@ -7,6 +7,7 @@
 #include "../include/myreport.h"
 
 report *myreport;
+report *mysnmp;
 report *reports;
 
 void displayMessages(report *myreport, int  id)
