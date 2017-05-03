@@ -1,5 +1,6 @@
 #ifndef MYPLOT_H
 #define MYPLOT_H
+#include "../include/gnuplot_i.h"
 
 #define SLEEP_LGTH  5
 #define NPOINTS    150
@@ -15,9 +16,10 @@ typedef struct flow {
   struct flow *next;
 } flow;
 
-int plotDistributed();
+int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name);
+char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id);
 int plotGraph(struct queue input, int type, char *name);
-int plotFinalResults(char *input);
+int plotDistributed();
 int plotNode(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange);
 
 #endif

@@ -10,7 +10,6 @@
 #include "../include/myreport.h"
 #include "../include/mysnmp.h"
 #include "../include/myplot.h"
-#include "../include/gnuplot_i.h"
 
 int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   char * command = (char*)calloc(150, sizeof(char));
@@ -62,7 +61,6 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   free(command);
   return -1;
 }
-
 
 char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id){
   char *nameYaxis = (char *)calloc(50 + 1, sizeof(char));

@@ -3,6 +3,7 @@
 #endif
 
 #include "pthread.h"
+#include "math.h"
 #include "../include/mymessages.h"
 #include "../include/mysnmp.h"
 #include "../include/myreport.h"
@@ -68,7 +69,9 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
             ramSize = atoi(token);
           } else  {
             if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
-              snprintf(result, 50, "%s", token);
+              number = atoi(token);
+              number /= pow(2, 10);
+              snprintf(result, 50, "%d", number);
               ID = (!strcmp(op->readableName, "BYTES_IN")) ? IN : OUT;
             } else if (!strcmp(op->readableName, "CPU_IDLE")) {
               number = atoi(token);
@@ -215,7 +218,7 @@ void *asynchronousSnmp(void *context)
     for (hp = hosts, hs = sessions; hp->name; hs++, hp++) {
       if (hs->sess) snmp_close(hs->sess);
     }
-    usleep(2000000);
+    usleep(1000000);
 
     pthread_mutex_lock(&lock);
       if (snmpStop == 1) {
