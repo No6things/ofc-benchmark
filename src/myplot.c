@@ -73,7 +73,7 @@ char *parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int n
   int tam = 0;
   int offset = 0;
   double number = 0;
-  char text[20];
+  char text[30];
 
   double x[10000];
   double y[10000];
@@ -95,7 +95,7 @@ char *parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int n
     while (input[offset] != ';') {
 
       //NUMBER INITIALIZATION
-      for(m = 0; m < 20; m++){
+      for(m = 0; m < 30; m++){
         text[m] = '\0';
       }
       tam = 0;
@@ -139,6 +139,7 @@ char *parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int n
       }
     }
     flows = flows->next;
+    printf("flows->name %s\n", flows->name);
     gnuplot_plot_xy(h1, y, x, i * NPOINTS_GENERAL, flows->name);
   }
 
@@ -159,7 +160,8 @@ char *parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int n
     x[z] = results[z][3];
   }
 
-  gnuplot_setstyle(h1, "lines");
+  //gnuplot_setstyle(h1, "lines");
+  gnuplot_setstyle(h1, "points");
   gnuplot_cmd(h1, command);
 
   flows = flows->next;
@@ -178,9 +180,9 @@ int setXtic(gnuplot_ctrl *h1, char *input){
   char *nameYaxis = (char *)calloc(50 + 1, sizeof(char));
   char * xtics = (char *)malloc(50);
   char * checkpoint;
-  char * buffer =(char *)malloc(strlen(input) + 1);
-  snprintf(buffer, strlen(input) + 2, "%s%c", input, CSV_NEWLINE);
-
+  char * buffer =(char *)malloc(strlen(input) + 3);
+  snprintf(buffer, strlen(input) + 3, "%s", input);
+  printf("buf %s\n", buffer);
   written = snprintf(xtics, 20, "set xtics (");
   checkpoint = xtics;
   xtics += written;
@@ -274,8 +276,8 @@ int plotGraph(struct queue input, int type, char *name){
       tmp = (struct flow *)malloc(sizeof(struct flow));
       tmp->next = NULL;
       flows->next = tmp;
-      flows->name[offset] = '\0';
-      //printf("\nflowName '%s'\n", flows->name);
+      flows->name[i] = '\0';
+      printf("add flowName '%s'\n", flows->name);
       flows = tmp;
       i = 0;
     } else {
@@ -286,8 +288,9 @@ int plotGraph(struct queue input, int type, char *name){
     }
     offset++;
   }while (input.first->buffer[offset] != ';');
+  flows->name[i] = '\0';
   offset++;
-  //printf("flowName '%s'\n", flows->name);
+  printf("add flowName '%s'\n", flows->name);
   flows = checkpoint;
 
   //Configuracion de nombres en graficas.
@@ -321,14 +324,11 @@ int plotGraph(struct queue input, int type, char *name){
     tmp = (struct flow *)malloc(sizeof(struct flow));
     *tmp = *flows;
     *checkpoint = *flows;
-    printf("tmp time %s\n", tmp->name);
     while (resultsIterator != NULL)
     {
       tmp = tmp->next;
-      printf("tmp ip %s", tmp->name);
       checkpoint->next = (struct flow *)malloc(sizeof(struct flow));
       *(checkpoint->next) = *(tmp);
-      printf("checkpoint ip %s\n", checkpoint->next->name);
       (checkpoint->next)->next = NULL;
       parseLines(h1, resultsIterator->buffer, checkpoint, name);
       free(checkpoint->next);

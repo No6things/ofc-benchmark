@@ -8,7 +8,7 @@
 #define MAX_NAME_GENERAL 3
 #define MAX_VALUES 4
 #define MAX_LENG 100
-#define MAX_NAME_LINES 20
+#define MAX_NAME_LINES 30
 
 typedef struct flow {
   char name[MAX_NAME_LINES];
