@@ -510,7 +510,7 @@ char * controllerBenchmarking() {
           continue;
         }
         sum += v;
-        if (v > max) {
+        if (v > max && v != 0.0) {
           max = v;
           printf("\n\n\n\n%f\n\n\n\n\n", max);
         }
