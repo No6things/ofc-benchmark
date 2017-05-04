@@ -226,7 +226,7 @@ void *asynchronousSnmp(void *context)
       }
     pthread_mutex_unlock(&lock);
   }
-printf("CPU length %d, MEMORY length %d, TIME length %d\n", mysnmp->queues[CPU].length, mysnmp->queues[MEMORY].length, mysnmp->queues[TIME].length);
+  printf("CPU length %d, MEMORY length %d, TIME length %d\n", mysnmp->queues[CPU].length, mysnmp->queues[MEMORY].length, mysnmp->queues[TIME].length);
   pthread_exit(NULL);
 }
 

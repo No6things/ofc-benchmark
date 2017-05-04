@@ -531,6 +531,10 @@ char * controllerBenchmarking() {
   }
   if (params->nNodes <= 1) {
     //TODO: manage graphication
+    pthread_mutex_lock(&lock);
+      snmpStop = 1;
+    pthread_mutex_unlock(&lock);
+
     pthread_join(snmp_thread, NULL);
     displayMessages(myreport, SNMP);
   }
@@ -558,8 +562,21 @@ int main(int argc, char * argv[]) {
     initializeSnmp();
     controllerBenchmarking();
     /*
-    TODO: Recibir arreglo de reportes de controllerBenchmarking()
-    TODO: Imprimir reportes
+    CREATE PLOT REPORT
+    TODO: VALUES
+          *build header
+          *concatenate data
+          *call plotGraph
+    TODO: AVG
+          *build header
+          *concatenate data
+          *call plotGraph
+    TODO: RESULT
+          *build header
+          *call plotGraph
+    TODO: SNMP
+          *factorize plotDistributed
+          *call new factorized SNMP
     */
   }
 
