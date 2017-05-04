@@ -33,7 +33,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
     int i, count;
-    int size = 150;
+    int size = 450;
     int written = 0;
     int total_wait = mstestlen + delay;
     double sum = 0;
@@ -101,8 +101,8 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
 
     values = checkpoint;
     result = checkpoint2;
-    enqueueMessage(values, myreport, VALUES, !DELIMIT, 150);
-    enqueueMessage(result, myreport, AVGS, !DELIMIT, 150);
+    enqueueMessage(values, myreport, VALUES, !DELIMIT, 450);
+    enqueueMessage(result, myreport, AVGS, !DELIMIT, 450);
 
     free(pollfds);
     return sum;
@@ -416,7 +416,7 @@ char * controllerBenchmarking() {
   unsigned int i, j, LAST;
   int threadErr;
   int countedTests;
-  char *finalMessage = (char*)malloc(150 * sizeof(char));
+  char *finalMessage = (char*)malloc(450 * sizeof(char));
   char *nSwitchesMessage = (char *)malloc(6 + 1);
   char *nLoopsMessage = (char *)malloc(6 + 1);
   char *modeMessage = (char *)malloc(6 + 1);
@@ -531,7 +531,7 @@ char * controllerBenchmarking() {
 
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 150);
+    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 450);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint

@@ -3,7 +3,7 @@
 #include "../include/gnuplot_i.h"
 
 #define SLEEP_LGTH  5
-#define NPOINTS    150
+#define NPOINTS    450
 #define NPOINTS_GENERAL 100
 #define MAX_NAME_GENERAL 3
 #define MAX_VALUES 4
