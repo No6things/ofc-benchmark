@@ -275,19 +275,19 @@ int plotGraph(struct queue input, int type, char *name){
       tmp->next = NULL;
       flows->next = tmp;
       flows->name[offset] = '\0';
-      printf("\nflowName '%s'\n", flows->name);
+      //printf("\nflowName '%s'\n", flows->name);
       flows = tmp;
       i = 0;
     } else {
       flows->name[i] = '\0';
       flows->name[i] = input.first->buffer[offset];
-      printf("-%c",flows->name[i]);
+      //printf("-%c",flows->name[i]);
       i++;
     }
     offset++;
   }while (input.first->buffer[offset] != ';');
   offset++;
-  printf("flowName '%s'\n", flows->name);
+  //printf("flowName '%s'\n", flows->name);
   flows = checkpoint;
 
   //Configuracion de nombres en graficas.
@@ -352,7 +352,7 @@ int plotGraph(struct queue input, int type, char *name){
     //PLOT NODE RESULTS
     printf("parseResults %s\n", resultsIterator->buffer);
     parseResults(h1, resultsIterator->buffer, flows, name , i);
-    printf("results success\n");
+    //printf("results success\n");
 
     gnuplot_close(h1);
 
