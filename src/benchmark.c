@@ -290,7 +290,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
      /* initialize random seed: */
      srand (time(NULL));
      /* generate secret number between 1 and 10: */
-     params->dpidOffset = 100	 + rand() / (RAND_MAX / (1 - 100 + 1) + 1);
+     params->dpidOffset = 999999	 + rand() / (RAND_MAX / (100000 - 999999 + 100000) + 100000);
   }
 
 
