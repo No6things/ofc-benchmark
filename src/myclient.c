@@ -104,7 +104,10 @@ int clientSide(const char *nodeMasterHostname) {
      buffer = NULL;
      if (end) break;
   }
-  sleep(5);
+  //TODO: Replace this way to ensure data sending, at least remove this for and
+  //      remove end = 1 breaking sentence
+  for (;;){
+  }
   shutdown(serverFd, SHUT_WR);
   return 0;
 }
