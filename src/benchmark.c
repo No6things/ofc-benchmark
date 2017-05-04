@@ -286,6 +286,14 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->mode =              MODE_LATENCY;
   params->warmup =            argsGetDefaultInt(options, "warmup");
 
+  if(params->dpidOffset == 1){
+     /* initialize random seed: */
+     srand (time(NULL));
+     /* generate secret number between 1 and 10: */
+     params->dpidOffset = 100	 + rand() / (RAND_MAX / (1 - 100 + 1) + 1);
+  }
+
+
   // TODO: HANDLE MALICIOUS DATA
   while(1) {
      int index = 0,

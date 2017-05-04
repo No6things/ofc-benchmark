@@ -277,6 +277,8 @@ static int makeFeaturesReply(int id, int xid, char * buf, int buflen){
     features->datapath_id = htonll(id);
     return sizeof(fake);
 }
+
+
 /***********************************************************************/
 static int  ofp13MakeFeaturesReply(int id, int xid, char * buf, int buflen){
     struct ofp131_switch_features * features;
