@@ -512,6 +512,7 @@ char * controllerBenchmarking() {
         sum += v;
         if (v > max) {
           max = v;
+          printf("\n\n\n\n%f\n\n\n\n\n", max);
         }
         if (v < min) {
           min = v;
