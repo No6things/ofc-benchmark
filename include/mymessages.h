@@ -14,9 +14,9 @@ static pthread_mutex_t lock = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t sendStart = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct {
-   int quantity;
-   int connected;
-   int reported;
+   unsigned int quantity;
+   unsigned int connected;
+   unsigned int reported;
  }status;
 
 extern status clientsStatuses;

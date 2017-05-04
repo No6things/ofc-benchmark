@@ -1,19 +1,28 @@
-
 #ifdef HAVE_WINSOCK_H
 #include <winsock.h>
 #endif
 
 #include "pthread.h"
-#include "../include/myreport.h"
+#include "math.h"
+#include "../include/mymessages.h"
 #include "../include/mysnmp.h"
+#include "../include/myreport.h"
 
 static struct oid *op;
 
 void initializeSnmp (void)
 {
+  int i;
   op=oids;
+  snmpStop = 0;
+  ramSize = 0;
+  mysnmp = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
+  for (i = 0; i < MAX_QUEUE; i++) {
+    mysnmp->queues[i].last = NULL;
+    mysnmp->queues[i].first = NULL;
+  }
+
   char * opts = "qv";
-  snmpReport = (struct report *)malloc(sizeof snmpReport);
   /* Win32: init winsock */
   SOCK_STARTUP;  /* initialize library */
   init_snmp("asynchapp");
@@ -28,7 +37,7 @@ void initializeSnmp (void)
     }
     op++;
   }
-  op= op - sizeof(oids)/sizeof(oids[0])+1;
+  op = op - sizeof(oids)/sizeof(oids[0])+1;
 }
 
 /*
@@ -36,26 +45,59 @@ void initializeSnmp (void)
  */
 static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pdu)
 {
-  char buf[1024];
-  char *result = (char *)malloc(150 + 1);
   struct variable_list *vp;
+  struct timeval now, diff;
+  const char s[2] = " ";
+  char buf[1024];
+  char *result = (char *)malloc(50 + 1);
+  char *timestamp = (char *)malloc(20 + 1);
+  char *token;
+  int ID = -1;
   int i;
-  struct timeval now;
+  int number;
+  int percentage;
+  long double ms;
 
-  gettimeofday(&now, NULL);
-
-  snprintf(result, 20, "%ld:", now.tv_usec);
   switch (status) {
     case STAT_SUCCESS:
       vp = pdu->variables;
       if (pdu->errstat == SNMP_ERR_NOERROR) {
         while (vp) {
           snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-          snprintf(result, 70, "%s:%s",op->readableName, buf);
-  	       vp = vp->next_variable;
-           op++;
+          token = strtok(buf, s);
+          if (!strcmp(op->readableName, "RAM_SIZE")) {
+            ramSize = atoi(token);
+          } else  {
+            if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
+              number = atoi(token);
+              number /= pow(2, 10);
+              snprintf(result, 50, "%d", number);
+              ID = (!strcmp(op->readableName, "BYTES_IN")) ? IN : OUT;
+            } else if (!strcmp(op->readableName, "CPU_IDLE")) {
+              number = atoi(token);
+              percentage = 100 - number;
+              ID = CPU;
+
+              //ADDED ONCE SHARED BETWEEN OIDS
+              gettimeofday(&now, NULL);
+              timersub(&now, &tStart, &diff);
+
+              ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
+              snprintf(timestamp, 20, "%.03Lf", ms);
+              enqueueMessage(timestamp, mysnmp, TIME, !DELIMIT, 20);
+
+              snprintf(result, 50, "%d", percentage);
+            } else if (!strcmp(op->readableName, "RAM_USED")) {
+              number = atoi(token);
+              percentage = number * 100 / ramSize;
+              snprintf(result, 50, "%d", percentage);
+              ID = MEMORY;
+            }
+            enqueueMessage(result, mysnmp, ID, !DELIMIT, 50);
+          }
+          vp = vp->next_variable;
+          op++;
         }
-        enqueueMessage(result, snmpReport);
       }
       else {
         for (i = 1; vp && i != pdu->errindex; vp = vp->next_variable, i++){
@@ -67,7 +109,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
       return 1;
 
     case STAT_TIMEOUT:
-      fprintf(stdout, "Timeout\n");
+      fprintf(stdout, "SNMP TIMEOUT\n");
       return 0;
 
     case STAT_ERROR:
@@ -120,10 +162,11 @@ void *asynchronousSnmp(void *context)
   struct snmp_pdu *req;
   struct snmp_session sess;
   int fds, block;
-
+  gettimeofday(&tStart, NULL);
   while(1) {
+
     op=oids;
-    hosts->name = snmpDestination; //controller
+    hosts->name = snmpDestination;
 
     /* startup all hosts */
     hs = sessions;
@@ -140,6 +183,7 @@ void *asynchronousSnmp(void *context)
     if (!(hs->sess = snmp_open(&sess))) {
       snmp_perror("snmp_open");
     }
+
 
     hs->current_oid = oids;
     req = snmp_pdu_create(SNMP_MSG_GET);	/* send the first GET */
@@ -166,7 +210,7 @@ void *asynchronousSnmp(void *context)
       }
       if (fds){
           snmp_read(&fdset);
-      }else{
+      } else {
           snmp_timeout();
       }
     }
@@ -175,8 +219,14 @@ void *asynchronousSnmp(void *context)
       if (hs->sess) snmp_close(hs->sess);
     }
     usleep(1000000);
-  }
 
+    pthread_mutex_lock(&lock);
+      if (snmpStop == 1) {
+        break;
+      }
+    pthread_mutex_unlock(&lock);
+  }
+  printf("CPU length %d, MEMORY length %d, TIME length %d\n", mysnmp->queues[CPU].length, mysnmp->queues[MEMORY].length, mysnmp->queues[TIME].length);
   pthread_exit(NULL);
 }
 

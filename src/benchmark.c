@@ -29,23 +29,26 @@
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
 //BENCHMARKING || Prints interval messages
-double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp) {
+double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST, struct timeval tStart) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
-    int i;
+    int i, count;
+    int size = 150;
+    int written = 0;
+    int total_wait = mstestlen + delay;
     double sum = 0;
     double passed;
-    int count;
-    int total_wait = mstestlen + delay;
-    time_t tNow;
-    struct tm *tmNow;
+    long double ms;
+
+    char* values = (char *)malloc(size);
+    char* result = (char *)malloc(size);
+    char* checkpoint;
+    char* checkpoint2;
+
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
     gettimeofday(&then, NULL);
-    int size = 150;
-    char* message = malloc(size);
-    int written = 0;
-    char* tmp;
+
     while (1) {
       gettimeofday(&now, NULL);
       timersub(&now, &then, &diff);
@@ -60,26 +63,47 @@ double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int 
         ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
       }
     }
-    tNow = now.tv_sec;
-    tmNow = localtime(&tNow);
-
-    written += snprintf(message, size, "%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec: ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
-    tmp = message; //  start checkpoint
-    message += written;
     usleep(100000); // sleep for 100 ms, to let packets queue
+
+    gettimeofday(&now, NULL);
+    timersub(&now, &tStart, &diff);
+
+    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
+    written += snprintf(values, size, "%.03Lf", ms);
+    snprintf(result, size, "%.03Lf", ms);
+
+    checkpoint = values; //  start checkpoint
+    checkpoint2 = result; //  start checkpoint
+    values += written;
+    result += written;
 
     for (i = 0; i < nSwitches; i++) {
       count = switchGetCount(&switches[i]);
-      written = snprintf(message, size, "%d  ", count);
-      message += written;
+      //SWITCHES VALUES
+      written = snprintf(values, size, ",%d", count);
+      values += written;
       sum += count;
     }
+
+    written = snprintf(values, 2, "%c", CSV_NEWLINE);
+    values += written;
+
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
-    sum /= passed;  // is now per ms
-    snprintf(message, size, "total = %lf per ms", sum);
-    message = tmp;
-    enqueueMessage(message, myreport);
+    sum /= passed;          // is now per ms
+    written = snprintf(result, size, ",%.02lf%c", sum, CSV_NEWLINE);
+
+    if (LAST) {
+      result += written;
+      snprintf(values, 4, "%c%c", CSV_NEWLINE, LIMITER);
+      snprintf(result, 4, "%c%c", CSV_NEWLINE, LIMITER);
+    }
+
+    values = checkpoint;
+    result = checkpoint2;
+    enqueueMessage(values, myreport, VALUES, !DELIMIT, 150);
+    enqueueMessage(result, myreport, AVGS, !DELIMIT, 150);
+
     free(pollfds);
     return sum;
 }
@@ -90,18 +114,18 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   size_t size;
   //ms/response
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "l;%.2lf;%.2lf;%.2lf;%.2lf;",
-            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "l;%.2lf;%.2lf;%.2lf;%.2lf;",
-            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
   //response/s
   } else {
-    size = snprintf(NULL, 0, "t;%.2lf;%.2lf;%.2lf;%.2lf;",
-            min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "t;%.2lf;%.2lf;%.2lf;%.2lf;",
-            min, max, avg, std_dev);
+    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min, max, avg, std_dev, CSV_NEWLINE);
+    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min, max, avg, std_dev, CSV_NEWLINE);
 
   }
   return buffer;
@@ -235,6 +259,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   struct inputValues *params = &benchmarkArgs;
   const struct option * longOpts = argsToLong(options);
   char *  shortOpts =         argsToShort(options);
+  unsigned int i;
 
   params->controllerHostname =argsGetDefaultStr(options,"controller");
   params->nodeMasterHostname =argsGetDefaultStr(options,"node-master");
@@ -350,6 +375,14 @@ void initializeBenchmarking(int argc, char * argv[]) {
          default:
           argsManual(options, PROG_TITLE, 1);
      }
+
+     myreport = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
+     for (i = 0; i < MAX_QUEUE; i++) {
+       myreport->queues[i].last = NULL;
+       myreport->queues[i].first = NULL;
+     }
+     myreport->sock = 0;
+
   }
 
   //START APPLICATION MESSAGE
@@ -372,21 +405,35 @@ void initializeBenchmarking(int argc, char * argv[]) {
 char * controllerBenchmarking() {
   struct fakeswitch *switches;
   struct inputValues *params = &benchmarkArgs;
-  char *finalMessage;
-  unsigned int i, j;
+  unsigned int i, j, LAST;
   int threadErr;
+  int countedTests;
+  char *finalMessage = (char*)malloc(150 * sizeof(char));
+  char *nSwitchesMessage = (char *)malloc(6 + 1);
+  char *nLoopsMessage = (char *)malloc(6 + 1);
+  char *modeMessage = (char *)malloc(6 + 1);
+  char *rangeMessage = (char *)malloc(6 + 1);
+  struct timeval tStart;
+
   pthread_t snmp_thread;
 
-  myreport = (report *)malloc(sizeof(myreport));
   switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
-
   assert(switches);
 
   double *results;
+  double sum;
   double  min = DBL_MAX;
   double  max = 0.0;
+  double  avg;
+  double  std_dev ;
   double  v;
-  results = malloc(params->loopsPerTest * sizeof(double));
+
+  results = (double *)malloc(params->loopsPerTest * sizeof(double));
+
+  snprintf(modeMessage, 6, "%d", params->mode == MODE_LATENCY ? 0 : 1);
+  snprintf(nSwitchesMessage, 6, "%d", params->nSwitches);
+  snprintf(nLoopsMessage, 6, "%d", params->loopsPerTest);
+  snprintf(rangeMessage, 6, "%d", params->testRange);
 
   if (params->nNodes <= 1) {
     threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
@@ -396,32 +443,43 @@ char * controllerBenchmarking() {
       exit(1);
     }
   }
+
+  //NSWITCHES STORAGE
+  enqueueMessage(nSwitchesMessage, myreport, VALUES, DELIMIT, 6);
+
+  //LOOPS STORAGE
+  enqueueMessage(nLoopsMessage, myreport, VALUES, DELIMIT, 6);
+
+  //TYPE OF TEST STORAGE
+  enqueueMessage(modeMessage, myreport, VALUES, DELIMIT, 6);
+
+  //TEST RANGE STORAGE
+  enqueueMessage(rangeMessage, myreport, VALUES, DELIMIT, 6);
+
   for(i = 0; i < params->nSwitches; i++) {
-    //CONNECTION
-    int sock;
-    double sum = 0;
+  //CONNECTION
+
+    sum = 0;
     if (params->connectDelay != 0 && i != 0 && (i % params->connectGroupSize == 0)) {
         if (params->debug) {
             fprintf(stderr, "Delaying connection by %dms...", params->connectDelay * 1000);
         }
         usleep(params->connectDelay * 1000);
     }
-    sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
 
-    if(sock < 0) {
-        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
+    myreport->sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
+
+    if(myreport->sock < 0) {
+        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", myreport->sock);
         exit(1);
     }
     if (params->debug) {
         fprintf(stderr,"Initializing switch %d ... ", i + 1);
     }
 
-    //Initializing report
-    myreport->sock = sock;
-    myreport->list = NULL;
 
     fflush(stderr);
-    switchInit(&switches[i], params->dpidOffset + i, sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
+    switchInit(&switches[i], params->dpidOffset + i, myreport->sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
     if (params->debug) {
         fprintf(stderr," :: done.\n");
     }
@@ -430,12 +488,15 @@ char * controllerBenchmarking() {
         continue;
     if (!params->testRange && ((i + 1) != params->nSwitches)) // only if testing range or this is last
         continue;
+
     //RUN
+    gettimeofday(&tStart, NULL);
     for(j = 0; j < params->loopsPerTest; j++) {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
-        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay, myreport);
+        LAST = (j == params->loopsPerTest - 1) ? 1 : 0;
+        v = 1000.0 * runTest(i + 1, switches, params->msTestLen, params->delay, myreport, LAST, tStart);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
@@ -449,20 +510,19 @@ char * controllerBenchmarking() {
         }
     }
 
-    //SHOW RESULTS
-    int countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
-    double avg = sum / countedTests;
+    //RESULT CALCULATION
+    countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
+    avg = sum / countedTests;
     sum = 0.0;
     for (j = params->warmup; j < params->loopsPerTest - params->cooldown; ++j) {
       sum += pow(results[j] - avg, 2);
     }
     sum = sum / (double)(countedTests);
-    double std_dev = sqrt(sum);
+    std_dev = sqrt(sum);
 
-    finalMessage = (char*)malloc(150 * sizeof(char));
+    //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-
-    enqueueMessage(finalMessage, myreport);
+    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 150);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint
@@ -470,8 +530,13 @@ char * controllerBenchmarking() {
     */
   }
   if (params->nNodes <= 1) {
+    //TODO: manage graphication
+    pthread_mutex_lock(&lock);
+      snmpStop = 1;
+    pthread_mutex_unlock(&lock);
+
     pthread_join(snmp_thread, NULL);
-    displayMessages(snmpReport);
+    displayMessages(myreport, SNMP);
   }
   return (char *)" ";
 }
@@ -497,8 +562,21 @@ int main(int argc, char * argv[]) {
     initializeSnmp();
     controllerBenchmarking();
     /*
-    TODO: Recibir arreglo de reportes de controllerBenchmarking()
-    TODO: Imprimir reportes
+    CREATE PLOT REPORT
+    TODO: VALUES
+          *build header
+          *concatenate data
+          *call plotGraph
+    TODO: AVG
+          *build header
+          *concatenate data
+          *call plotGraph
+    TODO: RESULT
+          *build header
+          *call plotGraph
+    TODO: SNMP
+          *factorize plotDistributed
+          *call new factorized SNMP
     */
   }
 

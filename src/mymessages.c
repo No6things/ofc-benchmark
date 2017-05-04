@@ -22,14 +22,10 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
 {
   int sz = 0, rt = 0, count = 0, sz_received = 1;
   char *array = (char *)malloc(BUFFER_SIZE);
-  printf("[del]");
+  //printf("[del]");
   do {
     rt = read(fd, array + sz, sz_received);
-    if (val < 2){
-      printf("%s\n",array);
-    } else {
-      printf("%c", array[sz]);
-    }
+    //printf("%c", array[sz]);
 
     if(rt < 1)
     {
@@ -44,14 +40,19 @@ char* readSocketLimiter(int fd, int BUFFER_SIZE, int* bytesRead)
     sz += rt;
     count += sz;
   }while((array[sz - 1] != LIMITER) && (sz < BUFFER_SIZE));
+  //printf("[del]%d\n", sz);
   array[sz - 1] = '\0';
-  printf("[del]%d\n", sz);
-  if (val < 2){
-    val++;
-  }
+
   *bytesRead = count;
-  printf("Read %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
-  return array;
+  printf("\nRead %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", *bytesRead, fd, array, strlen(array));
+  if (array[0] != '\0') {
+    return array;
+  } else {
+    char * otherArray = (char *)malloc(BUFFER_SIZE);
+    strncpy(otherArray, array + 3, sz);
+    free(array);
+    return otherArray;
+  }
 }
 
 
@@ -103,6 +104,7 @@ int writeSocket(int fd, char* array, int BUFFER_SIZE, int sz_emit)
       sz = 0;
   }
   printf("Sent %d byte(s), trough socket file descriptor %d  the content '%s' with length %zu \n", written, fd, array, strlen(array));
+  free(array);
   return i;
 }
 
