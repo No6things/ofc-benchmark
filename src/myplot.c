@@ -62,108 +62,163 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   return -1;
 }
 
-char *parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id){
-  char *nameYaxis = (char *)calloc(50 + 1, sizeof(char));
-  double xvalues [MAX_VALUES];
-  char * command = (char *)malloc(150 + 1);
-  char * pointSize = (char *)malloc(150 + 1);
+char *parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int n){
+  double results [n][MAX_VALUES];
+
   int i = 0;
   int j = 0;
   int z = 0;
   int w = 0;
   int m = 0;
+  int tam = 0;
   int offset = 0;
   double number = 0;
-  char numberText[20];
+  char text[20];
 
   double x[10000];
   double y[10000];
 
+  char * command = (char *) malloc(150);
+  char * pointSize = (char *) malloc(20);
+
   snprintf(command, 150, "set output \"../reports/charts/%s.png\"", name);
   snprintf(pointSize, 20, "set pointsize 2");
 
-  //XTIC
-  while (input[offset] != ','){
-    nameYaxis[i] = input[offset];
-    offset++;
-    i++;
-  }
-  offset++;
-
-  //DATA GATHERING
+  printf("parsing\n");
   while (input[offset] != ';'){
 
-    //CALLOC
-    for(m = 0; m < 20; m++){
-      numberText[m] = '\0';
+    //XTIC
+    while (input[offset] != ','){ offset++; }
+    offset++;
+
+    //LINE
+    while (input[offset] != ';') {
+
+      //NUMBER INITIALIZATION
+      for(m = 0; m < 20; m++){
+        text[m] = '\0';
+      }
+      tam = 0;
+
+      //NUMBER
+      while ((input[offset] != ',') && (input[offset] != ';')){
+        text[tam] = input[offset];
+        offset++;
+        tam++;
+      }
+
+      number = atof(text);
+      results[i][j] = number;
+      j++;
+      if (input[offset] != ';') {
+        offset++;
+      }
     }
 
-    i = 0;
-    while ((input[offset] != ',') && (input[offset] != ';')){
-      numberText[i] = input[offset];
-      offset++;
-      i++;
-    }
-    number = atof(numberText);
-    xvalues[j] = number;
-    //printf("%f  [%d]\n",xvalues[j], j);
-    j++; //next value/column
-
-    if (input[offset] == ';'){
-      j = 0;
-    }
+    //COUNT
+    j = 0;
+    i++;
     offset++;
   }
 
-  //IMPULSE FILLING
-  for (j = 0; j < NPOINTS_GENERAL; j++) {
-    y[j + (z * NPOINTS_GENERAL)] = (id + 1) + (j - 50) * 0.0005;
+  //FILL IMPULSES
+  printf("graphication\n");
+  for (z = 0; z < i; z++) {
+    for (j = 0; j < NPOINTS_GENERAL; j++) {
+      y[j + (z * NPOINTS_GENERAL)] = (z + 1) + (j - 50) * 0.0005;
+    }
   }
 
   gnuplot_setstyle(h1, "impulses");
+  gnuplot_cmd(h1, command);
+
   for (w = 0; w < 2; w++) {
-    for (j = 0; j < NPOINTS_GENERAL; j++) {
-      x[j + (z * NPOINTS_GENERAL)] = xvalues[w];
+    for (z = 0; z < i; z++) {
+      for (j = 0; j < NPOINTS_GENERAL; j++) {
+        x[j + (z * NPOINTS_GENERAL)] = results[z][w];
+      }
     }
-    gnuplot_cmd(h1, command);
     flows = flows->next;
-    gnuplot_plot_xy(h1, y, x, 1 * NPOINTS_GENERAL, flows->name);
+    gnuplot_plot_xy(h1, y, x, i * NPOINTS_GENERAL, flows->name);
   }
 
-  y[z] = id + 1;
-  x[z] = xvalues[2];
+  for (z = 0; z < i; z++) {
+    y[z] = z + 1;
+    x[z] = results[z][2];
+  }
 
-  flows = flows->next;
   gnuplot_setstyle(h1, "points");
   gnuplot_cmd(h1, pointSize);
-
   gnuplot_cmd(h1, command);
-  gnuplot_plot_xy(h1, y, x, 1, flows->name);
-
-  y[z] = id + 1;
-  x[z] = xvalues[3];
 
   flows = flows->next;
-  //gnuplot_setstyle(h1, "lines");
-  gnuplot_cmd(h1, command);
-  gnuplot_plot_xy(h1, y, x, 1, flows->name);
+  gnuplot_plot_xy(h1, y, x, i, flows->name);
 
+  for (z = 0; z < i; z++) {
+    y[z] = z + 1;
+    x[z] = results[z][3];
+  }
+
+  gnuplot_setstyle(h1, "lines");
+  gnuplot_cmd(h1, command);
+
+  flows = flows->next;
+  gnuplot_plot_xy(h1, y, x, i, flows->name);
+
+  printf("end\n");
   free(command);
-  return nameYaxis;
+  return 0;
 }
 
-char *getXtic(char *input){
-  int offset = 0;
+int setXtic(gnuplot_ctrl *h1, char *input){
   int i = 0;
+  int written = 0;
+  int offset = 0;
+  int length = 0;
   char *nameYaxis = (char *)calloc(50 + 1, sizeof(char));
-  //XTIC
-  while (input[offset] != ','){
-    nameYaxis[i] = input[offset];
-    printf("%c",nameYaxis[i]);
+  char * xtics = (char *)malloc(50);
+  char * checkpoint;
+  char * buffer =(char *)malloc(strlen(input) + 1);
+  snprintf(buffer, strlen(input) + 2, "%s%c", input, CSV_NEWLINE);
+
+  written = snprintf(xtics, 20, "set xtics (");
+  checkpoint = xtics;
+  xtics += written;
+
+  written = 0;
+  while(1){
+    xtics += written;
+    // GET IP
+    i = 0;
+    while (buffer[offset] != ','){
+      nameYaxis[i] = '\0';
+      nameYaxis[i] = buffer[offset];
+      offset++;
+      i++;
+    }
+    nameYaxis[i] = '\0';
+    written = snprintf(xtics, 50, "\"%s\"", nameYaxis);
+    xtics += written;
+
+    while (buffer[offset] != ';'){
+      offset++;
+    }
+
+    length++;
     offset++;
-    i++;
+
+    if (buffer[offset] == ';') {
+      written = snprintf(xtics, 10, " %d)", length);
+      break;
+    } else {
+      written = snprintf(xtics, 10, " %d, ", length);
+    }
   }
-  return nameYaxis;
+  xtics = checkpoint;
+  printf("xtics %s\n", xtics);
+
+  gnuplot_cmd(h1, xtics);
+  return length;
 }
 
 int plotGraph(struct queue input, int type, char *name){
@@ -175,17 +230,18 @@ int plotGraph(struct queue input, int type, char *name){
   int gotLabelX = 0;
   int gotLabelY = 0;
 
-  char *hook;
   char *buffer;
   char *xtics = (char *)malloc(150 * input.length + 1);
   char *xrange = (char *)malloc(150 + 1);
   char *xlabel = (char *)calloc(50 + 1, sizeof(char));
   char *ylabel = (char *)calloc(50 + 1, sizeof(char));
 
-  struct message *resultsIterator;
+  struct message *resultsIterator = (struct message *)malloc(sizeof(struct message*));
   struct flow *flows = (struct flow *)malloc(sizeof(struct flow));
-  struct flow *checkpoint = flows;
+  struct flow *checkpoint = (struct flow *)malloc(sizeof(struct flow));
   struct flow *tmp;
+
+  checkpoint = flows;
 
   printf("\nPLOTTING:\n HEADER:\n  %s\n BODY:\n  %s\n NAME:\n  %s\n", input.first->buffer, (input.first->back)->buffer, name);
   h1 = gnuplot_init();
@@ -218,18 +274,20 @@ int plotGraph(struct queue input, int type, char *name){
       tmp = (struct flow *)malloc(sizeof(struct flow));
       tmp->next = NULL;
       flows->next = tmp;
-      //printf("flowName '%s'\n", flows->name);
+      flows->name[offset] = '\0';
+      printf("\nflowName '%s'\n", flows->name);
       flows = tmp;
       i = 0;
     } else {
       flows->name[i] = '\0';
       flows->name[i] = input.first->buffer[offset];
+      printf("-%c",flows->name[i]);
       i++;
     }
     offset++;
   }while (input.first->buffer[offset] != ';');
   offset++;
-  //printf("flowName '%s'\n", flows->name);
+  printf("flowName '%s'\n", flows->name);
   flows = checkpoint;
 
   //Configuracion de nombres en graficas.
@@ -263,59 +321,38 @@ int plotGraph(struct queue input, int type, char *name){
     tmp = (struct flow *)malloc(sizeof(struct flow));
     *tmp = *flows;
     *checkpoint = *flows;
-
+    printf("tmp time %s\n", tmp->name);
     while (resultsIterator != NULL)
     {
       tmp = tmp->next;
+      printf("tmp ip %s", tmp->name);
+      checkpoint->next = (struct flow *)malloc(sizeof(struct flow));
       *(checkpoint->next) = *(tmp);
+      printf("checkpoint ip %s\n", checkpoint->next->name);
       (checkpoint->next)->next = NULL;
       parseLines(h1, resultsIterator->buffer, checkpoint, name);
+      free(checkpoint->next);
       resultsIterator = resultsIterator->back;
     }
     gnuplot_close(h1);
 
   } else if (type == RESULTS) {
+    //SET XTIOS
+    i = setXtic(h1, resultsIterator->buffer);
+
     //SET XRANGE
-    written = snprintf(xrange, 20, "set xrange [0:%d]", input.length);
+    written = snprintf(xrange, 20, "set xrange [0:%d]", i + 1);
     if (written == 0) {
       perror("set xrange");
       exit(1);
     }
+    printf("xrange %s\n", xrange);
     gnuplot_cmd(h1, xrange);
 
-    //SET XTIC
-    i = 1;
-    written = snprintf(xtics, 20, "set xtics (");
-    hook = xtics;
-    xtics += written;
-    while (resultsIterator != NULL)
-    {
-      buffer = getXtic(resultsIterator->buffer);
-      written = snprintf(xtics, 150,"\"%s\" %d",buffer, i);
-      xtics += written;
-      resultsIterator = resultsIterator->back;
-
-      if(resultsIterator != NULL) {
-        written = snprintf(xtics, 2, ",");
-      } else {
-        written = snprintf(xtics, 2, ")");
-      }
-      xtics += written;
-      i++;
-    }
-    xtics = hook;
-    //printf("xtics %s\n", xtics);
-    gnuplot_cmd(h1, xtics);
-
     //PLOT NODE RESULTS
-    i = 0;
-    resultsIterator = input.first->back;
-    while (resultsIterator != NULL)
-    {
-      parseResults(h1, resultsIterator->buffer, flows, name , i);
-      resultsIterator = resultsIterator->back;
-      i++;
-    }
+    printf("parseResults %s\n", resultsIterator->buffer);
+    parseResults(h1, resultsIterator->buffer, flows, name , i);
+    printf("results success\n");
 
     gnuplot_close(h1);
 
@@ -385,7 +422,6 @@ char * buildHeader(int type, int n, int mode, int subMode) {
 
   snprintf(header, 2, "%c", CSV_NEWLINE);
   header = checkpoint;
-
   return header;
 }
 

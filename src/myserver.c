@@ -32,6 +32,7 @@ void * serverSide(unsigned int s) {
   reports = (struct report *)malloc(clientsStatuses.quantity * (sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2));
   for (index = 0; index < clientsStatuses.quantity; index++) {
       for (jndex = 0; jndex < MAX_QUEUE; jndex++) {
+         reports[index].hostname = (char *)malloc(150);
          reports[index].queues[jndex].last = NULL;
          reports[index].queues[jndex].first = NULL;
       }
@@ -75,7 +76,7 @@ void * serverSide(unsigned int s) {
     }
 
     reports[index].sock = clientFd;
-    reports[index].hostname = inet_ntoa(cli_addr.sin_addr);
+    snprintf(reports[index].hostname, 150, "%s", inet_ntoa(cli_addr.sin_addr));
 
     printf("Client connected with socket %d and hostname: %s\n", reports[index].sock, reports[index].hostname);
     param = index;

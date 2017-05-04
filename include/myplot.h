@@ -17,7 +17,7 @@ typedef struct flow {
 } flow;
 
 int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name);
-char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int id);
+char* parseResults(gnuplot_ctrl *h1, char *input, flow *flows, char *name, int n);
 int plotGraph(struct queue input, int type, char *name);
 int plotDistributed();
 int plotNode(int clientFd, int id, int nSwitches, int nLines, int mode, int testRange);
