@@ -26,17 +26,19 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   assert(name != NULL);
 
   while (input[offset] != ';'){
-    //Texto representativo de un number de  10 digitos
+    //INITIALIZE text for number
     for(j = 0; j < 10; j++){
       numberText[j] = '\0';
     }
-    //Construye number
+   
     j = 0;
+    //READ number char by char
     while ((input[offset] != ',') && ( input[offset] != ';')){
       numberText[j] = input[offset];
       offset++;
       j++;
     }
+    //TRANSLATE number from char* to float 
     number = atof(numberText);
     flows->x[i] = number;
     flows = flows->next;
