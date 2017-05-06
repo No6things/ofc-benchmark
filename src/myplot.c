@@ -391,7 +391,7 @@ char * buildHeader(int type, int n, int mode, int subMode) {
 
     case AVGS:
       header = (char *)malloc(30 * (n + 2) + 1);
-      written = snprintf(header, 40 + 1, "timestamp (sec),flows/sec,time");
+      written = snprintf(header, 40 + 1, "timestamp (seg),flows/ms,time");
       checkpoint = header;
       header += written;
       do {
