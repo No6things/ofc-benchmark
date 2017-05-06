@@ -101,6 +101,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
 
     values = checkpoint;
     result = checkpoint2;
+    printf("STORING LOOP RESULT\n");
     enqueueMessage(values, myreport, VALUES, !DELIMIT, 450);
     enqueueMessage(result, myreport, AVGS, !DELIMIT, 450);
 
@@ -112,6 +113,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
 char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
+  printf("FORMATTING FINAL RESULT\n");
   //ms/response
   if (mode == MODE_LATENCY) {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
@@ -124,6 +126,7 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   } else {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
             min, max, avg, std_dev, CSV_NEWLINE);
+    buffer = (char *)malloc(size + 1);
     snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
             min, max, avg, std_dev, CSV_NEWLINE);
 
@@ -293,7 +296,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
      params->dpidOffset = 999999	 + rand() / (RAND_MAX / (100000 - 999999 + 100000) + 100000);
   }
 
-
+  printf("INITIALIZING\n");
   // TODO: HANDLE MALICIOUS DATA
   while(1) {
      int index = 0,
@@ -452,6 +455,8 @@ char * controllerBenchmarking() {
     }
   }
 
+  printf("STARTING\n");
+
   //NSWITCHES STORAGE
   enqueueMessage(nSwitchesMessage, myreport, VALUES, DELIMIT, 6);
 
@@ -498,6 +503,7 @@ char * controllerBenchmarking() {
         continue;
 
     //RUN
+    printf("STARTING LOOPS\n");
     gettimeofday(&tStart, NULL);
     for(j = 0; j < params->loopsPerTest; j++) {
         if (j > 0) {
@@ -512,12 +518,12 @@ char * controllerBenchmarking() {
         sum += v;
         if (v > max && v != 0.0) {
           max = v;
-          printf("\n\n\n\n%f\n\n\n\n\n", max);
         }
         if (v < min) {
           min = v;
         }
     }
+    printf("END OF LOOPS\n");
 
     //RESULT CALCULATION
     countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
@@ -530,6 +536,7 @@ char * controllerBenchmarking() {
     std_dev = sqrt(sum);
 
     //RESULT STORAGE
+    printf("STORING FINAL RESULT\n");
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
     enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 450);
     /*

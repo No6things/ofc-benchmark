@@ -70,29 +70,41 @@ int clientSide(const char *nodeMasterHostname) {
        displayMessages(myreport, AVGS);
        displayMessages(myreport, RESULTS);
 
+       printf("sending REPORT_MESSAGE\n");
        snprintf(buffer, strlen(REPORT_MESSAGE) + 1, REPORT_MESSAGE);
        writeSocket(serverFd, buffer, 2 , 1);
-       printf("sent REPORT_MESSAGE\n");
 
        //Sending Values
+       printf("VALUES\n");
+       int repId = 0;
        temp = myreport->queues[VALUES].first;
        while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->back;
+         repId++;
+         printf("%d ", repId);
        }
 
        //Sending Partials
+       printf("\nPARTIALS\n");
+       repId = 0;
        temp = myreport->queues[AVGS].first;
        while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->back;
+         repId++;
+         printf("%d ", repId);
        }
 
        //Sending Results
+       printf("\nRESULTS\n");
+       repId = 0;
        temp = myreport->queues[RESULTS].first;
        while (temp != NULL) {
          bytes = writeSocket(serverFd, temp->buffer, strlen(temp->buffer), strlen(temp->buffer));
          temp = temp->back;
+         repId++;
+         printf("%d ", repId);
        }
        //free(myreport);
        printf("End of transmission\n");
