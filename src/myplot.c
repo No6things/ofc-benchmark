@@ -53,7 +53,7 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   printf("graphication \n");
   resultsIterator = checkpoint->next;
   snprintf(command, 150, "set output \"../reports/charts/%s.png\"", name);
-  //TODO: move this to plotGraph
+
   while (resultsIterator != NULL) {
     gnuplot_cmd(h1, command);
     gnuplot_plot_xy(h1, checkpoint->x, resultsIterator->x, i, resultsIterator->name);
