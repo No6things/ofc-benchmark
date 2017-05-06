@@ -6,153 +6,200 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <string.h>
 
+#include "../include/mysnmp.h"
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
+#include "../include/myplot.h"
 #include "../include/myserver.h"
 
-static struct report *rp;
-static struct status *clients;
-
 void * serverSide(unsigned int s) {
-   char buffer[1024];
-   memset(buffer, '0',sizeof(buffer));
+  int n;
+  unsigned int index, jndex, nThreads, threadErr, param;
+  socklen_t serverFd, clientFd, clilen;
+  struct sockaddr_in serv_addr, cli_addr;
 
-   socklen_t sockfd, newsockfd;
-   unsigned int  iThreads, nThreads, threadErr, clilen;
-   int n;
-   struct sockaddr_in serv_addr, cli_addr;
+  // Initializing variables
+  clilen = sizeof(cli_addr);
 
-   rp = reports;
-   clients = clientsStatuses;
-   clients->quantity = s - 1;
-   clients->connected = 0;
+  clientsStatuses.quantity = s - 1;
+  clientsStatuses.connected = 0;
+  clientsStatuses.reported = 0;
 
-   iThreads = 0;
-   nThreads = clients->quantity * SERVER_MESSAGES;
-   pthread_t nodesThreads [nThreads];
+  reports = (struct report *)malloc(clientsStatuses.quantity * (sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2));
+  for (index = 0; index < clientsStatuses.quantity; index++) {
+      for (jndex = 0; jndex < MAX_QUEUE; jndex++) {
+         reports[index].hostname = (char *)malloc(150);
+         reports[index].queues[jndex].last = NULL;
+         reports[index].queues[jndex].first = NULL;
+      }
+  }
 
+  index = 0;
+  nThreads = clientsStatuses.quantity;
+  pthread_t nodesThreads[nThreads];
 
-   printf("The network will have %d node slaves\n", clients->quantity);
+  printf("The network will have %d node slaves\n", clientsStatuses.quantity);
 
+  // Opening Socket
+  if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("ERROR opening socket");
+    exit(1);
+  }
 
-   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      perror("ERROR opening socket");
+  // Initializing server Internet structures
+  memset((char *) &serv_addr, 0, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = INADDR_ANY;
+  printf("SERVER_PORT %d\n",SERVER_PORT);
+  serv_addr.sin_port = htons(SERVER_PORT);
+
+  //Binding server socket
+  if (bind(serverFd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+    perror("ERROR binding socket");
+    exit(1);
+  }
+
+  //Listening for clientsStatuses
+  if (listen(serverFd, 5) < 0) {
+    perror("ERROR listening socket");
+    exit(1);
+  }
+  do {
+    // Accept request connections
+    if ((clientFd = accept(serverFd, (struct sockaddr *)&cli_addr, &clilen)) < 0) {
+       perror("ERROR accepting slave");
+       exit(1);
+    }
+
+    reports[index].sock = clientFd;
+    snprintf(reports[index].hostname, 150, "%s", inet_ntoa(cli_addr.sin_addr));
+
+    printf("Client connected with socket %d and hostname: %s\n", reports[index].sock, reports[index].hostname);
+    param = index;
+    threadErr = pthread_create(&nodesThreads[index], NULL, &clientManagement, &param);
+    if (threadErr) {
+      pthread_join(nodesThreads[index], NULL);
+      perror("Creating clientManagement thread");
       exit(1);
-   }
+    }
+    index++;
 
-   memset((char *) &serv_addr, 0, sizeof(serv_addr));
+  } while (index < clientsStatuses.quantity);
 
-   serv_addr.sin_family = AF_INET;
-   serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons(5101);
+  for (n = nThreads - 1; n >= 0; n--) {
+    pthread_join(nodesThreads[n], NULL);
+  }
+  printf("threads done\n");
 
-   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-      perror("ERROR on binding");
-      exit(1);
-   }
+  plotDistributed();
 
-   /* Now start listening for the clients, here
-    * process will go in sleep mode and will wait
-    * for the incoming connection
-   */
-
-   if (listen(sockfd, 5) < 0) {
-     perror("ERROR listening");
-     exit(1);
-   }
+  pthread_mutex_destroy(&lock);
+  pthread_cond_destroy(&sendStart);
+  return 0;
+}
 
 
-   clilen = sizeof(cli_addr);
+void *clientManagement(void *context) {
+  char *buffer;
+  int clientFd, threadErr, bytesRead, nLines, index, messageReceived, nSwitches, testRange, mode;
+  unsigned id;
+  pthread_t snmp_thread;
 
-   while (1) {
+  //Initializing variables
+  threadErr = 0;
+  bytesRead = 0;
+  nSwitches = 0;
+  nLines = 0;
+  index = 0;
+  mode = 0;
+  testRange = 0;
+  messageReceived = 0;
+  id = *((unsigned int *)context);
+  clientFd = reports[id].sock;
+  buffer = NULL;
 
-      if ((newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL)) < 0) {
-         perror("ERROR on accept");
-         exit(1);
-      }
-      printf("Client connected with socket %d.\n", newsockfd);
 
-      /*ioctl(newsockfd, FIONREAD, &n);
-      if (n > 0) {
-        printf("ioctl %d\n", n);
+  while (1) {
+    buffer = readSocket(clientFd, 2, 1, &bytesRead);
 
-      }*/
-      while ((n = read(newsockfd, buffer, sizeof(buffer)-1)) > 0)
-      {
-          buffer[n] = 0;
-          if(fputs(buffer, stdout) == EOF)
-          {
-            printf("Error : Fputs error\n");
-          } else {
-            printf("There is more to read, but now we have %s\n", buffer);
+    if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
+        printf("CONNECT_REQUEST_MESSAGE\n");
+
+        pthread_mutex_lock(&lock);
+          clientsStatuses.connected++;
+          printf("Connected: %d/%d\n", clientsStatuses.connected, clientsStatuses.quantity);
+          if (clientsStatuses.connected == clientsStatuses.quantity) {
+            printf("Broadcasting 'send START_MESSAGE' order\n");
+            pthread_cond_broadcast(&sendStart);
           }
-      }
-      //TODO: Considerar que contiene el buffer cuando se recibieron simultaneamente
-      // multiples mensajes previo a la lectura
-      printf("Message received, '%s' of lenght %d.\n", buffer, n);
-
-      if (n < 0) {
-        perror("ERROR reading message from slave node");
-        exit(1);
-      }
-      if (strcmp(buffer, CONNECT_REQUEST_MESSAGE) == 0) {
-          printf("Some node wrote us by a CONNECT_REQUEST_MESSAGE\n");
-
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &connectReqMessage, rp);
-          //TODO: Considerar que no todos las funciones de mensajes necesitan
-          // el objecto report. Sin embargo siempre se debe enviar el socket para
-          // responder el mensaje.
-          if(threadErr){
-            pthread_join(nodesThreads[iThreads], NULL);
-            perror("ERROR creating CONNECT_REQUEST_MESSAGE  thread");
-            exit(1);
-          } else {
-            iThreads++;
+          while(clientsStatuses.connected < clientsStatuses.quantity){
+            //TODO: Agregar un timeout para enviar el mensaje aun si no estan todos conectados
+            printf("Blocked slave id: %d. of %d\n", clientsStatuses.connected, clientsStatuses.quantity);
+            pthread_cond_wait(&sendStart, &lock);
           }
-          pthread_mutex_lock(&lock);
-            clients->connected++;
-            if (clients->connected == clients->quantity) {
-              pthread_cond_broadcast(&sendStart);
+          if (id == clientsStatuses.quantity - 1) {
+            threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
+            if (threadErr) {
+              pthread_join(snmp_thread, NULL);
+              perror("Creating SNMP thread");
+              exit(1);
             }
-          pthread_mutex_unlock(&lock);
-
-      } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
-          printf("Some node wrote us by a REPORT_MESSAGE\n");
-
-          clients->reported++;
-
-          //delete condition sendStart
-          rp->sock = newsockfd;
-          printf("socket: %d, rp->sock: %d\n", newsockfd, rp->sock);
-          memcpy (rp->hostname, &cli_addr.sin_addr.s_addr, sizeof(cli_addr.sin_addr.s_addr));
-
-          //TODO: Considerar remover el hilo y manejar la recepcion de reportes de manera
-          //      secuencial
-          threadErr= pthread_create(&nodesThreads[iThreads], NULL, &reportMessage, rp);
-
-          if(threadErr){
-            pthread_join(nodesThreads[iThreads], NULL);
-            perror("ERROR creating REPORT_MESSAGE thread");
-            exit(1);
-          } else {
-            rp++;
           }
+        pthread_mutex_unlock(&lock);
+        snprintf(buffer, strlen(START_MESSAGE) + 1, START_MESSAGE);
+        bytesRead = writeSocket(clientFd, buffer, 2, 1);
+        if (bytesRead < 0) {
+          perror("connectReqMessage");
+          exit(0);
+        }
+        messageReceived++;
 
-      } else {
-          printf("Message received: '%s'\n",buffer);
-          perror("ERROR unknown message header from slave node");
-      }
-      if (clients->reported == clients->quantity) break;
-      //   TODO: Considerar que la cantidad de hilos en iThreads se corresponda a
-      //        la cantidad de hilos que debieron haberse usado
+    } else if (strcmp(buffer, REPORT_MESSAGE) == 0) {
+        printf("REPORT_MESSAGE\n");
 
-   }
-   for (n = nThreads; n >= 0; n--)
-      pthread_join(nodesThreads[n], NULL);
+        pthread_mutex_lock(&lock);
+          clientsStatuses.reported++;
+          printf("Reported: %d/%d\n", clientsStatuses.reported, clientsStatuses.quantity);
+        pthread_mutex_unlock(&lock);
 
-   pthread_mutex_destroy(&lock);
-   pthread_cond_destroy(&sendStart);
-   return 0;
+        printf("******** RESULTS *********\n");
+        //REPORT ENVIRONMENT
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        nSwitches = atoi(buffer);
+        printf("nSwitches: %d\n", nSwitches);
+        buffer = NULL;
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        nLines = atoi(buffer);
+        printf("nLines/loops: %d\n", nLines);
+        buffer = NULL;
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        mode = atoi(buffer);
+        printf("mode: %d\n", mode);
+        buffer = NULL;
+        buffer = readSocketLimiter(clientFd, 5, &bytesRead);
+        testRange = atoi(buffer);
+        printf("testRange: %d\n", testRange);
+
+        //REPORT DATA
+        bytesRead = plotNode(clientFd, id, nSwitches, nLines, mode, testRange);
+
+        if (bytesRead > 0) messageReceived++;
+    } else {
+        perror("ERROR unknown message from node");
+    }
+    if (messageReceived == SERVER_MESSAGES) break;
+  }
+  pthread_mutex_lock(&lock);
+    snmpStop = 1;
+  pthread_mutex_unlock(&lock);
+
+  if (id == clientsStatuses.quantity - 1) {
+    pthread_join(snmp_thread, NULL);
+  }
+  //displayMessages(mysnmp, SNMP);
+  pthread_exit(NULL);
 }

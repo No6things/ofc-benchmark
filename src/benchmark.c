@@ -18,6 +18,7 @@
 #include <sys/time.h>
 
 #include "../include/mysnmp.h"
+#include "../include/myreport.h"
 #include "../include/mymessages.h"
 #include "../include/myserver.h"
 #include "../include/myclient.h"
@@ -27,84 +28,109 @@
 
 #define PROG_TITLE "USAGE: ofcB [option]  # by Alberto Cavadia and Daniel Tovar 2016"
 
-//RUN TEST
-double runtTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay) {
+//BENCHMARKING || Prints interval messages
+double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST, struct timeval tStart) {
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
-    int i;
+    int i, count;
+    int size = 150;
+    int written = 0;
+    int total_wait = mstestlen + delay;
     double sum = 0;
     double passed;
-    int count;
+    long double ms;
 
-    int total_wait = mstestlen + delay;
-    time_t tNow;
-    struct tm *tmNow;
+    char* values = (char *)malloc(size);
+    char* result = (char *)malloc(size);
+    char* checkpoint;
+    char* checkpoint2;
+
     pollfds = malloc(nSwitches * sizeof(*pollfds));
     assert(pollfds);
-    gettimeofday(&then,NULL);
+    gettimeofday(&then, NULL);
+
     while (1) {
-        gettimeofday(&now, NULL);
-        timersub(&now, &then, &diff);
-        if ((1000 * diff.tv_sec  + (float)diff.tv_usec / 1000) > total_wait)
-            break;
-        for (i = 0; i< nSwitches; i++)
-            switchSetPollfd(&switches[i], &pollfds[i]);
-
-        poll(pollfds, nSwitches, 1000);      // block until something is ready or 100ms passes
-
-        for (i = 0; i < nSwitches; i++) {
-            ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
-        }
+      gettimeofday(&now, NULL);
+      timersub(&now, &then, &diff);
+      if ((1000 * diff.tv_sec  + (float)diff.tv_usec / 1000) > total_wait) {
+        break;
+      }
+      for (i = 0; i < nSwitches; i++) {
+        switchSetPollfd(&switches[i], &pollfds[i]);
+      }
+      poll(pollfds, nSwitches, 1000);      // block until something is ready or 100ms passes
+      for (i = 0; i < nSwitches; i++) {
+        ofp13SwitchHandleIo(&switches[i], &pollfds[i]);
+      }
     }
-    tNow = now.tv_sec;
-    tmNow = localtime(&tNow);
-    printf("%02d:%02d:%02d.%03d Testing %-3d Switches - flows/sec:  ", tmNow->tm_hour, tmNow->tm_min, tmNow->tm_sec, (int)(now.tv_usec/1000), nSwitches);
     usleep(100000); // sleep for 100 ms, to let packets queue
-    for (i = 0 ; i < nSwitches; i++) {
-        count = switchGetCount(&switches[i]);
-        printf("%d  ", count);
-        sum += count;
+
+    gettimeofday(&now, NULL);
+    timersub(&now, &tStart, &diff);
+
+    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
+    written += snprintf(values, size, "%.03Lf", ms);
+    snprintf(result, size, "%.03Lf", ms);
+
+    checkpoint = values; //  start checkpoint
+    checkpoint2 = result; //  start checkpoint
+    values += written;
+    result += written;
+
+    for (i = 0; i < nSwitches; i++) {
+      count = switchGetCount(&switches[i]);
+      //SWITCHES VALUES
+      written = snprintf(values, size, ",%d", count);
+      values += written;
+      sum += count;
     }
+
+    written = snprintf(values, 2, "%c", CSV_NEWLINE);
+    values += written;
+
     passed = 1000 * diff.tv_sec + (double)diff.tv_usec / 1000;
     passed -= delay;        // don't count the time we intentionally delayed
-    sum /= passed;  // is now per ms
-    printf("total = %lf per ms \n", sum);
+    sum /= passed;          // is now per ms
+    written = snprintf(result, size, ",%.02lf%c", sum, CSV_NEWLINE);
+
+    if (LAST) {
+      result += written;
+      snprintf(values, 4, "%c%c", CSV_NEWLINE, LIMITER);
+      snprintf(result, 4, "%c%c", CSV_NEWLINE, LIMITER);
+    }
+
+    values = checkpoint;
+    result = checkpoint2;
+    enqueueMessage(values, myreport, VALUES, !DELIMIT, 150);
+    enqueueMessage(result, myreport, AVGS, !DELIMIT, 150);
+
     free(pollfds);
     return sum;
 }
 
+// FINAL RESULT || Returns final report
 char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
-
+  //ms/response
   if (mode == MODE_LATENCY) {
-    size = snprintf(NULL, 0, "-Latency result: %d Switches %d Tests "
-        "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
-            i+1,
-            countedTests,
-            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
 
     buffer = (char *)malloc(size + 1);
-    snprintf(buffer, size + 1, "-Latency result: %d Switches %d Tests "
-        "max/min/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf miliseconds/response\n",
-            i+1,
-            countedTests,
-            1000/min, 1000/max, 1000/avg, 1000/std_dev);
+    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
+  //response/s
   } else {
-    size = snprintf(NULL, 0, "-Throughput result: %d Switches %d Tests "
-        "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
-            i+1,
-            countedTests,
-            min, max, avg, std_dev);
-    snprintf(buffer, size + 1, "-Throughput result: %d Switches %d Tests "
-        "min/max/avg/stdev = %.2lf/%.2lf/%.2lf/%.2lf responses/s\n",
-            i+1,
-            countedTests,
-            min, max, avg, std_dev);
+    size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min, max, avg, std_dev, CSV_NEWLINE);
+    snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
+            min, max, avg, std_dev, CSV_NEWLINE);
 
   }
   return buffer;
 }
+
 //CONNECTION
 
 int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
@@ -134,8 +160,6 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 			freeaddrinfo(res);
 		return -1;
 	}
-
-
 
 	// set non blocking
 	if ((flags = fcntl(fd, F_GETFL)) < 0) {
@@ -177,7 +201,6 @@ int timeoutConnect(int fd, const char * hostname, int port, int mstimeout) {
 	return 0;
 }
 
-
 int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsigned short sport,
         int mstimeout, int nodelay) {
     struct sockaddr_in local;
@@ -188,7 +211,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
         perror("makeTcpConnection: socket");
-        exit(1);  // bad socket
+        exit(1);
     }
 
     if (nodelay && (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &zero, sizeof(zero)) < 0)) {
@@ -212,7 +235,7 @@ int makeTcpConnectionFromPort(const char * hostname, unsigned short port, unsign
     if (err) {
         perror("makeTcpConnection: connect");
         close(s);
-        return err; // bad connection
+        return err;
     }
     return s;
 }
@@ -236,6 +259,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   struct inputValues *params = &benchmarkArgs;
   const struct option * longOpts = argsToLong(options);
   char *  shortOpts =         argsToShort(options);
+  unsigned int i;
 
   params->controllerHostname =argsGetDefaultStr(options,"controller");
   params->nodeMasterHostname =argsGetDefaultStr(options,"node-master");
@@ -250,7 +274,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->learnDstMacs =      argsGetDefaultFlag(options, "learn-dst-macs");
   params->msTestLen =         argsGetDefaultInt(options, "ms-per-test");
   params->nMacAddresses =     argsGetDefaultInt(options, "mac-addresses");
-  params->master = 1,    // TODO: DELIVER BETTER HANDLING OF DEFAULT MASTER ARG
+  params->master =            1;
   params->nNodes =            argsGetDefaultInt(options, "nodes");
   params->dpidOffset =        argsGetDefaultInt(options, "dpid-offset");
   params->nPackets=           argsGetDefaultInt(options, "packets");
@@ -259,8 +283,16 @@ void initializeBenchmarking(int argc, char * argv[]) {
   params->random =            argsGetDefaultFlag(options, "random");
   params->nSwitches =         argsGetDefaultInt(options, "switches");
   params->packetSize =        argsGetDefaultInt(options, "size");
-  params->mode = MODE_LATENCY; // TODO: UPDATE TO RECEIVE PARAMETER
+  params->mode =              MODE_LATENCY;
   params->warmup =            argsGetDefaultInt(options, "warmup");
+
+  if(params->dpidOffset == 1){
+     /* initialize random seed: */
+     srand (time(NULL));
+     /* generate secret number between 1 and 10: */
+     params->dpidOffset = 999999	 + rand() / (RAND_MAX / (100000 - 999999 + 100000) + 100000);
+  }
+
 
   // TODO: HANDLE MALICIOUS DATA
   while(1) {
@@ -275,6 +307,8 @@ void initializeBenchmarking(int argc, char * argv[]) {
              break;
          case 'C' :
              params->controllerHostname = strdup(optarg);
+             snmpDestination = (char *)malloc(20);
+             snprintf(snmpDestination, 20, "%s", params->controllerHostname);
              break;
          case 'd':
              params->packetDelay = atoi(optarg);
@@ -310,7 +344,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
              params->nMacAddresses = atoi(optarg);
              break;
          case 'n':
-             params->nodeMasterHostname= strdup(optarg);
+             params->nodeMasterHostname = strdup(optarg);
              if (strcasecmp(params->nodeMasterHostname, "localhost")) params->master = 0;
              break;
          case 'N':
@@ -349,9 +383,17 @@ void initializeBenchmarking(int argc, char * argv[]) {
          default:
           argsManual(options, PROG_TITLE, 1);
      }
+
+     myreport = (struct report *)malloc(sizeof(struct report) +  MAX_QUEUE * sizeof(struct message) * 2);
+     for (i = 0; i < MAX_QUEUE; i++) {
+       myreport->queues[i].last = NULL;
+       myreport->queues[i].first = NULL;
+     }
+     myreport->sock = 0;
+
   }
 
-  //STATUS MSGS
+  //START APPLICATION MESSAGE
   fprintf(stderr, "ofcB: OpenFlow Controller Benchmarking Tool\n"
                   "   running in mode %s\n"
                   "   connecting to controller at %s:%d \n"
@@ -371,84 +413,140 @@ void initializeBenchmarking(int argc, char * argv[]) {
 char * controllerBenchmarking() {
   struct fakeswitch *switches;
   struct inputValues *params = &benchmarkArgs;
-  struct report *rp = reports;
-  char *reportBuffer;
-  int i, j;
+  unsigned int i, j, LAST;
+  int threadErr;
+  int countedTests;
+  char *finalMessage = (char*)malloc(150 * sizeof(char));
+  char *nSwitchesMessage = (char *)malloc(6 + 1);
+  char *nLoopsMessage = (char *)malloc(6 + 1);
+  char *modeMessage = (char *)malloc(6 + 1);
+  char *rangeMessage = (char *)malloc(6 + 1);
+  struct timeval tStart;
 
-  switches = malloc(params->nSwitches * sizeof(struct fakeswitch));
+  pthread_t snmp_thread;
+
+  switches = (struct fakeswitch *)malloc(params->nSwitches * sizeof(struct fakeswitch));
   assert(switches);
 
   double *results;
+  double sum;
   double  min = DBL_MAX;
   double  max = 0.0;
+  double  avg;
+  double  std_dev ;
   double  v;
-  results = malloc(params->loopsPerTest * sizeof(double));
+
+  results = (double *)malloc(params->loopsPerTest * sizeof(double));
+
+  snprintf(modeMessage, 6, "%d", params->mode == MODE_LATENCY ? 0 : 1);
+  snprintf(nSwitchesMessage, 6, "%d", params->nSwitches);
+  snprintf(nLoopsMessage, 6, "%d", params->loopsPerTest);
+  snprintf(rangeMessage, 6, "%d", params->testRange);
+
+  if (params->nNodes <= 1) {
+    threadErr = pthread_create(&snmp_thread, NULL, &asynchronousSnmp, NULL);
+    if (threadErr) {
+      pthread_join(snmp_thread, NULL);
+      perror("Creating SNMP thread");
+      exit(1);
+    }
+  }
+
+  //NSWITCHES STORAGE
+  enqueueMessage(nSwitchesMessage, myreport, VALUES, DELIMIT, 6);
+
+  //LOOPS STORAGE
+  enqueueMessage(nLoopsMessage, myreport, VALUES, DELIMIT, 6);
+
+  //TYPE OF TEST STORAGE
+  enqueueMessage(modeMessage, myreport, VALUES, DELIMIT, 6);
+
+  //TEST RANGE STORAGE
+  enqueueMessage(rangeMessage, myreport, VALUES, DELIMIT, 6);
 
   for(i = 0; i < params->nSwitches; i++) {
-    //CONNECTION
-    int sock;
-    double sum = 0;
+  //CONNECTION
+
+    sum = 0;
     if (params->connectDelay != 0 && i != 0 && (i % params->connectGroupSize == 0)) {
         if (params->debug) {
             fprintf(stderr, "Delaying connection by %dms...", params->connectDelay * 1000);
         }
         usleep(params->connectDelay * 1000);
     }
-    sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
-    if(sock < 0) {
-        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", sock);
+
+    myreport->sock = makeTcpConnection(params->controllerHostname, params->controllerPort, 3000, params->mode != MODE_THROUGHPUT);
+
+    if(myreport->sock < 0) {
+        fprintf(stderr, "make_nonblock_tcp_connection :: returned %d", myreport->sock);
         exit(1);
     }
     if (params->debug) {
         fprintf(stderr,"Initializing switch %d ... ", i + 1);
     }
+
+
     fflush(stderr);
-    switchInit(&switches[i], params->dpidOffset + i, sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
+    switchInit(&switches[i], params->dpidOffset + i, myreport->sock, BUFLEN, params->debug, params->delay, params->mode, params->nMacAddresses, params->learnDstMacs, OFP131_VERSION);
     if (params->debug) {
         fprintf(stderr," :: done.\n");
     }
     fflush(stderr);
     if (countBits(i + 1) == 0)  // only test for 1,2,4,8,16 switches
         continue;
-    if (!params->testRange && ((i+1) != params->nSwitches)) // only if testing range or this is last
+    if (!params->testRange && ((i + 1) != params->nSwitches)) // only if testing range or this is last
         continue;
+
     //RUN
+    gettimeofday(&tStart, NULL);
     for(j = 0; j < params->loopsPerTest; j++) {
         if (j > 0) {
           params->delay = 0;      // only delay on the first run
         }
-        v = 1000.0 * runtTest(i + 1, switches, params->msTestLen, params->delay);
+        LAST = (j == params->loopsPerTest - 1) ? 1 : 0;
+        v = 1000.0 * runTest(i + 1, switches, params->msTestLen, params->delay, myreport, LAST, tStart);
         results[j] = v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
         }
         sum += v;
-        if (v > max) {
+        if (v > max && v != 0.0) {
           max = v;
+          printf("\n\n\n\n%f\n\n\n\n\n", max);
         }
         if (v < min) {
           min = v;
         }
     }
 
-    //SHOW RESULTS
-    int countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
-    double avg = sum / countedTests;
+    //RESULT CALCULATION
+    countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
+    avg = sum / countedTests;
     sum = 0.0;
-    for (j = params->warmup; j < params->loopsPerTest-params->cooldown; ++j) {
+    for (j = params->warmup; j < params->loopsPerTest - params->cooldown; ++j) {
       sum += pow(results[j] - avg, 2);
     }
     sum = sum / (double)(countedTests);
-    double std_dev = sqrt(sum);
+    std_dev = sqrt(sum);
 
-    reportBuffer = (char*)malloc(150 * sizeof(char));
-    reportBuffer = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-
-    //TODO: Store result of switch report
-    printf("Report\n");
-    printf("%s\n", reportBuffer); //TODO: Remove reporte once return has been implemented
+    //RESULT STORAGE
+    finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
+    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 150);
+    /*
+    TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
+          offset it would make us lose the start of the report, is needed to create a checkpoint
+          myreport++;
+    */
   }
-  //Return array of reports
+  if (params->nNodes <= 1) {
+    //TODO: manage graphication
+    pthread_mutex_lock(&lock);
+      snmpStop = 1;
+    pthread_mutex_unlock(&lock);
+
+    pthread_join(snmp_thread, NULL);
+    displayMessages(myreport, SNMP);
+  }
   return (char *)" ";
 }
 
@@ -463,22 +561,31 @@ int main(int argc, char * argv[]) {
     if (params->master) {
       printf("Im the master node\n");
       initializeSnmp();
-      asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
-      serverSide(params->nNodes); //TODO: Remover pase de parametros y manejar variable global
-      //TODO: Manejar los reportes para generar graficos
+      serverSide(params->nNodes);
     } else {
       printf("Im one of the slaves node\n");
-      clientSide(params->nodeMasterHostname); //TODO: Remover pase de parametros y manejar variable global
-      //TODO: llamar la funcion desde el clientSide una vez se recibe el mensaje START_MESSAGE
+      clientSide(params->nodeMasterHostname);
     }
   } else {
     printf("Im alone\n");
     initializeSnmp();
-    asynchronousSnmp(params->controllerHostname); //TODO: Make it periodically
     controllerBenchmarking();
     /*
-    TODO: Recibir arreglo de reportes de controllerBenchmarking()
-    TODO: Imprimir reportes
+    CREATE PLOT REPORT
+    TODO: VALUES
+          *build header
+          *concatenate data
+          *call plotGraph
+    TODO: AVG
+          *build header
+          *concatenate data
+          *call plotGraph
+    TODO: RESULT
+          *build header
+          *call plotGraph
+    TODO: SNMP
+          *factorize plotDistributed
+          *call new factorized SNMP
     */
   }
 

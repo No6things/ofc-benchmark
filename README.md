@@ -68,3 +68,4 @@ controllers under OF 1.3, with C, than the existing tool Cbench.
 3. Update snmpd.conf to accept foreigner requests:
 	 1. Update to agentAddress udp:161.
 	 2. Remove "-V systemonly" from "rocommunity public default -V systemonly".
+4. Install gnuplot on your OS with local package install manager. e.g: sudo zypper install gnuplot in OpenSuse

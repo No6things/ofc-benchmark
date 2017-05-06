@@ -7,10 +7,10 @@ LDIR =../lib
 
 LIBS=`net-snmp-config --libs` -lm -lrt -pthread
 
-_DEPS =  myargs.h benchmark.h mysnmp.h mymessages.h myserver.h myclient.h myswitch.h msgbuf.h openflow.h openflow131.h
+_DEPS =  myargs.h benchmark.h mysnmp.h myreport.h mymessages.h gnuplot_i.h myplot.h myserver.h myclient.h myswitch.h msgbuf.h openflow.h openflow131.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ =  myargs.o benchmark.o mysnmp.o mymessages.o myserver.o myclient.o myswitch.o msgbuf.o
+_OBJ =  myargs.o benchmark.o mysnmp.o myreport.o mymessages.o  gnuplot_i.o myplot.o myserver.o myclient.o myswitch.o msgbuf.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)
