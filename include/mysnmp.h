@@ -45,6 +45,9 @@ static struct session {
 int snmpStop;
 char * snmpDestination;
 unsigned long ramSize;
+unsigned long networkStartIn;
+unsigned long networkStartOut;
+int snmpStart;
 struct timeval tStart;
 
 

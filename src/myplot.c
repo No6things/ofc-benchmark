@@ -576,6 +576,7 @@ int plotDistributed(){
     secondIterator = secondIterator->back;
   }
   snprintf(snmpBody, 2, "%c", CSV_NEWLINE);
+  printf("BODY BUILT\n %s\n", snmpBody);
   snmpBody = checkpoint;
   enqueueMessage(snmpBody, tmp, SNMP, !DELIMIT, 450 * mysnmp->queues[TIME].length);
 

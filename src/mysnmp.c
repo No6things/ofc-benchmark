@@ -65,21 +65,42 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
         while (vp) {
           snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
           token = strtok(buf, s);
+
           if (!strcmp(op->readableName, "RAM_SIZE")) {
             ramSize = atol(token);
-            printf("RAM SIZE - %lu\n", ramSize);
           } else  {
-            if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
+            if (!strcmp(op->readableName, "BYTES_IN")) {
               number = atol(token);
               number /= pow(2, 10);
+
+              //GETTING FIRST TIME CONSUMPTION
+              if (snmpStart == 1) {
+                snmpStart++;
+                networkStartIn = number;
+                number = 0;
+              } else {
+                number = number - networkStartIn;
+              }
               snprintf(result, 50, "%d", number);
-              printf("NETWORK %lu\n", number);
-              ID = (!strcmp(op->readableName, "BYTES_IN")) ? IN : OUT;
+              ID = IN;
+            } else if (!strcmp(op->readableName, "BYTES_OUT")) {
+              number = atol(token);
+              number /= pow(2, 10);
+
+              //GETTING FIRST TIME CONSUMPTION
+              if (snmpStart == 2) {
+                snmpStart++;
+                networkStartOut = number;
+                number = 0;
+              } else {
+                number = number - networkStartOut;
+              }
+              snprintf(result, 50, "%d", number);
+              ID = OUT;
             } else if (!strcmp(op->readableName, "CPU_IDLE")) {
               number = atoi(token);
               percentage = 100 - number;
               ID = CPU;
-              printf("CPU %lu\n", number);
 
               //ADDED ONCE SHARED BETWEEN OIDS
               gettimeofday(&now, NULL);
@@ -93,7 +114,6 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
             } else if (!strcmp(op->readableName, "RAM_USED")) {
               number = atol(token);
               percentage = 100 - (number * 100 / ramSize);
-              printf("RAM - %lu\n", number);
 
               snprintf(result, 50, "%d", percentage);
               ID = MEMORY;
@@ -168,6 +188,9 @@ void *asynchronousSnmp(void *context)
   struct snmp_session sess;
   int fds, block;
   gettimeofday(&tStart, NULL);
+  snmpStart = 1;
+  networkStartIn = 0;
+  networkStartOut = 0;
   while(1) {
 
     op=oids;
