@@ -26,11 +26,11 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   assert(name != NULL);
 
   while (input[offset] != ';'){
-    //Texto representativo de un number de  10 digitos
+    //INITIALIZING TEXT NUMBER
     for(j = 0; j < 10; j++){
       numberText[j] = '\0';
     }
-    //Construye number
+    //PARSING TEXT NUMBER
     j = 0;
     while ((input[offset] != ',') && ( input[offset] != ';')){
       numberText[j] = input[offset];
@@ -51,7 +51,6 @@ int parseLines(gnuplot_ctrl *h1, char *input, flow *flows, char *name){
   printf("PLOTTING\n");
   resultsIterator = checkpoint->next;
   snprintf(command, 450, "set output \"../reports/charts/%s.png\"", name);
-  //TODO: move this to plotGraph
   while (resultsIterator != NULL) {
     gnuplot_cmd(h1, command);
     gnuplot_plot_xy(h1, checkpoint->x, resultsIterator->x, i, resultsIterator->name);
@@ -281,7 +280,6 @@ int plotGraph(struct queue input, int type, char *name){
     } else {
       flows->name[i] = '\0';
       flows->name[i] = input.first->buffer[offset];
-      //printf("-%c",flows->name[i]);
       i++;
     }
     offset++;
@@ -291,13 +289,13 @@ int plotGraph(struct queue input, int type, char *name){
   printf("FLOWNAME '%s'\n", flows->name);
   flows = checkpoint;
 
-  //Configuracion de nombres en graficas.
+  //SETTING LABELS
   gnuplot_set_ylabel(h1, ylabel);
   gnuplot_set_xlabel(h1, xlabel);
-  //Reseteo de grafica
+  //RESETTING PLOTTER
   gnuplot_resetplot(h1);
 
-  //Configuracion de salida PNG
+  //GRAPH BASIC CONFIGURATION
   gnuplot_cmd(h1, "set grid xtics lc rgb \"#bbbbbb\" lw 1 lt 0");
   gnuplot_cmd(h1, "set grid ytics lc rgb \"#bbbbbb\" lw 1 lt 0");
   gnuplot_cmd(h1, "set key rmargin");
@@ -345,7 +343,7 @@ int plotGraph(struct queue input, int type, char *name){
   } else if (type == RESULTS) {
     printf("RESULTS GRAPH\n");
 
-    //SET XTIOS
+    //SET XTICS
     printf("SETTING XTIC\n");
     i = setXtic(h1, resultsIterator->buffer);
 
@@ -485,12 +483,12 @@ int plotDistributed(){
 
   //PLOTTING AVGS
   //GRAPH NAME
-  printf("SETTING NAME GRAPH - AVG\n");
+  printf("\nSETTING NAME GRAPH - AVG\n");
   snprintf(graphName, 8 + 1, "partials");
   plotGraph(myreport->queues[AVGS], AVGS, graphName);
 
   // PLOTTING RESULTS
-  printf("RESIZING VALUES OF RESULT GRAH\n");
+  printf("\nCONCATENING RESULTS\n");
   myreport->queues[RESULTS].length = myreport->queues[RESULTS].length ? myreport->queues[RESULTS].length : 1;
   resultsMessage->buffer  = (char *)realloc(resultsMessage->buffer, myreport->queues[RESULTS].length * 450 + 2);
   if(newline  == NULL){
@@ -515,7 +513,7 @@ int plotDistributed(){
   plotGraph(myreport->queues[RESULTS], RESULTS, graphName);
 
   // PLOTTING SNMP
-  printf("SETTING NAME GRAPH - SNMP MEM&CPU\n");
+  printf("\nSETTING NAME GRAPH - SNMP MEM&CPU\n");
   tmp->queues[SNMP].last = NULL;
   tmp->queues[SNMP].first = NULL;
 
@@ -547,7 +545,7 @@ int plotDistributed(){
   free(tmp);
 
   // PLOTTING SNMP
-  printf("SETTING NAME GRAPH - SNMP NETWORK\n");
+  printf("\nSETTING NAME GRAPH - SNMP NETWORK\n");
   snprintf(graphName, 8 + 1, "bandwith");
 
   x = 0;
