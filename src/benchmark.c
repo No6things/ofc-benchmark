@@ -33,7 +33,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     struct timeval now, then, diff;
     struct  pollfd  *pollfds;
     int i, count;
-    int size = 150;
+    int size = 450;
     int written = 0;
     int total_wait = mstestlen + delay;
     double sum = 0;
@@ -101,8 +101,9 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
 
     values = checkpoint;
     result = checkpoint2;
-    enqueueMessage(values, myreport, VALUES, !DELIMIT, 150);
-    enqueueMessage(result, myreport, AVGS, !DELIMIT, 150);
+    printf("STORING LOOP RESULT\n");
+    enqueueMessage(values, myreport, VALUES, !DELIMIT, 450);
+    enqueueMessage(result, myreport, AVGS, !DELIMIT, 450);
 
     free(pollfds);
     return sum;
@@ -112,6 +113,7 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
 char * formatResult (unsigned int mode, unsigned int i, int countedTests, double min, double max,double avg, double std_dev){
   char *buffer;
   size_t size;
+  printf("FORMATTING FINAL RESULT\n");
   //ms/response
   if (mode == MODE_LATENCY) {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
@@ -123,9 +125,10 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   //response/s
   } else {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min, max, avg, std_dev, CSV_NEWLINE);
+            max, min, avg, std_dev, CSV_NEWLINE);
+    buffer = (char *)malloc(size + 1);
     snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min, max, avg, std_dev, CSV_NEWLINE);
+            max, min, avg, std_dev, CSV_NEWLINE);
 
   }
   return buffer;
@@ -293,7 +296,7 @@ void initializeBenchmarking(int argc, char * argv[]) {
      params->dpidOffset = 999999	 + rand() / (RAND_MAX / (100000 - 999999 + 100000) + 100000);
   }
 
-
+  printf("INITIALIZING\n");
   // TODO: HANDLE MALICIOUS DATA
   while(1) {
      int index = 0,
@@ -416,7 +419,7 @@ char * controllerBenchmarking() {
   unsigned int i, j, LAST;
   int threadErr;
   int countedTests;
-  char *finalMessage = (char*)malloc(150 * sizeof(char));
+  char *finalMessage = (char*)malloc(450 * sizeof(char));
   char *nSwitchesMessage = (char *)malloc(6 + 1);
   char *nLoopsMessage = (char *)malloc(6 + 1);
   char *modeMessage = (char *)malloc(6 + 1);
@@ -451,6 +454,8 @@ char * controllerBenchmarking() {
       exit(1);
     }
   }
+
+  printf("STARTING\n");
 
   //NSWITCHES STORAGE
   enqueueMessage(nSwitchesMessage, myreport, VALUES, DELIMIT, 6);
@@ -498,6 +503,7 @@ char * controllerBenchmarking() {
         continue;
 
     //RUN
+    printf("STARTING LOOPS\n");
     gettimeofday(&tStart, NULL);
     for(j = 0; j < params->loopsPerTest; j++) {
         if (j > 0) {
@@ -512,12 +518,12 @@ char * controllerBenchmarking() {
         sum += v;
         if (v > max && v != 0.0) {
           max = v;
-          printf("\n\n\n\n%f\n\n\n\n\n", max);
         }
         if (v < min) {
           min = v;
         }
     }
+    printf("END OF LOOPS\n");
 
     //RESULT CALCULATION
     countedTests = (params->loopsPerTest - params->warmup - params->cooldown);
@@ -530,8 +536,9 @@ char * controllerBenchmarking() {
     std_dev = sqrt(sum);
 
     //RESULT STORAGE
+    printf("STORING FINAL RESULT\n");
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
-    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 150);
+    enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 450);
     /*
     TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
           offset it would make us lose the start of the report, is needed to create a checkpoint
