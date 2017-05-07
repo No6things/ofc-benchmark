@@ -5,7 +5,7 @@
 
 
 #include "../include/myreport.h"
-
+#include "../include/benchmark.h"
 report *myreport;
 report *mysnmp;
 report *reports;
@@ -51,6 +51,7 @@ void enqueueMessage(char* item,  report *myreport, int id, int delimit, int size
   }
   myreport->queues[id].last = temp;
   free(item);
-
-  printf("[Q]%s[Q]\n", myreport->queues[id].last->buffer);
+  if(benchmarkArgs.verbose) {
+    printf("[Q]%s[Q]\n", myreport->queues[id].last->buffer);
+  }
 }

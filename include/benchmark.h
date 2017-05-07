@@ -36,6 +36,7 @@ static struct args options[] = { //Options for Tests. In case of change, also ch
     {"size",        'S', "Size of packets", INTEGER, {.integer = 0}}, //todo
     {"throughput",  't', "Test throughput instead of latency", NONE, {.none = 0}},
     {"warmup",  'w', "Loops to be disregarded on test start (warmup)", INTEGER, {.integer = 1}},
+    {"verbose",  'v', "Verbose Mode", FLAG, {.integer = 0}},
     {0, 0, 0, 0}
 };
 
@@ -63,6 +64,7 @@ static struct inputValues {
   unsigned int nSwitches;
   unsigned int packetSize;
   unsigned int mode;
+  unsigned int verbose;
   unsigned int warmup;
 } benchmarkArgs;
 

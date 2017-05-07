@@ -82,6 +82,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
                 number = number - networkStartIn;
               }
               snprintf(result, 50, "%d", number);
+              printf("KBYTES IN %lu\n", number);
               ID = IN;
             } else if (!strcmp(op->readableName, "BYTES_OUT")) {
               number = atol(token);
@@ -96,6 +97,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
                 number = number - networkStartOut;
               }
               snprintf(result, 50, "%d", number);
+              printf("KBYTES OUT %lu\n", number);
               ID = OUT;
             } else if (!strcmp(op->readableName, "CPU_IDLE")) {
               number = atoi(token);
@@ -108,13 +110,14 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
 
               ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
               snprintf(timestamp, 20, "%.03Lf", ms);
-              enqueueMessage(timestamp, mysnmp, TIME, !DELIMIT, 20);
 
+              enqueueMessage(timestamp, mysnmp, TIME, !DELIMIT, 20);
+              printf("CPU CONSUMPTION %d %'\n", percentage);
               snprintf(result, 50, "%d", percentage);
             } else if (!strcmp(op->readableName, "RAM_USED")) {
               number = atol(token);
               percentage = 100 - (number * 100 / ramSize);
-
+              printf("\nRAM CONSUMPTION %d %'\n", percentage);
               snprintf(result, 50, "%d", percentage);
               ID = MEMORY;
             }

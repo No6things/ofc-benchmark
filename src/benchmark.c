@@ -377,6 +377,9 @@ void initializeBenchmarking(int argc, char * argv[]) {
          case 't':
              params->mode = MODE_THROUGHPUT;
              break;
+         case 'v':
+             params->verbose = 1;
+             break;
          case 'w' :
              params->warmup = atoi(optarg);
              break;
