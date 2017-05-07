@@ -89,7 +89,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
 
               snprintf(result, 50, "%d", percentage);
             } else if (!strcmp(op->readableName, "RAM_USED")) {
-              number = atoi(token);
+              number = atol(token);
               percentage = 100 - (number * 100 / ramSize);
               snprintf(result, 50, "%d", percentage);
               ID = MEMORY;
