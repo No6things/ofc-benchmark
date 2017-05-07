@@ -54,7 +54,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
   char *token;
   int ID = -1;
   int i;
-  int number;
+  unsigned long number;
   int percentage;
   long double ms;
 
@@ -66,7 +66,8 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
           snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
           token = strtok(buf, s);
           if (!strcmp(op->readableName, "RAM_SIZE")) {
-            ramSize = atoi(token);
+            ramSize = atol(token);
+            printf("RAM SIZE - %d\n", );
           } else  {
             if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
               number = atoi(token);
