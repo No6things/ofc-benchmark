@@ -7,8 +7,11 @@
 #define CONNECT_REQUEST_MESSAGE  "1"
 #define REPORT_MESSAGE  "3"
 
-#define CLIENT_MESSAGES 1
+#define CLIENT_MESSAGES 3
 #define START_MESSAGE  "2"
+#define REPORT_MESSAGE  "3"
+#define STOP_MESSAGE  "4"
+
 
 static pthread_mutex_t lock = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t sendStart = PTHREAD_MUTEX_INITIALIZER;

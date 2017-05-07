@@ -200,6 +200,10 @@ void *clientManagement(void *context) {
   if (id == clientsStatuses.quantity - 1) {
     pthread_join(snmp_thread, NULL);
   }
+
+  //SEND STOP_MESSAGE
+  snprintf(buffer, strlen(STOP_MESSAGE) + 1, STOP_MESSAGE);
+  bytesRead = writeSocket(clientFd, buffer, 2, 1);
   //displayMessages(mysnmp, SNMP);
   pthread_exit(NULL);
 }

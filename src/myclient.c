@@ -62,7 +62,6 @@ int clientSide(const char *nodeMasterHostname) {
      buffer = readSocket(serverFd, 1, 1, &bytes);
 
      if (strcmp(buffer, START_MESSAGE) == 0) {
-       end = 1;
 
        printf("received START_MESSAGE\n");
        controllerBenchmarking();
@@ -107,19 +106,17 @@ int clientSide(const char *nodeMasterHostname) {
          printf("%d ", repId);
        }
        //free(myreport);
+     } else if (strcmp(buffer, STOP_MESSAGE) == 0) {
        printf("End of transmission\n");
+       break;
      } else {
-       printf("received: '%s'\n",buffer);
+       printf("Received: '%s'\n",buffer);
        perror("Uknown message for distributed mode");
        exit(1);
      }
      buffer = NULL;
-     if (end) break;
   }
-  //TODO: Replace this way to ensure data sending, at least remove this for and
-  //      remove end = 1 breaking sentence
-  for (;;){
-  }
+
   shutdown(serverFd, SHUT_WR);
   return 0;
 }
