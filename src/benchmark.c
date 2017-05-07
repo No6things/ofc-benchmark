@@ -125,10 +125,10 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   //response/s
   } else {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min, max, avg, std_dev, CSV_NEWLINE);
+            max, min, avg, std_dev, CSV_NEWLINE);
     buffer = (char *)malloc(size + 1);
     snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min, max, avg, std_dev, CSV_NEWLINE);
+            max, min, avg, std_dev, CSV_NEWLINE);
 
   }
   return buffer;
