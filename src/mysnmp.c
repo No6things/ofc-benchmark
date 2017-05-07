@@ -67,17 +67,19 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
           token = strtok(buf, s);
           if (!strcmp(op->readableName, "RAM_SIZE")) {
             ramSize = atol(token);
-            printf("RAM SIZE - %d\n", ramSize);
+            printf("RAM SIZE - %lu\n", ramSize);
           } else  {
             if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
-              number = atoi(token);
+              number = atol(token);
               number /= pow(2, 10);
               snprintf(result, 50, "%d", number);
+              printf("NETWORK %lu\n", number);
               ID = (!strcmp(op->readableName, "BYTES_IN")) ? IN : OUT;
             } else if (!strcmp(op->readableName, "CPU_IDLE")) {
               number = atoi(token);
               percentage = 100 - number;
               ID = CPU;
+              printf("CPU %lu\n", number);
 
               //ADDED ONCE SHARED BETWEEN OIDS
               gettimeofday(&now, NULL);
@@ -91,6 +93,8 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
             } else if (!strcmp(op->readableName, "RAM_USED")) {
               number = atol(token);
               percentage = 100 - (number * 100 / ramSize);
+              printf("RAM - %lu\n", number);
+
               snprintf(result, 50, "%d", percentage);
               ID = MEMORY;
             }
