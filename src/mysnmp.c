@@ -67,7 +67,7 @@ static int printResult (int status, struct snmp_session *sp, struct snmp_pdu *pd
           token = strtok(buf, s);
           if (!strcmp(op->readableName, "RAM_SIZE")) {
             ramSize = atol(token);
-            printf("RAM SIZE - %d\n", );
+            printf("RAM SIZE - %d\n", ramSize);
           } else  {
             if (!strcmp(op->readableName, "BYTES_IN") || !strcmp(op->readableName, "BYTES_OUT")) {
               number = atoi(token);
