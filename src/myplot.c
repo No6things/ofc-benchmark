@@ -379,7 +379,7 @@ char * buildHeader(int type, int n, int mode, int subMode) {
 
   char* snmpL = (char*)calloc(100 + 1,sizeof(char));
   //printf("%d\n", ramSize/pow(2,30));
-  snprintf(snmpL, 101, "Memory %0.1f GB,CPU", ramSize;
+  snprintf(snmpL, 101, "Memory %0.1f GB,CPU", ramSize);
   printf("%s\n",snmpL );
   const char* snmpLabelX = (subMode == 0) ? "Consumption Percentage(%)" : "KB";
   const char* snmpFlows = (subMode == 0) ? snmpL : "Received,Emmitted";
