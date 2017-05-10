@@ -376,8 +376,12 @@ int plotGraph(struct queue input, int type, char *name){
 char * buildHeader(int type, int n, int mode, int subMode) {
   char* header;
   char* checkpoint;
-  const char* snmpLabelX = (subMode == 0) ? "%" : "KB";
-  const char* snmpFlows = (subMode == 0) ? "Memory,CPU" : "Received,Emmitted";
+
+  char* snmpL = (char*)calloc(20 + 1,sizeof(char));
+  snprintf(snmpL, 21, "Memory %0.1f GB,CPU", ramSize/pow(2,30));
+
+  const char* snmpLabelX = (subMode == 0) ? "Consumption Percentage(%)" : "KB";
+  const char* snmpFlows = (subMode == 0) ? snmpL : "Received,Emmitted";
   int written;
   int index = 0;
 
