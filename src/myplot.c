@@ -377,8 +377,8 @@ char * buildHeader(int type, int n, int mode, int subMode) {
   char* header;
   char* checkpoint;
 
-  char* snmpL = (char*)calloc(20 + 1,sizeof(char));
-  snprintf(snmpL, 21, "Memory %0.1f GB,CPU", ramSize/pow(2,30));
+  char* snmpL = (char*)calloc(100 + 1,sizeof(char));
+  snprintf(snmpL, 101, "Memory %0.1f GB,CPU", ramSize/pow(2,30));
 
   const char* snmpLabelX = (subMode == 0) ? "Consumption Percentage(%)" : "KB";
   const char* snmpFlows = (subMode == 0) ? snmpL : "Received,Emmitted";
