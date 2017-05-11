@@ -30,7 +30,7 @@
 
 //BENCHMARKING || Prints interval messages
 double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int delay, report *rp, int LAST, struct timeval tStart) {
-    struct timeval now, then, diff;
+    struct timeval now, then, diff, totalDiff;
     struct  pollfd  *pollfds;
     int i, count;
     int size = 450;
@@ -66,9 +66,9 @@ double runTest (int nSwitches, struct fakeswitch *switches, int mstestlen, int d
     usleep(100000); // sleep for 100 ms, to let packets queue
 
     gettimeofday(&now, NULL);
-    timersub(&now, &tStart, &diff);
+    timersub(&now, &tStart, &totalDiff);
 
-    ms = (diff.tv_usec / 1000 + diff.tv_sec * 10e3) / 10000;
+    ms = (totalDiff.tv_usec / 1000 + totalDiff.tv_sec * 10e3) / 10000;
     written += snprintf(values, size, "%.03Lf", ms);
     snprintf(result, size, "%.03Lf", ms);
 
