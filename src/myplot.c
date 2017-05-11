@@ -380,7 +380,7 @@ char * buildHeader(int type, int n, int mode, int subMode) {
   char* snmpL = (char*)calloc(150 + 1, sizeof(char));
   unsigned int ramGB = round(ramSize/pow(2,20)); //FROM KB TO GB
   snprintf(snmpL, 150, "Memory %u GB,CPU", ramGB);
-  const char* snmpLabelX = (subMode == 0) ? "Consumption Percentage (%)" : "KB";
+  const char* snmpLabelX = (subMode == 0) ? "% \Consumption" : "kB Consumption";
   const char* snmpFlows = (subMode == 0) ? snmpL : "Received,Emmitted";
   int written;
   int index = 0;
@@ -415,9 +415,9 @@ char * buildHeader(int type, int n, int mode, int subMode) {
     case RESULTS:
       header = (char *)malloc(50 + 1);
       if (mode == MODE_LATENCY) {
-        written = snprintf(header, 50 + 1, "nodes,ms/response,node,MAX,MIN,AVG,STD DEV");
+        written = snprintf(header, 50 + 1, "nodes,ms/flows,node,MAX,MIN,AVG,STD DEV");
       } else {
-        written = snprintf(header, 50 + 1, "nodes,response/sec,node,MAX,MIN,AVG,STD DEV");
+        written = snprintf(header, 50 + 1, "nodes,flows/sec,node,MAX,MIN,AVG,STD DEV");
       }
       checkpoint = header;
       header += written;
@@ -566,7 +566,7 @@ int plotDistributed(){
 
   snmpHeader = buildHeader(SNMP, -1, -1, 1);
   printf("BUILDING BODY\n");
-  enqueueMessage(snmpHeader, tmp, SNMP, !DELIMIT, 50);
+  enqueueMessage(snmpHeader, tmp, SNMP, !DELIMIT, 150);
 
   for (x = 0; x < mysnmp->queues[TIME].length; x++) {
     written = snprintf(snmpBody, 450,"%s,%s,%s;", timeIterator->buffer, firstIterator->buffer, secondIterator->buffer);
