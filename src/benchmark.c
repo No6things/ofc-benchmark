@@ -117,11 +117,11 @@ char * formatResult (unsigned int mode, unsigned int i, int countedTests, double
   //ms/response
   if (mode == MODE_LATENCY) {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : avg, std_dev == 0 ? 0 : std_dev, CSV_NEWLINE);
 
     buffer = (char *)malloc(size + 1);
     snprintf(buffer, size + 1, "%.2lf,%.2lf,%.2lf,%.2lf%c",
-            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : 1000/avg, std_dev == 0 ? 0 : 1000/std_dev, CSV_NEWLINE);
+            min == 0 ? 0 : 1000/min, max == 0 ? 0 : 1000/max, avg == 0 ? 0 : avg, std_dev == 0 ? 0 : std_dev, CSV_NEWLINE);
   //response/s
   } else {
     size = snprintf(NULL, 0, "%.2lf,%.2lf,%.2lf,%.2lf%c",
@@ -514,11 +514,11 @@ char * controllerBenchmarking() {
         }
         LAST = (j == params->loopsPerTest - 1) ? 1 : 0;
         v = 1000.0 * runTest(i + 1, switches, params->msTestLen, params->delay, myreport, LAST, tStart);
-        results[j] = v;
+        results[j] = params->mode == MODE_LATENCY ? 1000/v : v;
         if (j < params->warmup || j >= params->loopsPerTest - params->cooldown) {
           continue;
         }
-        sum += v;
+        sum += params->mode == MODE_LATENCY ? 1000/v : v;
         if (v > max && v != 0.0) {
           max = v;
         }
