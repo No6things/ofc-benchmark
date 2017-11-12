@@ -532,14 +532,8 @@ char * controllerBenchmarking() {
     //RESULT STORAGE
     finalMessage = formatResult(params->mode, i, countedTests, min, max, avg, std_dev);
     enqueueMessage(finalMessage, myreport, RESULTS, DELIMIT, 150);
-    /*
-    TODO: right now application cant handle many switches because the pointer used is the same defined as gloabl,
-          offset it would make us lose the start of the report, is needed to create a checkpoint
-          myreport++;
-    */
   }
   if (params->nNodes <= 1) {
-    //TODO: manage graphication
     pthread_mutex_lock(&lock);
       snmpStop = 1;
     pthread_mutex_unlock(&lock);
@@ -570,23 +564,6 @@ int main(int argc, char * argv[]) {
     printf("Im alone\n");
     initializeSnmp();
     controllerBenchmarking();
-    /*
-    CREATE PLOT REPORT
-    TODO: VALUES
-          *build header
-          *concatenate data
-          *call plotGraph
-    TODO: AVG
-          *build header
-          *concatenate data
-          *call plotGraph
-    TODO: RESULT
-          *build header
-          *call plotGraph
-    TODO: SNMP
-          *factorize plotDistributed
-          *call new factorized SNMP
-    */
   }
 
   return 0;
