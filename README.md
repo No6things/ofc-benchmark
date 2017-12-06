@@ -54,7 +54,7 @@ NOTE: This tool was based on OFLOPS/cbench, so it has all the current options su
 #### Requirements
 
 
-1. SNMP-NET installe
+1. SNMP-NET installed
 2. SNMP-MIBS-DOWNLOADER installed.
 	 1. Comment out "mibs:" from snmp.conf.
 	 2. Run download-mibs.
