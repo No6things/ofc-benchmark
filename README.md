@@ -12,27 +12,42 @@ NOTE: This tool was based on OFLOPS/cbench, so it has all the current options su
 1. Metrics for latency and performance tests:
 
 	a. RTT.
+	
 	b. CPU usage percent.
+	
 	c. Memory usage.
+	
 	d. Packets sent.
+	
 	e. Packets received.
+	
 	f. Number of flows.
 
 2. Parameters:
 
 	a. Number of switches.
+	
 	b. Number of packets.
+	
 	c. Size of packet.
+	
 	d. Interpacket delay sending.
+	
 	e. Packet fields.
+	
 	f. Number of packets to configure.
+	
 	g. Sending order:
+	
 		i. Serial.
+		
 		ii. Random.
 
 3. Controllers supported:
 	a. Ryu.
+	
 	b. FloodLight.
+	
 	c. OpenDayLight.
 	d. OpenMUL.
 
